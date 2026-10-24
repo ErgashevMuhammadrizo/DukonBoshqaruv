@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app.dart';
@@ -233,14 +234,38 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
           ],
         ),
       );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        error = 'Aktivatsiya xatosi: ${e.toString()}';
-        busy = false;
-      });
+} on DioException catch (e) {
+  if (!mounted) return;
+
+  final data = e.response?.data;
+  String message = 'Aktivatsiya amalga oshmadi.';
+
+  if (data is Map) {
+    final errorData = data['error'];
+
+    if (errorData is Map && errorData['message'] != null) {
+      message = errorData['message'].toString();
+    } else if (data['detail'] != null) {
+      message = data['detail'].toString();
+    } else if (data['message'] != null) {
+      message = data['message'].toString();
     }
+  } else if (e.response == null) {
+    message = 'Serverga ulanib bo‘lmadi. Internet aloqasini tekshiring.';
   }
+
+  setState(() {
+    error = 'Aktivatsiya xatosi: $message';
+    busy = false;
+  });
+} catch (e) {
+  if (!mounted) return;
+
+  setState(() {
+    error = 'Kutilmagan xatolik: $e';
+    busy = false;
+  });
+}
 
   @override
   void dispose() {
