@@ -86,27 +86,31 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').strip().lower()
-if DB_ENGINE not in {'sqlite', 'postgres', 'postgresql'}:
-    raise RuntimeError('DB_ENGINE must be sqlite or postgres')
-if not DEBUG and DB_ENGINE == 'sqlite':
-    raise RuntimeError('Production requires PostgreSQL; SQLite is for development and isolated tests only')
-if not DEBUG and not os.getenv('POSTGRES_PASSWORD', '').strip():
-    raise RuntimeError('Set POSTGRES_PASSWORD through the production secret environment')
-if DB_ENGINE == 'sqlite':
-    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'dev.sqlite3'}}
-else:
+import os
+
+DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
+
+if DB_ENGINE == "sqlite":
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('POSTGRES_DB', 'dokon'),
-            'USER': os.getenv('POSTGRES_USER', 'dokon'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-            'HOST': os.getenv('POSTGRES_HOST', 'db'),
-            'PORT': os.getenv('POSTGRES_PORT', '5432'),
-            'CONN_MAX_AGE': 60,
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+elif DB_ENGINE == "postgres":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ["PGDATABASE"],
+            "USER": os.environ["PGUSER"],
+            "PASSWORD": os.environ["PGPASSWORD"],
+            "HOST": os.environ["PGHOST"],
+            "PORT": os.getenv("PGPORT", "5432"),
+            "OPTIONS": {"sslmode": "require"},
+        }
+    }
+else:
+    raise ValueError(f"Noto'g'ri DB_ENGINE: {DB_ENGINE}")
 
 AUTH_USER_MODEL = 'core.User'
 AUTH_PASSWORD_VALIDATORS = [
