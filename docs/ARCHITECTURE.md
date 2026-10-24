@@ -1,0 +1,2 @@
+# Architecture
+Single Django backend with Django Admin + Django template marketing pages + DRF `/api/v1/`. Flutter client consumes API. Django ORM data resides in PostgreSQL. Store-owner ownership enforced by tenant queryset and server-derived store. Local client SQLite queues offline sales; server PostgreSQL remains authoritative for posted sales and stock. Backend source is centralized under `apps/core` for initial development; future feature modules may split it without creating another backend.

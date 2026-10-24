@@ -1,0 +1,34 @@
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local databases, uploads and generated assets
+
+backend/media/
+backend/staticfiles/
+var/backups/
+
+# Flutter generated files
+dokon_boshqaruv/.dart_tool/
+dokon_boshqaruv/.flutter-plugins
+dokon_boshqaruv/.flutter-plugins-dependencies
+dokon_boshqaruv/.packages
+dokon_boshqaruv/build/
+dokon_boshqaruv/coverage/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store

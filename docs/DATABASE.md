@@ -1,0 +1,2 @@
+# Data model
+`User` -> one `Store`; all products/categories/sales/movements have store FKs. `Product.stock` is authoritative posted quantity, updated only in critical service and adjustment API. `InventoryMovement` logs each API-originated change. `Sale` stores exact total and split tender; `SaleItem` stores historical prices/costs. `SyncOperation` provides store-scoped unique operation IDs. Money uses DecimalField (2 decimal places) and round-half-up. Inventory quantities use 3 decimal places. Admin direct model writes bypass invariant and must be blocked prior to release.
