@@ -1,113 +1,174 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class BarcodeScannerDialog extends StatefulWidget {
   const BarcodeScannerDialog({super.key});
 
   @override
-  State<BarcodeScannerDialog> createState() => _BarcodeScannerDialogState();
+  State<BarcodeScannerDialog> createState() =>
+      _BarcodeScannerDialogState();
 }
 
-class _BarcodeScannerDialogState extends State<BarcodeScannerDialog> {
-  final MobileScannerController controller = MobileScannerController(
+class _BarcodeScannerDialogState
+    extends State<BarcodeScannerDialog>
+    with WidgetsBindingObserver {
+  final _controller = MobileScannerController(
+    facing: CameraFacing.back,
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
 
+  bool _completed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _startCamera() async {
+    if (!mounted || _completed) return;
+
+    try {
+      await _controller.start();
+    } catch (_) {
+      // Kamera xatosi MobileScanner.errorBuilder orqali ko‘rsatiladi.
+    }
+  }
+
+  Future<void> _stopCamera() async {
+    try {
+      await _controller.stop();
+    } catch (_) {
+      // Yopilayotgan kameraning xatosi oynani buzmasligi kerak.
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_completed || !_controller.value.isInitialized) return;
+
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_startCamera());
+    } else if (state == AppLifecycleState.inactive) {
+      unawaited(_stopCamera());
+    }
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_completed || !mounted) return;
+
+    for (final barcode in capture.barcodes) {
+      final code = barcode.rawValue?.trim();
+
+      if (code == null || code.isEmpty) continue;
+
+      _completed = true;
+      Navigator.of(context).pop(code);
+      return;
+    }
+  }
+
+  Future<void> _toggleTorch() async {
+    try {
+      await _controller.toggleTorch();
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bu kamerada chiroqni yoqib bo‘lmadi.'),
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
-    controller.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_controller.dispose());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final screen = MediaQuery.sizeOf(context);
+
     return Dialog(
-      child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 500,
-          maxHeight: 600,
-        ),
+      insetPadding: const EdgeInsets.all(16),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        width: 500,
+        height: screen.height * 0.75,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             AppBar(
-              title: const Text('Shtrix-kod skanerlash'),
               automaticallyImplyLeading: false,
+              title: const Text('Shtrix-kodni skanerlash'),
               actions: [
                 IconButton(
+                  tooltip: 'Yopish',
+                  onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
             Expanded(
-              child: Stack(
-                children: [
-                  MobileScanner(
-                    controller: controller,
-                    onDetect: (BarcodeCapture capture) {
-                      final List<Barcode> barcodes = capture.barcodes;
-                      if (barcodes.isNotEmpty) {
-                        final barcode = barcodes.first.rawValue;
-                        if (barcode != null && barcode.isNotEmpty) {
-                          Navigator.pop(context, barcode);
-                        }
-                      }
-                    },
-                  ),
-                  Center(
-                    child: Container(
-                      width: 250,
-                      height: 250,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
+              child: MobileScanner(
+                controller: _controller,
+                onDetect: _onDetect,
+                errorBuilder: (context, error, child) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.no_photography_outlined,
+                          size: 48,
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Kamera ochilmadi. Telefon sozlamalarida '
+                          'Dokon Boshqaruv uchun kamera ruxsatini '
+                          'tekshiring.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Xato: ${error.errorCode.name}',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () async {
+                            await openAppSettings();
+                          },
+                          child: const Text('Sozlamalarni ochish'),
+                        ),
+                        TextButton(
+                          onPressed: _startCamera,
+                          child: const Text('Qayta urinish'),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.black87,
-              child: Column(
-                children: [
-                  const Text(
-                    'Shtrix-kodni ramka ichiga joylashtiring',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.flash_on,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => controller.toggleTorch(),
-                        tooltip: 'Chiroq',
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.switch_camera,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => controller.switchCamera(),
-                        tooltip: 'Kamerani almashtirish',
-                      ),
-                    ],
-                  ),
-                ],
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Text(
+                'Mahsulotdagi shtrix-kodni kameraga ko‘rsating. '
+                'Kod to‘liq ko‘rinsin va tasvir tiniqlashishini kuting.',
+                textAlign: TextAlign.center,
               ),
+            ),
+            IconButton(
+              tooltip: 'Chiroq',
+              onPressed: _toggleTorch,
+              icon: const Icon(Icons.flash_on),
             ),
           ],
         ),

@@ -869,7 +869,7 @@ class _AdminPanelState extends ConsumerState<AdminPanel>
                       itemBuilder: (_) => const [
                             PopupMenuItem(
                                 value: 'extend',
-                                child: Text('1 oyga uzaytirish')),
+                                child: Text('Muddatni uzaytirish')),
                             PopupMenuItem(
                                 value: 'cancel',
                                 child: Text('Obunani bekor qilish'))
@@ -905,43 +905,125 @@ class _AdminPanelState extends ConsumerState<AdminPanel>
             icon: const Icon(Icons.chevron_right))
       ]));
 
+  bool _subscriptionBusy = false;
+
   Future<void> _subscriptionAction(
       Map<String, dynamic> row, String action) async {
-    final reason = TextEditingController();
-    final accepted = await showDialog<String>(
+    if (_subscriptionBusy || !mounted) return;
+    if (action != 'extend' && action != 'cancel') return;
+    final storeId = int.tryParse('${row['store_id']}');
+    if (storeId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Do‘kon ID si topilmadi. Ro‘yxatni yangilang.')),
+      );
+      return;
+    }
+    _subscriptionBusy = true;
+    try {
+      final form = GlobalKey<FormState>();
+      var months = 1;
+      var reason = '';
+      final accepted = await showDialog<Map<String, dynamic>>(
         context: context,
         builder: (ctx) => AlertDialog(
-                title: Text(action == 'cancel'
-                    ? 'Obunani bekor qilish'
-                    : 'Obunani uzaytirish'),
-                content: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(action == 'cancel'
-                      ? '${row['store']} do‘koni obunasi darhol tugatiladi.'
-                      : '${row['store']} obunasi bir oyga uzaytiriladi.'),
+          title: Text(action == 'cancel'
+              ? 'Obunani bekor qilish' : 'Obunani uzaytirish'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: form,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Do‘kon: ${row['store']}'),
+                  const SizedBox(height: 8),
+                  Text('Hozirgi to‘langan muddat: ${row['paid_until'] ?? '—'}'),
                   const SizedBox(height: 12),
-                  TextField(
-                      controller: reason,
-                      decoration:
-                          const InputDecoration(labelText: 'Sabab (majburiy)')),
-                ]),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Ortga')),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(ctx, reason.text.trim()),
-                      child: const Text('Tasdiqlash'))
-                ]));
-    if (accepted == null || accepted.isEmpty) return;
-    try {
-      await ref.read(apiProvider).adminSubscriptionAction(
-          row['store_id'] as int, action,
-          reason: accepted);
+                  if (action == 'extend') ...[
+                    TextFormField(
+                      initialValue: '1',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Uzaytirish muddati (oy)',
+                        helperText: '1 dan 36 oygacha. 12 oy = 1 yil.',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        final parsed = int.tryParse(value ?? '');
+                        if (parsed == null || parsed < 1 || parsed > 36) {
+                          return '1–36 oralig‘ida oy kiriting.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) => months = int.parse(value!),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Faol muddatning qolgan qismi saqlanadi. '
+                        'Yakuniy tugash sanasini server hisoblaydi.'),
+                    const SizedBox(height: 12),
+                  ] else ...[
+                    const Text('Obuna muddati darhol tugatiladi. '
+                        'Bu amal foydalanuvchi ma’lumotlarini o‘chirmaydi.'),
+                    const SizedBox(height: 12),
+                  ],
+                  TextFormField(
+                    minLines: 2,
+                    maxLines: 4,
+                    maxLength: 300,
+                    decoration: const InputDecoration(
+                      labelText: 'Sabab (majburiy)',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) => (value ?? '').trim().isEmpty
+                        ? 'Amal sababini kiriting.' : null,
+                    onSaved: (value) => reason = (value ?? '').trim(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Ortga'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (form.currentState?.validate() != true) return;
+                form.currentState!.save();
+                Navigator.of(ctx).pop(<String, dynamic>{
+                  'months': months, 'reason': reason,
+                });
+              },
+              child: const Text('Tasdiqlash'),
+            ),
+          ],
+        ),
+      );
+      if (accepted == null || !mounted) return;
+      final result = await ref.read(apiProvider).adminSubscriptionAction(
+        storeId, action,
+        months: accepted['months'] as int,
+        reason: accepted['reason'] as String,
+      );
+      if (!mounted) return;
+      final expiry = DateTime.tryParse('${result['paid_until'] ?? ''}');
+      final message = action == 'cancel'
+          ? 'Obuna bekor qilindi.'
+          : 'Obuna ${accepted['months']} oyga uzaytirildi.'
+              '${expiry == null ? '' : ' Tugash sanasi: ${DateFormat('dd.MM.yyyy HH:mm').format(expiry.toLocal())}.'}';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       await loadSection(4);
-    } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Amal bajarilmadi: $e')));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Amal tasdiqlanmadi. '
+              'Qayta uzaytirishdan oldin ro‘yxatni yangilab muddatni tekshiring.')),
+        );
+      }
+    } finally {
+      _subscriptionBusy = false;
     }
   }
 

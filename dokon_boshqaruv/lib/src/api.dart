@@ -1,49 +1,50 @@
 import 'dart:async';
-import 'package:uuid/uuid.dart';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 
-const _configuredApiBaseUrl = String.fromEnvironment('API_BASE_URL');
+const _configuredApiBaseUrl =
+    String.fromEnvironment('API_BASE_URL');
 
 String get _apiBaseUrl {
-  if (_configuredApiBaseUrl.trim().isNotEmpty) {
-    return _configuredApiBaseUrl;
-  }
-  if (kReleaseMode) return 'https://example.invalid/api/v1/';
-  if (kIsWeb) return 'http://localhost:8000/api/v1/';
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    // Android emulator: 10.0.2.2 — host mashina.
-    // Haqiqiy qurilmalarda API_BASE_URL yoki `adb reverse tcp:8000 tcp:8000` kerak.
-    return 'http://10.0.2.2:8000/api/v1/';
-  }
-  return 'http://127.0.0.1:8000/api/v1/';
+  final configured = _configuredApiBaseUrl.trim();
+  final value = configured.isNotEmpty
+      ? configured
+      : 'https://dukonboshqaruvi-production.up.railway.app/api/v1/';
+
+  return value.endsWith('/') ? value : '$value/';
 }
 
 class Api {
   final Dio dio = Dio(
     BaseOptions(
       baseUrl: _apiBaseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 20),
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 15),
+      sendTimeout: const Duration(seconds: 15),
     ),
   );
 
-  final FlutterSecureStorage secure = const FlutterSecureStorage();
+  final FlutterSecureStorage secure =
+      const FlutterSecureStorage();
 
-  // 401 refresh uchun: bir vaqtda faqat bitta refresh bajarilsin.
-  // Parallel so'rovlar birinchi refresh tugaguncha kutadi.
-  bool _refreshing = false;
-  Completer<bool>? _refreshCompleter;
-
-  /// Logout callback — token yangilash xato berganda chaqiriladi.
-  /// Ilovada [app.dart] ichida o'rnatiladi.
   void Function()? onLogout;
 
-  // Interceptordan chetda qolishi kerak bo'lgan yo'llar (cheksiz sikl oldini olish uchun).
+  String? _sessionKey;
+  String? get sessionKey => _sessionKey;
+
+  bool _refreshRejected = false;
+  Object? _lastRefreshError;
+  Future<bool>? _refreshFuture;
+
+  static const _profileKey = 'offline_profile_v2';
+  static const _checkedKey = 'offline_checked_v2';
+  static const _expiryKey = 'offline_expiry_v2';
+  static const _serverKey = 'offline_server_v2';
+
   static const _exemptPaths = {
     'auth/login/',
     'auth/activate/',
@@ -56,65 +57,89 @@ class Api {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await secure.read(key: 'access');
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+          try {
+            final path =
+                options.path.replaceAll(RegExp(r'^/+'), '');
+
+            if (_exemptPaths.contains(path)) {
+              options.headers.remove('Authorization');
+            } else {
+              final token = await secure.read(key: 'access');
+
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+            }
+
+            handler.next(options);
+          } catch (error) {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                error: error,
+              ),
+            );
           }
-          handler.next(options);
         },
         onError: (error, handler) async {
-          final response = error.response;
-          if (response == null || response.statusCode != 401) {
-            handler.next(error);
-            return;
-          }
-
-          // Exempt yo'llarni tekshir — cheksiz sikl oldini olish.
           final path =
               error.requestOptions.path.replaceAll(RegExp(r'^/+'), '');
-          if (_exemptPaths.any((e) => path.startsWith(e))) {
+
+          final alreadyRetried =
+              error.requestOptions.extra['auth_retried'] == true;
+
+          if (error.response?.statusCode != 401 ||
+              _exemptPaths.contains(path) ||
+              alreadyRetried) {
             handler.next(error);
             return;
           }
 
-          // Agar refresh allaqachon bajarilmoqda bo'lsa — birinchi natijani kutamiz.
-          if (_refreshing) {
-            final ok = await _refreshCompleter!.future;
-            if (!ok) {
-              handler.next(error);
-              return;
-            }
-            try {
-              final retried = await _retry(error.requestOptions);
-              handler.resolve(retried);
-            } catch (e) {
-              handler.next(error);
-            }
-            return;
-          }
-
-          // Refresh jarayonini boshlash.
-          _refreshing = true;
-          _refreshCompleter = Completer<bool>();
-
-          final refreshed = await _doRefresh();
-          _refreshCompleter!.complete(refreshed);
-          _refreshing = false;
-          _refreshCompleter = null;
+          final refreshed = await _refreshTokens();
 
           if (!refreshed) {
-            // Refresh xato berdi — tokenlarni o'chirib login ekraniga qaytish.
-            await secure.deleteAll();
-            onLogout?.call();
-            handler.next(error);
+            if (_refreshRejected) {
+              await _clearSession();
+              onLogout?.call();
+            }
+
+            // Refresh vaqtida internet uzilgan bo‘lsa,
+            // asl 401 ni tarmoq xatosidan farqlaymiz.
+            final refreshError = _lastRefreshError;
+
+            if (isNetworkError(refreshError)) {
+              handler.next(
+                DioException(
+                  requestOptions: error.requestOptions,
+                  type: refreshError is DioException
+                      ? refreshError.type
+                      : DioExceptionType.connectionTimeout,
+                  error: refreshError,
+                  message: 'Sessiyani yangilashda tarmoq uzildi.',
+                ),
+              );
+            } else {
+              handler.next(error);
+            }
+
             return;
           }
 
-          // Muvaffaqiyatli refresh — asl so'rovni yangi token bilan qayta yuborish.
           try {
-            final retried = await _retry(error.requestOptions);
-            handler.resolve(retried);
-          } catch (e) {
+            final token = await secure.read(key: 'access');
+            final request = error.requestOptions;
+
+            request.extra['auth_retried'] = true;
+
+            if (token != null) {
+              request.headers['Authorization'] = 'Bearer $token';
+            }
+
+            final response = await dio.fetch<dynamic>(request);
+            handler.resolve(response);
+          } on DioException catch (retryError) {
+            handler.next(retryError);
+          } catch (_) {
             handler.next(error);
           }
         },
@@ -122,90 +147,217 @@ class Api {
     );
   }
 
-  /// Refresh tokenni ishlatib yangi access token olish.
-  Future<bool> _doRefresh() async {
+  static bool isNetworkError(Object? error) {
+    if (error is TimeoutException) return true;
+
+    return error is DioException &&
+        {
+          DioExceptionType.connectionError,
+          DioExceptionType.connectionTimeout,
+          DioExceptionType.sendTimeout,
+          DioExceptionType.receiveTimeout,
+        }.contains(error.type);
+  }
+
+  void _setIdentity(Map<String, dynamic> profile) {
+    final id = profile['id'];
+
+    if (id == null) {
+      throw const FormatException(
+        'Profil javobida foydalanuvchi ID mavjud emas.',
+      );
+    }
+
+    _sessionKey = base64Url
+        .encode(utf8.encode('${dio.options.baseUrl}|$id'))
+        .replaceAll('=', '');
+  }
+
+  Future<void> _clearOfflineProfile() async {
+    await secure.delete(key: _profileKey);
+    await secure.delete(key: _checkedKey);
+    await secure.delete(key: _expiryKey);
+    await secure.delete(key: _serverKey);
+  }
+
+  Future<void> _clearSession() async {
+    _sessionKey = null;
+
+    await secure.delete(key: 'access');
+    await secure.delete(key: 'refresh');
+    await _clearOfflineProfile();
+  }
+
+  Future<bool> _refreshTokens() {
+    final running = _refreshFuture;
+    if (running != null) return running;
+
+    final future = _performRefresh();
+    _refreshFuture = future;
+
+    return future.whenComplete(() {
+      if (identical(_refreshFuture, future)) {
+        _refreshFuture = null;
+      }
+    });
+  }
+
+  Future<bool> _performRefresh() async {
+    _refreshRejected = false;
+    _lastRefreshError = null;
+
     try {
       final refresh = await secure.read(key: 'refresh');
-      if (refresh == null || refresh.trim().isEmpty) return false;
 
-      final r = await dio
-          .post(
-            'auth/token/refresh/',
-            data: {'refresh': refresh},
-          )
-          .timeout(const Duration(seconds: 8));
-
-      await secure.write(key: 'access', value: r.data['access'] as String);
-      if (r.data['refresh'] != null) {
-        await secure.write(
-            key: 'refresh', value: r.data['refresh'] as String);
+      if (refresh == null || refresh.trim().isEmpty) {
+        _refreshRejected = true;
+        return false;
       }
+
+      final response = await dio.post(
+        'auth/token/refresh/',
+        data: {'refresh': refresh},
+      );
+
+      final data =
+          Map<String, dynamic>.from(response.data as Map);
+
+      final access = data['access'];
+
+      if (access is! String || access.isEmpty) {
+        throw const FormatException(
+          'Server access token qaytarmadi.',
+        );
+      }
+
+      await secure.write(key: 'access', value: access);
+
+      final nextRefresh = data['refresh'];
+
+      if (nextRefresh is String && nextRefresh.isNotEmpty) {
+        await secure.write(
+          key: 'refresh',
+          value: nextRefresh,
+        );
+      }
+
       return true;
-    } catch (_) {
+    } catch (error) {
+      _lastRefreshError = error;
+
+      if (error is DioException) {
+        _refreshRejected =
+            error.response?.statusCode == 401 ||
+            error.response?.statusCode == 403;
+      }
+
       return false;
     }
   }
 
-  /// Asl so'rovni yangilangan token bilan qayta yuborish.
-  Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {
-    final newToken = await secure.read(key: 'access');
-    final options = Options(
-      method: requestOptions.method,
-      headers: {
-        ...requestOptions.headers,
-        if (newToken != null) 'Authorization': 'Bearer $newToken',
-      },
-    );
-    return dio.request<dynamic>(
-      requestOptions.path,
-      data: requestOptions.data,
-      queryParameters: requestOptions.queryParameters,
-      options: options,
-    );
+  Future<Map<String, dynamic>?> offlineProfile() async {
+    try {
+      final refresh = await secure.read(key: 'refresh');
+      final raw = await secure.read(key: _profileKey);
+      final server = await secure.read(key: _serverKey);
+
+      final checkedAt = DateTime.tryParse(
+        await secure.read(key: _checkedKey) ?? '',
+      );
+
+      final expiresAt = DateTime.tryParse(
+        await secure.read(key: _expiryKey) ?? '',
+      );
+
+      if (refresh == null ||
+          refresh.isEmpty ||
+          raw == null ||
+          server != dio.options.baseUrl ||
+          checkedAt == null ||
+          expiresAt == null) {
+        return null;
+      }
+
+      final now = DateTime.now().toUtc();
+
+      if (now.isBefore(checkedAt.toUtc()) ||
+          now.difference(checkedAt.toUtc()) >=
+              const Duration(hours: 24) ||
+          !expiresAt.toUtc().isAfter(now)) {
+        return null;
+      }
+
+      final profile =
+          Map<String, dynamic>.from(jsonDecode(raw) as Map);
+
+      if (profile['is_superadmin'] == true ||
+          profile['superadmin'] == true ||
+          profile['is_active'] == false ||
+          profile['needs_password_change'] == true ||
+          profile['force_password_change'] == true) {
+        return null;
+      }
+
+      _setIdentity(profile);
+      return profile;
+    } catch (_) {
+      return null;
+    }
   }
 
-  Future<bool> login(String username, String password) async {
-    // Eski tokenlarni tozalash.
-    await secure.delete(key: 'access');
-    await secure.delete(key: 'refresh');
+  Future<bool> login(
+    String username,
+    String password,
+  ) async {
+    await _clearSession();
 
-    // Login uchun interceptor'siz toza so'rov.
-    final r = await dio.post(
+    final response = await dio.post(
       'auth/login/',
       data: {
-        'username': username,
+        'username': username.trim(),
         'password': password,
       },
-      options: Options(
-        headers: {}, // Authorization header kerak emas.
-      ),
     );
-    await secure.write(key: 'access', value: r.data['access'] as String);
-    await secure.write(key: 'refresh', value: r.data['refresh'] as String);
+
+    final data =
+        Map<String, dynamic>.from(response.data as Map);
+
+    await secure.write(
+      key: 'access',
+      value: data['access'] as String,
+    );
+
+    await secure.write(
+      key: 'refresh',
+      value: data['refresh'] as String,
+    );
+
     return true;
   }
 
   Future<bool> restore() async {
     final refresh = await secure.read(key: 'refresh');
-    if (refresh == null || refresh.trim().isEmpty) return false;
 
-    try {
-      final r = await dio
-          .post('auth/token/refresh/', data: {'refresh': refresh})
-          .timeout(const Duration(seconds: 4));
+    if (refresh == null || refresh.isEmpty) return false;
 
-      await secure.write(key: 'access', value: r.data['access'] as String);
-      if (r.data['refresh'] != null) {
-        await secure.write(
-            key: 'refresh', value: r.data['refresh'] as String);
+    final restored = await _refreshTokens();
+
+    if (!restored) {
+      if (_refreshRejected) {
+        await _clearSession();
+        return false;
       }
 
-      await dio.get('me/').timeout(const Duration(seconds: 4));
+      if (isNetworkError(_lastRefreshError)) {
+        return await offlineProfile() != null;
+      }
+
+      return false;
+    }
+
+    try {
+      await me();
       return true;
-    } on TimeoutException catch (_) {
-      return false;
-    } on DioException catch (_) {
-      return false;
     } catch (_) {
       return false;
     }
@@ -213,227 +365,413 @@ class Api {
 
   Future<void> logout() async {
     try {
-      final token = await secure.read(key: 'refresh');
-      if (token != null) {
-        await dio.post('auth/logout/', data: {'refresh': token});
+      final refresh = await secure.read(key: 'refresh');
+
+      if (refresh != null) {
+        await dio.post(
+          'auth/logout/',
+          data: {'refresh': refresh},
+        );
       }
+    } catch (_) {
+      // Serverga chiqish xabari yetib bormasa ham,
+      // qurilmadagi sessiya tozalanadi.
     } finally {
-      await secure.deleteAll();
+      await _clearSession();
     }
   }
 
   Future<Map<String, dynamic>> me() async {
-    final r = await dio.get('me/');
-    return Map<String, dynamic>.from(r.data as Map);
+    Map<String, dynamic> profile;
+
+    try {
+      final response = await dio.get('me/');
+      profile =
+          Map<String, dynamic>.from(response.data as Map);
+    } catch (error) {
+      if (isNetworkError(error)) {
+        final cached = await offlineProfile();
+        if (cached != null) return cached;
+      }
+
+      if (error is DioException &&
+          {
+            401,
+            403,
+          }.contains(error.response?.statusCode)) {
+        await _clearOfflineProfile();
+      }
+
+      rethrow;
+    }
+
+    _setIdentity(profile);
+
+    final isAdmin = profile['is_superadmin'] == true ||
+        profile['superadmin'] == true;
+
+    final blocked = profile['is_active'] == false ||
+        profile['needs_password_change'] == true ||
+        profile['force_password_change'] == true;
+
+    if (isAdmin || blocked) {
+      await _clearOfflineProfile();
+      return profile;
+    }
+
+    try {
+      final response = await dio.get('subscription/status/');
+      final status =
+          Map<String, dynamic>.from(response.data as Map);
+
+      final expiry = DateTime.tryParse(
+        status['expires_at']?.toString() ?? '',
+      );
+
+      final now = DateTime.now().toUtc();
+
+      if (status['active'] != true ||
+          expiry == null ||
+          !expiry.toUtc().isAfter(now)) {
+        await _clearOfflineProfile();
+        return profile;
+      }
+
+      // Ruxsat belgisi oxirida yoziladi.
+      await secure.delete(key: _checkedKey);
+
+      await secure.write(
+        key: _profileKey,
+        value: jsonEncode(profile),
+      );
+
+      await secure.write(
+        key: _serverKey,
+        value: dio.options.baseUrl,
+      );
+
+      await secure.write(
+        key: _expiryKey,
+        value: expiry.toUtc().toIso8601String(),
+      );
+
+      await secure.write(
+        key: _checkedKey,
+        value: now.toIso8601String(),
+      );
+    } catch (error) {
+      // Tarmoq uzilsa oldingi tasdiqning muddati uzaytirilmaydi.
+      // Boshqa xatoda eski offline ruxsat bekor qilinadi.
+      if (!isNetworkError(error)) {
+        await _clearOfflineProfile();
+      }
+    }
+
+    return profile;
   }
 
-  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async =>
-      Map<String, dynamic>.from(
-          (await dio.patch('me/', data: data)).data as Map);
+  Future<Map<String, dynamic>> _getMap(
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
+    final response =
+        await dio.get(path, queryParameters: query);
 
-  Future<Map<String, dynamic>> changeUsername(String username) async =>
-      Map<String, dynamic>.from((await dio
-              .post('auth/change-username/', data: {'username': username}))
-          .data as Map);
-
-  Future<List<dynamic>> plans() async =>
-      (await dio.get('plans/')).data as List<dynamic>;
-
-  Future<List<dynamic>> payments() async =>
-      (await dio.get('payments/')).data as List<dynamic>;
-
-  Future<List<dynamic>> subscriptionHistory() async =>
-      (await dio.get('subscriptions/history/')).data as List<dynamic>;
-
-  Future<Map<String, dynamic>> adminDashboard(
-          {String? start, String? end}) async =>
-      Map<String, dynamic>.from((await dio.get('admin/dashboard/',
-              queryParameters: {
-            if (start != null) 'start': start,
-            if (end != null) 'end': end
-          }))
-          .data as Map);
-
-  Future<Map<String, dynamic>> adminUsers(
-      {int page = 1, String? q, bool? active}) async {
-    final r = await dio.get('admin/users/', queryParameters: {
-      'page': page,
-      if (q != null && q.isNotEmpty) 'q': q,
-      if (active != null) 'active': '$active'
-    });
-    return Map<String, dynamic>.from(r.data as Map);
+    return Map<String, dynamic>.from(response.data as Map);
   }
 
-  Future<Map<String, dynamic>> adminUser(int id, bool active) async =>
-      Map<String, dynamic>.from(
-          (await dio.patch('admin/users/$id/', data: {'is_active': active}))
-              .data as Map);
+  Future<List<dynamic>> _getList(
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
+    final response =
+        await dio.get(path, queryParameters: query);
 
-  Future<Map<String, dynamic>> adminStores(
-          {int page = 1, String? q, bool? active}) async =>
-      Map<String, dynamic>.from(
-          (await dio.get('admin/stores/', queryParameters: {
-        'page': page,
-        if (q != null && q.isNotEmpty) 'q': q,
-        if (active != null) 'active': '$active'
-      }))
-              .data as Map);
+    return List<dynamic>.from(response.data as List);
+  }
+
+  Future<Map<String, dynamic>> _postMap(
+    String path,
+    Object? data,
+  ) async {
+    final response = await dio.post(path, data: data);
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  Future<Map<String, dynamic>> _patchMap(
+    String path,
+    Object? data,
+  ) async {
+    final response = await dio.patch(path, data: data);
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  // Profil va autentifikatsiya.
+
+  Future<Map<String, dynamic>> updateProfile(
+    Map<String, dynamic> data,
+  ) =>
+      _patchMap('me/', data);
+
+  Future<Map<String, dynamic>> changeUsername(
+    String username,
+  ) =>
+      _postMap(
+        'auth/change-username/',
+        {'username': username},
+      );
+
+  Future<Map<String, dynamic>> activateAccount(
+    String code,
+    String password,
+  ) =>
+      _postMap(
+        'auth/activate/',
+        {'code': code, 'password': password},
+      );
+
+  Future<Map<String, dynamic>> changePassword(
+    String oldPassword,
+    String newPassword,
+    String confirmPassword,
+  ) =>
+      _postMap(
+        'auth/change-password/',
+        {
+          'old_password': oldPassword,
+          'new_password': newPassword,
+          'confirm_password': confirmPassword,
+        },
+      );
+
+  // Tariflar va to‘lovlar.
+
+  Future<List<dynamic>> plans() => _getList('plans/');
+
+  Future<List<dynamic>> payments() => _getList('payments/');
+
+  Future<List<dynamic>> subscriptionHistory() =>
+      _getList('subscriptions/history/');
+
+  // Superadmin.
+
+  Future<Map<String, dynamic>> adminDashboard({
+    String? start,
+    String? end,
+  }) =>
+      _getMap(
+        'admin/dashboard/',
+        query: {
+          if (start != null) 'start': start,
+          if (end != null) 'end': end,
+        },
+      );
+
+  Future<Map<String, dynamic>> adminUsers({
+    int page = 1,
+    String? q,
+    bool? active,
+  }) =>
+      _getMap(
+        'admin/users/',
+        query: {
+          'page': page,
+          if (q != null && q.isNotEmpty) 'q': q,
+          if (active != null) 'active': '$active',
+        },
+      );
+
+  Future<Map<String, dynamic>> adminUser(
+    int id,
+    bool active,
+  ) =>
+      _patchMap(
+        'admin/users/$id/',
+        {'is_active': active},
+      );
+
+  Future<Map<String, dynamic>> adminStores({
+    int page = 1,
+    String? q,
+    bool? active,
+  }) =>
+      _getMap(
+        'admin/stores/',
+        query: {
+          'page': page,
+          if (q != null && q.isNotEmpty) 'q': q,
+          if (active != null) 'active': '$active',
+        },
+      );
 
   Future<Map<String, dynamic>> adminStore(
-          int id, bool active, String reason) async =>
-      Map<String, dynamic>.from((await dio.patch('admin/stores/',
-              data: {'store_id': id, 'is_active': active, 'reason': reason}))
-          .data as Map);
+    int id,
+    bool active,
+    String reason,
+  ) =>
+      _patchMap(
+        'admin/stores/',
+        {
+          'store_id': id,
+          'is_active': active,
+          'reason': reason,
+        },
+      );
 
-  Future<List<dynamic>> adminPlans() async =>
-      (await dio.get('admin/plans/')).data as List<dynamic>;
+  Future<List<dynamic>> adminPlans() =>
+      _getList('admin/plans/');
 
-  Future<Map<String, dynamic>> saveAdminPlan(Map<String, dynamic> data,
-          {int? id}) async =>
-      Map<String, dynamic>.from((await (id == null
-              ? dio.post('admin/plans/', data: data)
-              : dio.patch('admin/plans/$id/', data: data)))
-          .data as Map);
+  Future<Map<String, dynamic>> saveAdminPlan(
+    Map<String, dynamic> data, {
+    int? id,
+  }) =>
+      id == null
+          ? _postMap('admin/plans/', data)
+          : _patchMap('admin/plans/$id/', data);
 
-  Future<List<dynamic>> adminSubscriptions(
-          {String? status, String? q}) async =>
-      (await dio.get('admin/subscriptions/', queryParameters: {
-        if (status != null) 'status': status,
-        if (q != null && q.isNotEmpty) 'q': q,
-      }))
-          .data as List<dynamic>;
+  Future<List<dynamic>> adminSubscriptions({
+    String? status,
+    String? q,
+  }) =>
+      _getList(
+        'admin/subscriptions/',
+        query: {
+          if (status != null) 'status': status,
+          if (q != null && q.isNotEmpty) 'q': q,
+        },
+      );
 
   Future<Map<String, dynamic>> adminSubscriptionAction(
-          int storeId, String action,
-          {int months = 1, required String reason}) async =>
-      Map<String, dynamic>.from((await dio.post('admin/subscriptions/', data: {
-        'store_id': storeId,
-        'action': action,
-        'months': months,
-        'reason': reason
-      }))
-          .data as Map);
+    int storeId,
+    String action, {
+    int months = 1,
+    required String reason,
+  }) =>
+      _postMap(
+        'admin/subscriptions/',
+        {
+          'store_id': storeId,
+          'action': action,
+          'months': months,
+          'reason': reason,
+        },
+      );
 
-  Future<Map<String, dynamic>> adminPayments(
-          {int page = 1, String? status, String? start, String? end}) async =>
-      Map<String, dynamic>.from(
-          (await dio.get('admin/payments/', queryParameters: {
-        'page': page,
-        if (status != null) 'status': status,
-        if (start != null) 'start': start,
-        if (end != null) 'end': end
-      }))
-              .data as Map);
+  Future<Map<String, dynamic>> adminPayments({
+    int page = 1,
+    String? status,
+    String? start,
+    String? end,
+  }) =>
+      _getMap(
+        'admin/payments/',
+        query: {
+          'page': page,
+          if (status != null) 'status': status,
+          if (start != null) 'start': start,
+          if (end != null) 'end': end,
+        },
+      );
 
   Future<Map<String, dynamic>> adminApprovePayment(
-          int id, String reason) async =>
-      Map<String, dynamic>.from((await dio.patch('admin/payments/$id/',
-              data: {'action': 'approve', 'reason': reason}))
-          .data as Map);
+    int id,
+    String reason,
+  ) =>
+      _patchMap(
+        'admin/payments/$id/',
+        {'action': 'approve', 'reason': reason},
+      );
 
-  Future<Map<String, dynamic>> adminAudit({int page = 1, String? q}) async =>
-      Map<String, dynamic>.from((await dio.get('admin/audit/',
-              queryParameters: {
-            'page': page,
-            if (q != null && q.isNotEmpty) 'q': q
-          }))
-          .data as Map);
+  Future<Map<String, dynamic>> adminAudit({
+    int page = 1,
+    String? q,
+  }) =>
+      _getMap(
+        'admin/audit/',
+        query: {
+          'page': page,
+          if (q != null && q.isNotEmpty) 'q': q,
+        },
+      );
 
-  Future<Map<String, dynamic>> adminSystemStatus() async =>
-      Map<String, dynamic>.from(
-          (await dio.get('admin/system-status/')).data as Map);
+  Future<Map<String, dynamic>> adminSystemStatus() =>
+      _getMap('admin/system-status/');
 
   Future<Map<String, dynamic>> createAdminUser(
     String username,
     String storeName,
-  ) async {
-    final r = await dio.post('admin/users/', data: {
-      'username': username,
-      'store_name': storeName,
-    });
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+  ) =>
+      _postMap(
+        'admin/users/',
+        {
+          'username': username,
+          'store_name': storeName,
+        },
+      );
 
   Future<Map<String, dynamic>> issueCredential(
-      int userId, String purpose) async {
-    final r = await dio.post('admin/issue-credential/', data: {
-      'user_id': userId,
-      'purpose': purpose,
-    });
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+    int userId,
+    String purpose,
+  ) =>
+      _postMap(
+        'admin/issue-credential/',
+        {
+          'user_id': userId,
+          'purpose': purpose,
+        },
+      );
 
-  Future<Map<String, dynamic>> activateAccount(
-      String code, String password) async {
-    // Aktivatsiya uchun Authorization header kerak emas.
-    final r = await dio.post(
-      'auth/activate/',
-      data: {
-        'code': code,
-        'password': password,
-      },
-      options: Options(
-        headers: {}, // Authorization header kerak emas.
-      ),
-    );
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+  // Mahsulotlar.
 
-  Future<Map<String, dynamic>> changePassword(
-      String oldPassword, String newPassword, String confirmPassword) async {
-    final r = await dio.post('auth/change-password/', data: {
-      'old_password': oldPassword,
-      'new_password': newPassword,
-      'confirm_password': confirmPassword,
-    });
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+  Future<List<dynamic>> products({String? search}) =>
+      _getList(
+        'products/',
+        query: {
+          if (search != null && search.isNotEmpty) 'q': search,
+        },
+      );
 
-  // ─── Mahsulotlar API ──────────────────────────────────────────────────────
-
-  Future<List<dynamic>> products({String? search}) async {
-    final queryParams = <String, dynamic>{};
-    if (search != null && search.isNotEmpty) {
-      queryParams['q'] = search;
-    }
-    final r = await dio.get('products/', queryParameters: queryParams);
-    return r.data as List<dynamic>;
-  }
-
-  Future<Map<String, dynamic>?> getProduct(int id) async {
-    try {
-      final r = await dio.get('products/$id/');
-      return Map<String, dynamic>.from(r.data as Map);
-    } catch (e) {
-      rethrow; // HTTP xatolarni mahsulot topilmadi deb yashirmaymiz.
-    }
-  }
-
-  Future<Map<String, dynamic>> createProduct(Map<String, dynamic> payload,
-      {String? imagePath}) async {
-    final body = await _productBody(payload, imagePath);
-    final r = await dio.post('products/', data: body);
-    return Map<String, dynamic>.from(r.data as Map);
-  }
-
-  Future<Map<String, dynamic>> updateProduct(
-      int id, Map<String, dynamic> payload,
-      {String? imagePath}) async {
-    final body = await _productBody(payload, imagePath);
-    final r = await dio.patch('products/$id/', data: body);
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+  Future<Map<String, dynamic>?> getProduct(int id) async =>
+      _getMap('products/$id/');
 
   Future<Object> _productBody(
-      Map<String, dynamic> payload, String? imagePath) async {
-    if (imagePath == null || imagePath.isEmpty) return payload;
+    Map<String, dynamic> payload,
+    String? imagePath,
+  ) async {
+    if (imagePath == null || imagePath.isEmpty) {
+      return payload;
+    }
+
     final file = XFile(imagePath);
     final bytes = await file.readAsBytes();
+
     return FormData.fromMap({
       ...payload,
-      'image': MultipartFile.fromBytes(bytes, filename: file.name),
+      'image': MultipartFile.fromBytes(
+        bytes,
+        filename: file.name,
+      ),
     });
   }
+
+  Future<Map<String, dynamic>> createProduct(
+    Map<String, dynamic> payload, {
+    String? imagePath,
+  }) async =>
+      _postMap(
+        'products/',
+        await _productBody(payload, imagePath),
+      );
+
+  Future<Map<String, dynamic>> updateProduct(
+    int id,
+    Map<String, dynamic> payload, {
+    String? imagePath,
+  }) async =>
+      _patchMap(
+        'products/$id/',
+        await _productBody(payload, imagePath),
+      );
 
   Future<void> deleteProduct(int id) async {
     await dio.delete('products/$id/');
@@ -443,56 +781,61 @@ class Api {
     await dio.post('products/$id/archive/');
   }
 
-  // ─── Toifalar API ────────────────────────────────────────────────────────
+  // Toifalar.
 
-  Future<List<dynamic>> getCategories() async {
-    final r = await dio.get('categories/');
-    return r.data as List<dynamic>;
-  }
+  Future<List<dynamic>> getCategories() =>
+      _getList('categories/');
 
-  Future<Map<String, dynamic>> createCategory(String name) async {
-    final r = await dio.post('categories/', data: {'name': name});
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+  Future<Map<String, dynamic>> createCategory(String name) =>
+      _postMap('categories/', {'name': name});
 
-  Future<Map<String, dynamic>> updateCategory(int id, String name) async {
-    final r = await dio.patch('categories/$id/', data: {'name': name});
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+  Future<Map<String, dynamic>> updateCategory(
+    int id,
+    String name,
+  ) =>
+      _patchMap('categories/$id/', {'name': name});
 
   Future<void> deleteCategory(int id) async {
     await dio.delete('categories/$id/');
   }
 
-  // ─── Ombor API ───────────────────────────────────────────────────────────
+  // Ombor.
 
-  Future<List<dynamic>> getInventoryMovements({int? productId}) async {
-    final r = await dio.get('inventory/movements/');
-    return r.data as List<dynamic>;
-  }
+  Future<List<dynamic>> getInventoryMovements({
+    int? productId,
+  }) =>
+      _getList(
+        'inventory/movements/',
+        query: {
+          if (productId != null) 'product_id': productId,
+        },
+      );
 
   Future<Map<String, dynamic>> adjustStock(
-      int productId, String delta, String reason) async {
-    final r = await dio.post('inventory/adjustments/', data: {
-      'product_id': productId,
-      'delta': delta,
-      'reason': reason,
-    });
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+    int productId,
+    String delta,
+    String reason,
+  ) =>
+      _postMap(
+        'inventory/adjustments/',
+        {
+          'product_id': productId,
+          'delta': delta,
+          'reason': reason,
+        },
+      );
 
-  // ─── Sotuvlar API ────────────────────────────────────────────────────────
+  // Sotuvlar.
 
-  Future<List<dynamic>> sales() async =>
-      (await dio.get('sales/')).data as List<dynamic>;
+  Future<List<dynamic>> sales() => _getList('sales/');
 
-  Future<Map<String, dynamic>> report() async =>
-      Map<String, dynamic>.from((await dio.get('reports/summary/')).data);
+  Future<Map<String, dynamic>> report() =>
+      _getMap('reports/summary/');
 
-  Future<Map<String, dynamic>> checkout(Map<String, dynamic> data) async =>
-      Map<String, dynamic>.from((await dio.post('sales/', data: data)).data);
-
-  // ─── Kassa (POS) API ─────────────────────────────────────────────────────
+  Future<Map<String, dynamic>> checkout(
+    Map<String, dynamic> data,
+  ) =>
+      _postMap('sales/', data);
 
   Future<Map<String, dynamic>> posCreateSale({
     required List<Map<String, dynamic>> items,
@@ -500,26 +843,31 @@ class Api {
     required double card,
     required double discount,
     required String operationId,
-  }) async {
-    final r = await dio.post('sales/', data: {
-      'operation_id': operationId,
-      'items': items,
-      'cash': cash.toStringAsFixed(2),
-      'card': card.toStringAsFixed(2),
-      'discount': discount.toStringAsFixed(2),
-    });
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+  }) =>
+      _postMap(
+        'sales/',
+        {
+          'operation_id': operationId,
+          'items': items,
+          'cash': cash.toStringAsFixed(2),
+          'card': card.toStringAsFixed(2),
+          'discount': discount.toStringAsFixed(2),
+        },
+      );
 
-  Future<List<dynamic>> posSalesList({String? start, String? end}) async {
-    final r = await dio.get('sales/', queryParameters: {
-      if (start != null) 'start': start,
-      if (end != null) 'end': end,
-    });
-    return r.data as List<dynamic>;
-  }
+  Future<List<dynamic>> posSalesList({
+    String? start,
+    String? end,
+  }) =>
+      _getList(
+        'sales/',
+        query: {
+          if (start != null) 'start': start,
+          if (end != null) 'end': end,
+        },
+      );
 
-  // ─── Qarz (Nasiya) API ───────────────────────────────────────────────────
+  // Qarz / nasiya.
 
   Future<List<dynamic>> debts({
     String? direction,
@@ -529,35 +877,44 @@ class Api {
     String? sort,
     String? start,
     String? end,
-  }) async =>
-      (await dio.get('debts/', queryParameters: {
-        if (direction != null) 'direction': direction,
-        if (search != null && search.isNotEmpty) 'q': search,
-        if (status != null) 'status': status,
-        if (due != null) 'due': due,
-        if (sort != null) 'sort': sort,
-        if (start != null) 'start': start,
-        if (end != null) 'end': end,
-      }))
-          .data as List<dynamic>;
+  }) =>
+      _getList(
+        'debts/',
+        query: {
+          if (direction != null) 'direction': direction,
+          if (search != null && search.isNotEmpty) 'q': search,
+          if (status != null) 'status': status,
+          if (due != null) 'due': due,
+          if (sort != null) 'sort': sort,
+          if (start != null) 'start': start,
+          if (end != null) 'end': end,
+        },
+      );
 
-  Future<Map<String, dynamic>> createDebt(Map<String, dynamic> data) async =>
-      Map<String, dynamic>.from(
-          (await dio.post('debts/', data: data)).data as Map);
+  Future<Map<String, dynamic>> createDebt(
+    Map<String, dynamic> data,
+  ) =>
+      _postMap('debts/', data);
 
-  Future<Map<String, dynamic>> debtDetail(int id) async =>
-      Map<String, dynamic>.from((await dio.get('debts/$id/')).data as Map);
+  Future<Map<String, dynamic>> debtDetail(int id) =>
+      _getMap('debts/$id/');
 
-  Future<Map<String, dynamic>> updateDebt(int id,
-          {String? note, String? dueDate, bool clearDueDate = false}) async =>
-      Map<String, dynamic>.from((await dio.patch('debts/$id/', data: {
-        if (note != null) 'note': note,
-        if (clearDueDate)
-          'due_date': null
-        else if (dueDate != null)
-          'due_date': dueDate,
-      }))
-          .data as Map);
+  Future<Map<String, dynamic>> updateDebt(
+    int id, {
+    String? note,
+    String? dueDate,
+    bool clearDueDate = false,
+  }) =>
+      _patchMap(
+        'debts/$id/',
+        {
+          if (note != null) 'note': note,
+          if (clearDueDate)
+            'due_date': null
+          else if (dueDate != null)
+            'due_date': dueDate,
+        },
+      );
 
   Future<Map<String, dynamic>> recordDebtPayment(
     int id, {
@@ -565,24 +922,25 @@ class Api {
     required String method,
     required String paidOn,
     String note = '',
-  }) async =>
-      Map<String, dynamic>.from((await dio.post('debts/$id/payments/', data: {
-        'operation_id': const Uuid().v4(),
-        'amount': amount,
-        'method': method,
-        'paid_on': paidOn,
-        'note': note,
-      }))
-          .data as Map);
+  }) =>
+      _postMap(
+        'debts/$id/payments/',
+        {
+          'operation_id': const Uuid().v4(),
+          'amount': amount,
+          'method': method,
+          'paid_on': paidOn,
+          'note': note,
+        },
+      );
 
-  // ─── Sinxronlash API ─────────────────────────────────────────────────────
+  // Offline sinxronlash.
 
-  /// Offline operatsiyalarni serverga yuborish.
-  /// Qaytadi: {results: [{operation_id, status: 'ack'|'conflict', ...}]}
   Future<Map<String, dynamic>> syncPush(
-      List<Map<String, dynamic>> operations) async {
-    final r =
-        await dio.post('sync/push/', data: {'operations': operations});
-    return Map<String, dynamic>.from(r.data as Map);
-  }
+    List<Map<String, dynamic>> operations,
+  ) =>
+      _postMap(
+        'sync/push/',
+        {'operations': operations},
+      );
 }

@@ -1,18 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqflite/sqflite.dart';
+
 import '../../../src/api.dart';
 import '../../../src/offline.dart';
-import '../../../src/app.dart'; // Import for apiProvider and queueProvider
+import '../../../src/app.dart' show apiProvider, queueProvider;
 import '../models/product.dart';
 
 final productsStaleProvider = StateProvider<bool>((ref) => false);
 
-// Products list provider
-final productsProvider =
-    StateNotifierProvider<ProductsNotifier, AsyncValue<List<Product>>>((ref) {
+final productsProvider = StateNotifierProvider<ProductsNotifier,
+    AsyncValue<List<Product>>>((ref) {
   return ProductsNotifier(
     ref.read(apiProvider),
     ref.read(queueProvider),
-    (stale) => ref.read(productsStaleProvider.notifier).state = stale,
+    (value) => ref.read(productsStaleProvider.notifier).state = value,
   );
 });
 
@@ -20,6 +23,7 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
   final Api _api;
   final OfflineQueue _queue;
   final void Function(bool) _setStale;
+  Future<void>? _loading;
 
   ProductsNotifier(this._api, this._queue, this._setStale)
       : super(const AsyncValue.loading()) {
@@ -27,243 +31,281 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
   }
 
   Future<void> loadProducts({bool forceRefresh = false}) async {
-    if (!forceRefresh && state.hasValue) {
-      // Don't reload if already loaded
-      return;
-    }
-
+    final running = _loading;
+    if (running != null) return running;
+    if (!forceRefresh && state.hasValue) return;
+    final future = _load();
+    _loading = future;
     try {
-      state = const AsyncValue.loading();
-      final data = await _api.products();
-      final products = data.map((json) => Product.fromJson(json)).toList();
-
-      // Cache products offline
-      await _queue.cacheProducts(data);
-
-      _setStale(false);
-      state = AsyncValue.data(products);
-    } catch (e, stack) {
-      // Try to load from cache
-      try {
-        final cached = await _queue.cachedProducts();
-        if (cached.isNotEmpty) {
-          final products =
-              cached.map((json) => Product.fromJson(json)).toList();
-          _setStale(true);
-          state = AsyncValue.data(products);
-        } else {
-          _setStale(false);
-          state = AsyncValue.error(e, stack);
-        }
-      } catch (_) {
-        _setStale(false);
-        state = AsyncValue.error(e, stack);
-      }
+      await future;
+    } finally {
+      _loading = null;
     }
   }
 
-  Future<void> refresh() async {
-    await loadProducts(forceRefresh: true);
+  Future<void> _load() async {
+    if (!mounted) return;
+    state = const AsyncValue.loading();
+    try {
+      // Oldingi payment_dialog.dart lokal qoldiqni shu keshda kamaytiradi.
+      // Navbat bor ekan uni server qoldig‘i bilan almashtirmaymiz.
+      if (await _queue.pendingCount() > 0) {
+        await _showReservedCache();
+        return;
+      }
+
+      final fresh = await _api.products();
+      final database = await _queue.db;
+      final chosen = await database.transaction<List<dynamic>>((tx) async {
+        final counts = await tx.rawQuery(
+          "SELECT COUNT(*) AS n FROM operations "
+          "WHERE status IN ('pending', 'conflict')",
+        );
+        final pending = (counts.first['n'] as num?)?.toInt() ?? 0;
+
+        // HTTP so‘rovi davomida yangi offline savdo qo‘shilgan bo‘lishi mumkin.
+        if (pending > 0) {
+          final rows = await tx.query('cache', where: 'key = ?',
+              whereArgs: ['products'], limit: 1);
+          if (rows.isEmpty) {
+            throw StateError('Tasdiqlanmagan sotuvlar bor, mahsulot keshi yo‘q. '
+                'Avval sotuvlarni sinxronlang.');
+          }
+          return List<dynamic>.from(
+              jsonDecode(rows.first['payload'] as String) as List);
+        }
+
+        // Noto‘g‘ri API javobi mavjud yaxshi keshni buzmasin.
+        for (final raw in fresh) {
+          Product.fromJson(Map<String, dynamic>.from(raw as Map));
+        }
+        await tx.insert('cache', {
+          'key': 'products',
+          'payload': jsonEncode(fresh),
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+        return fresh;
+      });
+
+      final parsed = chosen.map((raw) => Product.fromJson(
+          Map<String, dynamic>.from(raw as Map))).toList();
+      final stale = await _queue.pendingCount() > 0;
+      if (!mounted) return;
+      _setStale(stale);
+      state = AsyncValue.data(parsed);
+    } catch (error, stack) {
+      if (!mounted) return;
+      // Ruxsat/avtorizatsiya xatosini offline rejim deb yashirmaymiz.
+      if (Api.isNetworkError(error)) {
+        try {
+          await _showReservedCache();
+          return;
+        } catch (_) {
+          // Asl tarmoq xatosini ko‘rsatamiz.
+        }
+      }
+      if (!mounted) return;
+      _setStale(false);
+      state = AsyncValue.error(error, stack);
+    }
+  }
+
+  Future<void> _showReservedCache() async {
+    final database = await _queue.db;
+    final rows = await database.query('cache', where: 'key = ?',
+        whereArgs: ['products'], limit: 1);
+    if (rows.isEmpty) {
+      throw StateError('Saqlangan mahsulotlar yo‘q. Internet bilan '
+          'mahsulotlarni bir marta yuklang.');
+    }
+    final raw = List<dynamic>.from(
+        jsonDecode(rows.first['payload'] as String) as List);
+    final parsed = raw.map((item) => Product.fromJson(
+        Map<String, dynamic>.from(item as Map))).toList();
+    if (!mounted) return;
+    _setStale(true);
+    state = AsyncValue.data(parsed);
+  }
+
+  Future<void> refresh() => loadProducts(forceRefresh: true);
+
+  Future<void> _requireSynced() async {
+    if (await _queue.pendingCount() > 0) {
+      throw StateError('Avval tasdiqlanmagan sotuvlarni sinxronlang yoki '
+          'ziddiyatlarni hal qiling. Keyin mahsulotni o‘zgartiring.');
+    }
   }
 
   Future<Product?> addProduct(Map<String, dynamic> data,
       {String? imagePath}) async {
-    try {
-      final result = await _api.createProduct(data, imagePath: imagePath);
-      final newProduct = Product.fromJson(result);
-
-      // Add to local list
-      state.whenData((products) {
-        state = AsyncValue.data([...products, newProduct]);
-      });
-
-      return newProduct;
-    } catch (e) {
-      rethrow;
-    }
+    await _requireSynced();
+    final result = await _api.createProduct(data, imagePath: imagePath);
+    final product = Product.fromJson(result);
+    // Server yozuvi muvaffaqiyatli bo‘lganidan keyingi yuklash xatosi
+    // mahsulotni qaytadan yaratishga sabab bo‘lmasin.
+    await refresh();
+    return product;
   }
 
   Future<void> updateProduct(int id, Map<String, dynamic> data,
       {String? imagePath}) async {
-    try {
-      final result = await _api.updateProduct(id, data, imagePath: imagePath);
-      final updatedProduct = Product.fromJson(result);
-
-      // Update in local list
-      state.whenData((products) {
-        final index = products.indexWhere((p) => p.id == id);
-        if (index != -1) {
-          final newList = [...products];
-          newList[index] = updatedProduct;
-          state = AsyncValue.data(newList);
-        }
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await _requireSynced();
+    await _api.updateProduct(id, data, imagePath: imagePath);
+    await refresh();
   }
 
   Future<void> deleteProduct(int id) async {
-    try {
-      await _api.deleteProduct(id);
-
-      // Remove from local list
-      state.whenData((products) {
-        state = AsyncValue.data(products.where((p) => p.id != id).toList());
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await _requireSynced();
+    await _api.deleteProduct(id);
+    await refresh();
   }
 
   Future<void> archiveProduct(int id) async {
-    try {
-      await _api.archiveProduct(id);
-
-      // Update active status in local list
-      state.whenData((products) {
-        final index = products.indexWhere((p) => p.id == id);
-        if (index != -1) {
-          final newList = [...products];
-          newList[index] = newList[index].copyWith(active: false);
-          state = AsyncValue.data(newList);
-        }
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await _requireSynced();
+    await _api.archiveProduct(id);
+    await refresh();
   }
 
-  /// Mahsulot miqdorini lokal ravishda yangilaydi (API chaqiruvidan keyin)
+  // Kassa bazaga yozishni o‘zi bajaradi. Bu metodlar faqat joriy UI uchun.
   void updateStockLocally(int productId, double newStock) {
-    state.whenData((products) {
-      final index = products.indexWhere((p) => p.id == productId);
-      if (index != -1) {
-        final newList = [...products];
-        newList[index] = newList[index].copyWith(stock: newStock.toString());
-        state = AsyncValue.data(newList);
-      }
-    });
+    if (!mounted || !newStock.isFinite || newStock < 0) return;
+    final list = state.asData?.value;
+    if (list == null) return;
+    state = AsyncValue.data(list.map((product) => product.id == productId
+        ? product.copyWith(stock: newStock.toStringAsFixed(3))
+        : product).toList());
   }
 
-  /// Delta asosida lokal stock ni yangilaydi
   void adjustStockLocally(int productId, double delta) {
-    state.whenData((products) {
-      final index = products.indexWhere((p) => p.id == productId);
-      if (index != -1) {
-        final current = double.tryParse(products[index].stock) ?? 0;
-        final newStock = (current + delta).clamp(0.0, double.infinity);
-        final newList = [...products];
-        newList[index] =
-            newList[index].copyWith(stock: newStock.toStringAsFixed(3));
-        state = AsyncValue.data(newList);
+    if (!mounted || !delta.isFinite) return;
+    final list = state.asData?.value;
+    if (list == null) return;
+    for (final product in list) {
+      if (product.id == productId) {
+        final current = double.tryParse(product.stock);
+        if (current == null) return;
+        updateStockLocally(productId,
+            (current + delta).clamp(0.0, double.infinity).toDouble());
+        return;
       }
-    });
+    }
   }
 }
 
-// Filtered products provider
 final productFiltersProvider = StateProvider<ProductFilters>((ref) {
   return ProductFilters();
 });
 
 final filteredProductsProvider = Provider<List<Product>>((ref) {
-  final productsAsync = ref.watch(productsProvider);
+  final source = ref.watch(productsProvider).asData?.value;
   final filters = ref.watch(productFiltersProvider);
-
-  return productsAsync.when(
-    data: (products) {
-      var filtered = products;
-
-      // Search filter
-      if (filters.searchQuery != null && filters.searchQuery!.isNotEmpty) {
-        final query = filters.searchQuery!.toLowerCase();
-        filtered = filtered.where((p) {
-          return p.name.toLowerCase().contains(query) ||
-              p.sku.toLowerCase().contains(query) ||
-              (p.barcode?.toLowerCase().contains(query) ?? false) ||
-              (p.categoryName?.toLowerCase().contains(query) ?? false);
-        }).toList();
-      }
-
-      // Category filter
-      if (filters.categoryId != null) {
-        filtered =
-            filtered.where((p) => p.categoryId == filters.categoryId).toList();
-      }
-
-      // Stock status filter
-      if (filters.stockStatus != null && filters.stockStatus != 'all') {
-        filtered = filtered
-            .where((p) => p.stockStatus == filters.stockStatus)
-            .toList();
-      }
-
-      // Price range filter
-      if (filters.minPrice != null) {
-        filtered = filtered.where((p) {
-          final price = double.tryParse(p.salePrice) ?? 0;
-          return price >= filters.minPrice!;
-        }).toList();
-      }
-      if (filters.maxPrice != null) {
-        filtered = filtered.where((p) {
-          final price = double.tryParse(p.salePrice) ?? 0;
-          return price <= filters.maxPrice!;
-        }).toList();
-      }
-
-      // Sorting
-      filtered.sort((a, b) {
-        int comparison = 0;
-
-        switch (filters.sortBy) {
-          case 'name':
-            comparison = a.name.compareTo(b.name);
-            break;
-          case 'sale_price':
-            final priceA = double.tryParse(a.salePrice) ?? 0;
-            final priceB = double.tryParse(b.salePrice) ?? 0;
-            comparison = priceA.compareTo(priceB);
-            break;
-          case 'purchase_price':
-            final priceA = double.tryParse(a.purchasePrice) ?? 0;
-            final priceB = double.tryParse(b.purchasePrice) ?? 0;
-            comparison = priceA.compareTo(priceB);
-            break;
-          case 'stock':
-            final stockA = double.tryParse(a.stock) ?? 0;
-            final stockB = double.tryParse(b.stock) ?? 0;
-            comparison = stockA.compareTo(stockB);
-            break;
-        }
-
-        return filters.sortAscending ? comparison : -comparison;
-      });
-
-      return filtered;
-    },
-    loading: () => [],
-    error: (_, __) => [],
-  );
+  if (source == null) return [];
+  // Sort asl provider ro‘yxatining tartibini o‘zgartirmaydi.
+  var list = List<Product>.of(source);
+  final query = filters.searchQuery?.trim().toLowerCase() ?? '';
+  if (query.isNotEmpty) {
+    list = list.where((p) => p.name.toLowerCase().contains(query) ||
+        p.sku.toLowerCase().contains(query) ||
+        (p.barcode?.toLowerCase().contains(query) ?? false) ||
+        (p.categoryName?.toLowerCase().contains(query) ?? false)).toList();
+  }
+  if (filters.categoryId != null) {
+    list = list.where((p) => p.categoryId == filters.categoryId).toList();
+  }
+  if (filters.stockStatus != null && filters.stockStatus != 'all') {
+    list = list.where((p) => p.stockStatus == filters.stockStatus).toList();
+  }
+  if (filters.minPrice != null) {
+    list = list.where((p) =>
+        (double.tryParse(p.salePrice) ?? 0) >= filters.minPrice!).toList();
+  }
+  if (filters.maxPrice != null) {
+    list = list.where((p) =>
+        (double.tryParse(p.salePrice) ?? 0) <= filters.maxPrice!).toList();
+  }
+  list.sort((a, b) {
+    int compared;
+    switch (filters.sortBy) {
+      case 'sale_price':
+        compared = (double.tryParse(a.salePrice) ?? 0)
+            .compareTo(double.tryParse(b.salePrice) ?? 0);
+        break;
+      case 'purchase_price':
+        compared = (double.tryParse(a.purchasePrice) ?? 0)
+            .compareTo(double.tryParse(b.purchasePrice) ?? 0);
+        break;
+      case 'stock':
+        compared = (double.tryParse(a.stock) ?? 0)
+            .compareTo(double.tryParse(b.stock) ?? 0);
+        break;
+      default:
+        compared = a.name.compareTo(b.name);
+    }
+    return filters.sortAscending ? compared : -compared;
+  });
+  return list;
 });
 
-// Product summary provider
 final productSummaryProvider = Provider<ProductSummary>((ref) {
-  final products = ref.watch(filteredProductsProvider);
-  return ProductSummary.fromProducts(products);
+  return ProductSummary.fromProducts(ref.watch(filteredProductsProvider));
 });
 
-// Categories provider
 final categoriesProvider = FutureProvider<List<Category>>((ref) async {
   final api = ref.read(apiProvider);
-  final data = await api.getCategories();
-  return data.map((json) => Category.fromJson(json)).toList();
+  final queue = ref.read(queueProvider);
+  List<dynamic> data;
+  try {
+    data = await api.getCategories();
+    for (final item in data) {
+      Category.fromJson(Map<String, dynamic>.from(item as Map));
+    }
+  } catch (error) {
+    if (!Api.isNetworkError(error)) rethrow;
+    final database = await queue.db;
+    final rows = await database.query('cache', where: 'key = ?',
+        whereArgs: ['categories'], limit: 1);
+    if (rows.isEmpty) rethrow;
+    data = List<dynamic>.from(
+        jsonDecode(rows.first['payload'] as String) as List);
+    return data.map((item) => Category.fromJson(
+        Map<String, dynamic>.from(item as Map))).toList();
+  }
+  final database = await queue.db;
+  await database.insert('cache', {
+    'key': 'categories', 'payload': jsonEncode(data),
+  }, conflictAlgorithm: ConflictAlgorithm.replace);
+  return data.map((item) => Category.fromJson(
+      Map<String, dynamic>.from(item as Map))).toList();
 });
 
-// Single product provider
 final productProvider = FutureProvider.family<Product?, int>((ref, id) async {
-  final api = ref.read(apiProvider);
-  final data = await api.getProduct(id);
-  return data != null ? Product.fromJson(data) : null;
+  final current = ref.watch(productsProvider);
+  final loaded = current.asData?.value;
+  if (loaded != null) {
+    for (final product in loaded) {
+      if (product.id == id) return product;
+    }
+  }
+  final queue = ref.read(queueProvider);
+  if (await queue.pendingCount() > 0) {
+    final cached = await queue.cachedProducts();
+    for (final raw in cached) {
+      final product = Product.fromJson(
+          Map<String, dynamic>.from(raw as Map));
+      if (product.id == id) return product;
+    }
+    return null;
+  }
+  try {
+    final raw = await ref.read(apiProvider).getProduct(id);
+    return raw == null ? null : Product.fromJson(raw);
+  } catch (error) {
+    if (!Api.isNetworkError(error)) rethrow;
+    final cached = await queue.cachedProducts();
+    for (final raw in cached) {
+      final product = Product.fromJson(
+          Map<String, dynamic>.from(raw as Map));
+      if (product.id == id) return product;
+    }
+    rethrow;
+  }
 });
