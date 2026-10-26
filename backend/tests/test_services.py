@@ -17,6 +17,22 @@ class SalesTests(TestCase):
  def test_atomic_failed_payment(self):
   with self.assertRaises(ValidationError):create_sale(self.store,{'operation_id':'61ad9719-cebd-4551-ae32-923fd3db6b14','items':[{'product_id':self.p.id,'quantity':2}],'cash':'3'})
   self.p.refresh_from_db();self.assertEqual(self.p.stock,10)
+ def test_sale_can_record_customer_debt(self):
+  from apps.core.models import DebtRecord
+  payload={
+   'operation_id':'c2df2b9c-fc83-4858-b3d4-7d1d0fdf4b6a',
+   'items':[{'product_id':self.p.id,'quantity':'2'}],
+   'cash':'20000','card':'0','debt':'4000','customer_name':'Ali Valiyev',
+  }
+  sale,created=create_sale(self.store,payload)
+  self.assertTrue(created)
+  self.assertEqual(sale.total,Decimal('24000.00'))
+  self.assertEqual(DebtRecord.objects.filter(store=self.store,direction='customer').count(),1)
+  debt=DebtRecord.objects.get(store=self.store,direction='customer')
+  self.assertEqual(debt.party_name,'Ali Valiyev')
+  self.assertEqual(debt.amount,Decimal('4000.00'))
+  self.assertEqual(debt.balance,Decimal('4000.00'))
+  self.p.refresh_from_db();self.assertEqual(self.p.stock,8)
  def test_rounding(self):self.assertEqual(money('1.005'),Decimal('1.01'))
 class TenantTests(TestCase):
  def setUp(self):

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -33,6 +34,7 @@ class _PaymentDialogState
   final _cardController = TextEditingController();
   final _discountController =
       TextEditingController(text: '0');
+  final _customerNameController = TextEditingController();
 
   int _paymentType = 0;
   bool _processing = false;
@@ -48,6 +50,7 @@ class _PaymentDialogState
     _cashController.dispose();
     _cardController.dispose();
     _discountController.dispose();
+    _customerNameController.dispose();
     super.dispose();
   }
 
@@ -169,6 +172,7 @@ class _PaymentDialogState
 
     int cashCents = 0;
     int cardCents = 0;
+    int debtCents = 0;
 
     if (_paymentType == 0) {
       final received = _moneyCents(_cashController.text);
@@ -181,7 +185,6 @@ class _PaymentDialogState
         return null;
       }
 
-      // Ortiqcha olingan pul qaytim hisoblanadi.
       cashCents = totalCents;
     } else if (_paymentType == 1) {
       final entered = _moneyCents(_cardController.text);
@@ -195,7 +198,7 @@ class _PaymentDialogState
       }
 
       cardCents = entered;
-    } else {
+    } else if (_paymentType == 2) {
       final receivedCash =
           _moneyCents(_cashController.text);
       final enteredCard =
@@ -220,14 +223,32 @@ class _PaymentDialogState
 
       cardCents = enteredCard;
       cashCents = totalCents - enteredCard;
+    } else {
+      final customerName = _customerNameController.text.trim();
+      if (customerName.isEmpty) {
+        _message(
+          'Mijoz nomini kiriting.',
+          error: true,
+        );
+        return null;
+      }
+      debtCents = totalCents;
     }
 
-    return {
+    final payload = {
       'items': cart.map((item) => item.toJson()).toList(),
       'cash': (cashCents / 100).toStringAsFixed(2),
       'card': (cardCents / 100).toStringAsFixed(2),
       'discount': (discountCents / 100).toStringAsFixed(2),
     };
+
+    if (debtCents > 0) {
+      payload['debt'] = (debtCents / 100).toStringAsFixed(2);
+      payload['customer_name'] =
+          _customerNameController.text.trim();
+    }
+
+    return payload;
   }
 
   void _setExact() {
@@ -452,6 +473,10 @@ class _PaymentDialogState
         card: double.parse(payload['card'] as String),
         discount: double.parse(payload['discount'] as String),
         operationId: operationId,
+        debt: payload.containsKey('debt')
+            ? double.parse(payload['debt'] as String)
+            : null,
+        customerName: payload['customer_name'] as String?,
       );
 
       if (!mounted || api.sessionKey != owner) return;
@@ -764,7 +789,7 @@ class _PaymentDialogState
                       ),
                       const Divider(height: 28),
                       DropdownButtonFormField<int>(
-                        value: _paymentType,
+                        initialValue: _paymentType,
                         decoration: const InputDecoration(
                           labelText: 'To‘lov turi',
                           border: OutlineInputBorder(),
@@ -782,6 +807,10 @@ class _PaymentDialogState
                             value: 2,
                             child: Text('Naqd + karta'),
                           ),
+                          DropdownMenuItem(
+                            value: 3,
+                            child: Text('Qarz'),
+                          ),
                         ],
                         onChanged: locked
                             ? null
@@ -794,18 +823,30 @@ class _PaymentDialogState
                               },
                       ),
                       const SizedBox(height: 16),
-                      if (_paymentType != 1)
-                        _amountField(
-                          _cashController,
-                          'Mijoz bergan naqd pul',
+                      if (_paymentType == 3) ...[
+                        TextField(
+                          controller: _customerNameController,
+                          enabled: !_processing && _frozenPayload == null,
+                          decoration: const InputDecoration(
+                            labelText: 'Mijoz nomi',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
-                      if (_paymentType == 2)
                         const SizedBox(height: 16),
-                      if (_paymentType != 0)
-                        _amountField(
-                          _cardController,
-                          'Karta orqali to‘lov',
-                        ),
+                      ] else ...[
+                        if (_paymentType != 1)
+                          _amountField(
+                            _cashController,
+                            'Mijoz bergan naqd pul',
+                          ),
+                        if (_paymentType == 2)
+                          const SizedBox(height: 16),
+                        if (_paymentType != 0)
+                          _amountField(
+                            _cardController,
+                            'Karta orqali to‘lov',
+                          ),
+                      ],
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: locked ? null : _setExact,
@@ -842,15 +883,14 @@ class _PaymentDialogState
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Qarz savdosini kassadan yakunlash '
-                        'vaqtincha mavjud emas. '
-                        'Daftar bo‘limi alohida ishlaydi.',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
+                      if (_paymentType == 3)
+                        const Text(
+                          'Qarz miqdori avtomatik ravishda daftar qarziga yoziladi.',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

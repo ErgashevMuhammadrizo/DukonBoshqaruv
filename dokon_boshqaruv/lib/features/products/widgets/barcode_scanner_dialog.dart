@@ -15,7 +15,7 @@ class BarcodeScannerDialog extends StatefulWidget {
 class _BarcodeScannerDialogState
     extends State<BarcodeScannerDialog>
     with WidgetsBindingObserver {
-  final _controller = MobileScannerController(
+  final MobileScannerController _controller = MobileScannerController(
     facing: CameraFacing.back,
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
@@ -26,13 +26,42 @@ class _BarcodeScannerDialogState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(_ensureCameraReady());
+  }
+
+  Future<void> _ensureCameraReady() async {
+    if (!mounted || _completed) return;
+
+    try {
+      final status = await Permission.camera.request();
+      if (!mounted) return;
+
+      if (status != PermissionStatus.granted &&
+          status != PermissionStatus.limited) {
+        return;
+      }
+
+      if (!_controller.value.isInitialized) {
+        await _controller.start();
+      }
+    } catch (_) {
+      // Kamera xatosi MobileScanner.errorBuilder orqali ko‘rsatiladi.
+    }
   }
 
   Future<void> _startCamera() async {
     if (!mounted || _completed) return;
 
     try {
-      await _controller.start();
+      final status = await Permission.camera.request();
+      if (!mounted) return;
+      if (status != PermissionStatus.granted &&
+          status != PermissionStatus.limited) {
+        return;
+      }
+      if (!_controller.value.isInitialized) {
+        await _controller.start();
+      }
     } catch (_) {
       // Kamera xatosi MobileScanner.errorBuilder orqali ko‘rsatiladi.
     }
@@ -48,11 +77,12 @@ class _BarcodeScannerDialogState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_completed || !_controller.value.isInitialized) return;
+    if (_completed) return;
 
     if (state == AppLifecycleState.resumed) {
       unawaited(_startCamera());
-    } else if (state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       unawaited(_stopCamera());
     }
   }

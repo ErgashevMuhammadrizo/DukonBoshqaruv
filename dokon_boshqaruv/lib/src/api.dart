@@ -843,6 +843,8 @@ class Api {
     required double card,
     required double discount,
     required String operationId,
+    double? debt,
+    String? customerName,
   }) =>
       _postMap(
         'sales/',
@@ -852,6 +854,9 @@ class Api {
           'cash': cash.toStringAsFixed(2),
           'card': card.toStringAsFixed(2),
           'discount': discount.toStringAsFixed(2),
+          if (debt != null) 'debt': debt.toStringAsFixed(2),
+          if (customerName != null && customerName.trim().isNotEmpty)
+            'customer_name': customerName.trim(),
         },
       );
 

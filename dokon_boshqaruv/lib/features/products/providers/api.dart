@@ -23,6 +23,8 @@ extension ApiPosExtension on Api {
     required double card,
     required double discount,
     required String operationId,
+    double? debt,
+    String? customerName,
   }) async {
     final data = await posCreateSale(
       items: items,
@@ -30,6 +32,8 @@ extension ApiPosExtension on Api {
       card: card,
       discount: discount,
       operationId: operationId,
+      debt: debt,
+      customerName: customerName,
     );
     return Sale.fromJson(data);
   }
