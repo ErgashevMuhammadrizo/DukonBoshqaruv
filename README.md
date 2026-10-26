@@ -63,3 +63,6 @@ Use Django Admin to create an inactive user and a Store with that owner; use `PO
 ## Limitations
 
 This is NOT a completed production application. Important features such as server-side subscription entitlement enforcement on mutations, password-reset issuance workflow, website legal documents, camera scanner, expanded admin flow, full offline/online synchronization, data reconciliation, web persistence, more tests, and end-to-end build validation are outstanding. See `PROGRESS.md`.
+
+
+bu yangilanish mvp ni sungi yangilanishi
