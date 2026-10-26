@@ -33,12 +33,18 @@ class _BarcodeScannerDialogState
     if (!mounted || _completed) return;
 
     try {
-      final status = await Permission.camera.request();
+      final status = await Permission.camera.status;
       if (!mounted) return;
 
       if (status != PermissionStatus.granted &&
           status != PermissionStatus.limited) {
-        return;
+        final requested = await Permission.camera.request();
+        if (!mounted) return;
+
+        if (requested != PermissionStatus.granted &&
+            requested != PermissionStatus.limited) {
+          return;
+        }
       }
 
       if (!_controller.value.isInitialized) {
@@ -53,12 +59,19 @@ class _BarcodeScannerDialogState
     if (!mounted || _completed) return;
 
     try {
-      final status = await Permission.camera.request();
+      final status = await Permission.camera.status;
       if (!mounted) return;
+
       if (status != PermissionStatus.granted &&
           status != PermissionStatus.limited) {
-        return;
+        final requested = await Permission.camera.request();
+        if (!mounted) return;
+        if (requested != PermissionStatus.granted &&
+            requested != PermissionStatus.limited) {
+          return;
+        }
       }
+
       if (!_controller.value.isInitialized) {
         await _controller.start();
       }
@@ -150,38 +163,60 @@ class _BarcodeScannerDialogState
                 controller: _controller,
                 onDetect: _onDetect,
                 errorBuilder: (context, error, child) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.no_photography_outlined,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Kamera ochilmadi. Telefon sozlamalarida '
-                          'Dokon Boshqaruv uchun kamera ruxsatini '
-                          'tekshiring.',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Xato: ${error.errorCode.name}',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: () async {
-                            await openAppSettings();
-                          },
-                          child: const Text('Sozlamalarni ochish'),
-                        ),
-                        TextButton(
-                          onPressed: _startCamera,
-                          child: const Text('Qayta urinish'),
-                        ),
-                      ],
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.phonelink_lock_rounded,
+                            size: 56,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Kamera ruxsati kerak',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Shtrix-kodni skanerlash uchun telefoningizning '
+                            'sozlamalarida Dokon Boshqaruvga kamera ruxsatini '
+                            'bering.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: () async {
+                              await openAppSettings();
+                              if (!mounted) return;
+                              await _startCamera();
+                            },
+                            icon: const Icon(Icons.settings_outlined),
+                            label: const Text('Sozlamalarni ochish'),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: _startCamera,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Qayta urinish'),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Xato: ${error.errorCode.name}',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

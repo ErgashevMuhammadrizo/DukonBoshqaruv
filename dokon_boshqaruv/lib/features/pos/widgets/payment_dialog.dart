@@ -288,6 +288,31 @@ class _PaymentDialogState
     });
   }
 
+  void _applyQuickPayment(double ratio) {
+    if (_processing || _frozenPayload != null) return;
+
+    final subtotal = ref.read(cartSubtotalProvider);
+    final discount = _parse(_discountController.text) ?? 0;
+    if (!subtotal.isFinite || subtotal < 0 || discount < 0 || discount > subtotal) {
+      _message('Chegirma yoki umumiy summa noto‘g‘ri.', error: true);
+      return;
+    }
+
+    final total = subtotal - discount;
+    final amount = (total * ratio).clamp(0.0, total);
+
+    setState(() {
+      if (_paymentType == 0) {
+        _cashController.text = amount.toStringAsFixed(2);
+      } else if (_paymentType == 1) {
+        _cardController.text = amount.toStringAsFixed(2);
+      } else {
+        _cardController.text = amount.toStringAsFixed(2);
+        _cashController.text = (total - amount).toStringAsFixed(2);
+      }
+    });
+  }
+
   List<Map<String, dynamic>> _items(
     Map<String, dynamic> payload,
   ) {
@@ -674,6 +699,16 @@ class _PaymentDialogState
     );
   }
 
+  Widget _quickAmountChip(String label, double ratio) {
+    return ActionChip(
+      label: Text(label),
+      avatar: const Icon(Icons.auto_awesome, size: 16),
+      onPressed: _processing || _frozenPayload != null ? null : () => _applyQuickPayment(ratio),
+      backgroundColor: Colors.blue.shade50,
+      side: BorderSide(color: Colors.blue.shade200),
+    );
+  }
+
   Widget _summaryRow(
     String label,
     double value, {
@@ -826,10 +861,43 @@ class _PaymentDialogState
                                   setState(() {
                                     _paymentType = value;
                                   });
+                                  if (_paymentType != 3 &&
+                                      (_cashController.text.isEmpty ||
+                                          _cardController.text.isEmpty)) {
+                                    final subtotal = ref.read(cartSubtotalProvider);
+                                    final discount = _parse(_discountController.text) ?? 0;
+                                    final total = subtotal - discount;
+                                    if (total > 0) {
+                                      if (_paymentType == 0) {
+                                        _cashController.text = total.toStringAsFixed(2);
+                                      } else if (_paymentType == 1) {
+                                        _cardController.text = total.toStringAsFixed(2);
+                                      } else {
+                                        _cardController.text = total.toStringAsFixed(2);
+                                        _cashController.text = '0.00';
+                                      }
+                                    }
+                                  }
                                 }
                               },
                       ),
                       const SizedBox(height: 16),
+                      if (_paymentType != 3) ...[
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _quickAmountChip('25%', 0.25),
+                              _quickAmountChip('50%', 0.50),
+                              _quickAmountChip('75%', 0.75),
+                              _quickAmountChip('To‘liq', 1.0),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       if (_paymentType == 3) ...[
                         TextField(
                           controller: _customerNameController,
