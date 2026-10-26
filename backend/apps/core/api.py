@@ -13,7 +13,7 @@ from rest_framework.permissions import AllowAny,IsAdminUser,BasePermission
 from rest_framework.decorators import action
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView
+from .auth_refresh import SafeTokenRefreshView as TokenRefreshView
 from django.contrib.auth import authenticate
 from .models import *
 from .services import create_sale,redeem_credential,issue_credential,money
