@@ -66,11 +66,12 @@ def create_sale(store,payload):
     discount=money(payload.get('discount',0)); due=money(subtotal-discount)
     cash=money(payload.get('cash',0)); card=money(payload.get('card',0)); debt=money(payload.get('debt',0))
     customer_name=str(payload.get('customer_name') or payload.get('customer') or '').strip() or 'Mijoz'
+    customer_phone=str(payload.get('customer_phone') or '').strip()
     if not all(v.is_finite() for v in (discount,cash,card,debt,due)) or discount<0 or discount>subtotal or cash<0 or card<0 or debt<0: raise ValidationError('To‘lov yoki qarz xato')
     if money(cash+card+debt)!=due: raise ValidationError('To‘lov yoki qarz xato')
     sale=Sale.objects.create(store=store,operation_id=op,subtotal=subtotal,discount=discount,total=due,cash=cash,card=card)
     if debt>0:
-        DebtRecord.objects.create(store=store,direction='customer',party_name=customer_name,amount=debt,reason='POS savdo',note=f'Operatsiya {op}')
+        DebtRecord.objects.create(store=store,direction='customer',party_name=customer_name,phone=customer_phone,amount=debt,reason='POS savdo',note=f'Operatsiya {op}')
     for p,qty,total in detail:
         before=p.stock; p.stock-=qty; p.save(update_fields=['stock','updated_at'])
         SaleItem.objects.create(sale=sale,product=p,name=p.name,quantity=qty,unit_price=p.sale_price,cost_price=p.purchase_price,line_total=total)

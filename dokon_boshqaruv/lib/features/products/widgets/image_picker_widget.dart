@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ImagePickerWidget extends StatefulWidget {
   final String? initialImagePath;
@@ -31,6 +32,32 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
     setState(() => _isProcessing = true);
 
     try {
+      if (source == ImageSource.camera) {
+        final status = await Permission.camera.request();
+        if (!mounted) return;
+        if (status.isDenied || status.isPermanentlyDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kamera ruxsati berilmagan. Sozlamalardan ruxsatni yoqing.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+      } else {
+        final status = await Permission.photos.request();
+        if (!mounted) return;
+        if (status.isDenied || status.isPermanentlyDenied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Galereya ruxsati berilmagan. Sozlamalardan ruxsatni yoqing.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+      }
+
       final XFile? image = await _picker.pickImage(
         source: source,
         maxWidth: 1920,
@@ -247,7 +274,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),

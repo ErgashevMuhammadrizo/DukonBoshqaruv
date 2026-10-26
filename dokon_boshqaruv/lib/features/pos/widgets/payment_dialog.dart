@@ -35,6 +35,7 @@ class _PaymentDialogState
   final _discountController =
       TextEditingController(text: '0');
   final _customerNameController = TextEditingController();
+  final _customerPhoneController = TextEditingController();
 
   int _paymentType = 0;
   bool _processing = false;
@@ -51,6 +52,7 @@ class _PaymentDialogState
     _cardController.dispose();
     _discountController.dispose();
     _customerNameController.dispose();
+    _customerPhoneController.dispose();
     super.dispose();
   }
 
@@ -246,6 +248,10 @@ class _PaymentDialogState
       payload['debt'] = (debtCents / 100).toStringAsFixed(2);
       payload['customer_name'] =
           _customerNameController.text.trim();
+      final phone = _customerPhoneController.text.trim();
+      if (phone.isNotEmpty) {
+        payload['customer_phone'] = phone;
+      }
     }
 
     return payload;
@@ -477,6 +483,7 @@ class _PaymentDialogState
             ? double.parse(payload['debt'] as String)
             : null,
         customerName: payload['customer_name'] as String?,
+        customerPhone: payload['customer_phone'] as String?,
       );
 
       if (!mounted || api.sessionKey != owner) return;
@@ -829,6 +836,16 @@ class _PaymentDialogState
                           enabled: !_processing && _frozenPayload == null,
                           decoration: const InputDecoration(
                             labelText: 'Mijoz nomi',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _customerPhoneController,
+                          enabled: !_processing && _frozenPayload == null,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'Telefon (ixtiyoriy)',
                             border: OutlineInputBorder(),
                           ),
                         ),

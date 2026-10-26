@@ -845,6 +845,7 @@ class Api {
     required String operationId,
     double? debt,
     String? customerName,
+    String? customerPhone,
   }) =>
       _postMap(
         'sales/',
@@ -857,6 +858,8 @@ class Api {
           if (debt != null) 'debt': debt.toStringAsFixed(2),
           if (customerName != null && customerName.trim().isNotEmpty)
             'customer_name': customerName.trim(),
+          if (customerPhone != null && customerPhone.trim().isNotEmpty)
+            'customer_phone': customerPhone.trim(),
         },
       );
 
