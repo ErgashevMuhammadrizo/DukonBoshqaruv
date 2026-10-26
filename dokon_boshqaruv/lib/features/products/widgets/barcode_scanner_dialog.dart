@@ -15,266 +15,136 @@ class BarcodeScannerDialog extends StatefulWidget {
 class _BarcodeScannerDialogState
     extends State<BarcodeScannerDialog>
     with WidgetsBindingObserver {
-  final MobileScannerController _controller =
-      MobileScannerController(
-    autoStart: false,
+  final MobileScannerController _controller = MobileScannerController(
     facing: CameraFacing.back,
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
 
-  Future<void> _jobs = Future<void>.value();
-
-  bool _disposed = false;
   bool _completed = false;
-  bool _active = true;
-  bool _busy = true;
-  bool _permissionDenied = false;
-
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addObserver(this);
-
-    final state = WidgetsBinding.instance.lifecycleState;
-    _active = state == null ||
-        state == AppLifecycleState.resumed;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _schedule(_startCamera);
-      }
-    });
+    unawaited(_ensureCameraReady());
   }
 
-  // Start/stop bir vaqtning o‘zida bajarilmaydi.
-  void _schedule(Future<void> Function() action) {
-    _jobs = _jobs.then((_) async {
-      if (_disposed || _completed) return;
+  Future<void> _ensureCameraReady() async {
+    if (!mounted || _completed) return;
 
-      try {
-        await action();
-      } catch (error) {
-        _showError(error.toString());
+    try {
+      final status = await Permission.camera.status;
+      if (!mounted) return;
+
+      if (status != PermissionStatus.granted &&
+          status != PermissionStatus.limited) {
+        final requested = await Permission.camera.request();
+        if (!mounted) return;
+
+        if (requested != PermissionStatus.granted &&
+            requested != PermissionStatus.limited) {
+          return;
+        }
       }
-    });
-  }
 
-  void _showError(String message) {
-    if (!mounted || _disposed || _completed) return;
-
-    setState(() {
-      _busy = false;
-      _error = message;
-    });
+      if (!_controller.value.isInitialized) {
+        await _controller.start();
+      }
+    } catch (_) {
+      // Kamera xatosi MobileScanner.errorBuilder orqali ko‘rsatiladi.
+    }
   }
 
   Future<void> _startCamera() async {
-    if (!_active || _disposed || _completed) return;
-
-    if (mounted) {
-      setState(() {
-        _busy = true;
-        _error = null;
-        _permissionDenied = false;
-      });
-    }
-
-    var permission = await Permission.camera.status;
-
-    if (permission.isDenied) {
-      permission = await Permission.camera.request();
-    }
-
-    if (_disposed || _completed || !mounted) return;
-
-    if (!permission.isGranted) {
-      setState(() {
-        _busy = false;
-        _permissionDenied = true;
-      });
-      return;
-    }
-
-    // Ruxsat oynasi ilovani vaqtincha inactive qilishi mumkin.
-    if (!_active) {
-      setState(() => _busy = false);
-      return;
-    }
+    if (!mounted || _completed) return;
 
     try {
-      // Oldingi kamera sessiyasi ochiq qolgan bo‘lsa to‘xtatamiz.
-      if (_controller.value.isInitialized) {
-        await _controller.stop();
+      final status = await Permission.camera.status;
+      if (!mounted) return;
+
+      if (status != PermissionStatus.granted &&
+          status != PermissionStatus.limited) {
+        final requested = await Permission.camera.request();
+        if (!mounted) return;
+        if (requested != PermissionStatus.granted &&
+            requested != PermissionStatus.limited) {
+          return;
+        }
       }
 
-      if (_disposed || _completed || !_active) return;
-
-      await _controller.start();
-
-      if (!mounted || _disposed || _completed) return;
-
-      setState(() {
-        _busy = false;
-        _error = null;
-        _permissionDenied = false;
-      });
-    } catch (error) {
-      _showError(error.toString());
+      if (!_controller.value.isInitialized) {
+        await _controller.start();
+      }
+    } catch (_) {
+      // Kamera xatosi MobileScanner.errorBuilder orqali ko‘rsatiladi.
     }
   }
 
   Future<void> _stopCamera() async {
     try {
-      if (_controller.value.isInitialized) {
-        await _controller.stop();
-      }
+      await _controller.stop();
     } catch (_) {
-      // Kamera allaqachon yopilgan bo‘lishi mumkin.
+      // Yopilayotgan kameraning xatosi oynani buzmasligi kerak.
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _active = state == AppLifecycleState.resumed;
+    if (_completed) return;
 
-    if (_disposed || _completed) return;
-
-    if (_active) {
-      _schedule(_startCamera);
-    } else {
-      _schedule(_stopCamera);
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_startCamera());
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      unawaited(_stopCamera());
     }
   }
 
   void _onDetect(BarcodeCapture capture) {
-    if (_disposed || _completed || !mounted) return;
+    if (_completed || !mounted) return;
 
     for (final barcode in capture.barcodes) {
-      final value = barcode.rawValue?.trim();
+      final code = barcode.rawValue?.trim();
 
-      if (value == null || value.isEmpty) continue;
+      if (code == null || code.isEmpty) continue;
 
       _completed = true;
-      Navigator.of(context).pop(value);
+      Navigator.of(context).pop(code);
       return;
     }
   }
 
-  void _toggleTorch() {
-    _schedule(() async {
-      if (!_controller.value.isInitialized) return;
-
-      try {
-        await _controller.toggleTorch();
-      } catch (_) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kamera chirog‘ini yoqib bo‘lmadi.'),
-          ),
-        );
-      }
-    });
-  }
-
-  Future<void> _disposeCamera() async {
-    await _jobs;
-
+  Future<void> _toggleTorch() async {
     try {
-      await _controller.dispose();
+      await _controller.toggleTorch();
     } catch (_) {
-      // Ekran yopilganidan keyin UI yangilanmaydi.
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bu kamerada chiroqni yoqib bo‘lmadi.'),
+        ),
+      );
     }
   }
 
   @override
   void dispose() {
-    _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(_disposeCamera());
+    unawaited(_controller.dispose());
     super.dispose();
-  }
-
-  Widget _errorPanel(
-    String message, {
-    required bool permissionProblem,
-  }) {
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surface,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                permissionProblem
-                    ? Icons.no_photography_outlined
-                    : Icons.camera_alt_outlined,
-                size: 48,
-                color: Colors.orange,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                permissionProblem
-                    ? 'Kamera ruxsati berilmagan'
-                    : 'Kamerani ishga tushirib bo‘lmadi',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                permissionProblem
-                    ? 'Telefon sozlamalarida ushbu ilova '
-                        'uchun kamera ruxsatini yoqing.'
-                    : 'Boshqa kamera ilovalarini yoping. '
-                        'Telefonning umumiy kamera maxfiylik '
-                        'tugmasi o‘chirilmaganini tekshiring.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              SelectableText(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () => _schedule(_startCamera),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Qayta urinish'),
-              ),
-              if (permissionProblem)
-                TextButton(
-                  onPressed: () async {
-                    await openAppSettings();
-                  },
-                  child: const Text('Sozlamalarni ochish'),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
+    final screen = MediaQuery.sizeOf(context);
 
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
         width: 500,
-        height: size.height * 0.8,
+        height: screen.height * 0.75,
         child: Column(
           children: [
             AppBar(
@@ -282,61 +152,87 @@ class _BarcodeScannerDialogState
               title: const Text('Shtrix-kodni skanerlash'),
               actions: [
                 IconButton(
-                  onPressed: () =>
-                      Navigator.of(context).pop(),
+                  tooltip: 'Yopish',
+                  onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close),
                 ),
               ],
             ),
             Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  MobileScanner(
-                    controller: _controller,
-                    onDetect: _onDetect,
-                    errorBuilder: (context, error, child) {
-                      return _errorPanel(
-                        error.toString(),
-                        permissionProblem: false,
-                      );
-                    },
-                  ),
-                  if (_permissionDenied)
-                    _errorPanel(
-                      'Android kamera ruxsatini bermadi.',
-                      permissionProblem: true,
-                    )
-                  else if (_error != null)
-                    _errorPanel(
-                      _error!,
-                      permissionProblem: false,
-                    )
-                  else if (_busy)
-                    const ColoredBox(
-                      color: Colors.black87,
-                      child: Center(
-                        child: CircularProgressIndicator(),
+              child: MobileScanner(
+                controller: _controller,
+                onDetect: _onDetect,
+                errorBuilder: (context, error, child) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.phonelink_lock_rounded,
+                            size: 56,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Kamera ruxsati kerak',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Shtrix-kodni skanerlash uchun telefoningizning '
+                            'sozlamalarida Dokon Boshqaruvga kamera ruxsatini '
+                            'bering.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: () async {
+                              await openAppSettings();
+                              if (!mounted) return;
+                              await _startCamera();
+                            },
+                            icon: const Icon(Icons.settings_outlined),
+                            label: const Text('Sozlamalarni ochish'),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: _startCamera,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Qayta urinish'),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Xato: ${error.errorCode.name}',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                ],
+                  );
+                },
               ),
             ),
             const Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
-                'Mahsulot shtrix-kodini kameraga ko‘rsating. '
-                'Kod to‘liq ko‘rinsin.',
+                'Mahsulotdagi shtrix-kodni kameraga ko‘rsating. '
+                'Kod to‘liq ko‘rinsin va tasvir tiniqlashishini kuting.',
                 textAlign: TextAlign.center,
               ),
             ),
             IconButton(
-              onPressed: _busy ||
-                      _permissionDenied ||
-                      _error != null
-                  ? null
-                  : _toggleTorch,
               tooltip: 'Chiroq',
+              onPressed: _toggleTorch,
               icon: const Icon(Icons.flash_on),
             ),
           ],

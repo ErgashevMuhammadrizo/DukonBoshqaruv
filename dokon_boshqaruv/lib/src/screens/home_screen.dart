@@ -1,3 +1,4 @@
+import '../diagnostics/diagnostics_view.dart';
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -500,6 +501,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Diagnostika',
+            onPressed: () => showDiagnosticsDialog(context),
+            icon: const Icon(Icons.bug_report_outlined),
+          ),
           PopupMenuButton<String>(
             onSelected: _handleMenu,
             itemBuilder: (_) => const [
