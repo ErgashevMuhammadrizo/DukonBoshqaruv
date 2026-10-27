@@ -8,7 +8,6 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../src/diagnostics/app_diagnostics.dart';
 import '../../../src/diagnostics/camera_session.dart';
-import '../../../src/diagnostics/diagnostics_view.dart';
 
 class BarcodeScannerDialog extends StatefulWidget {
   const BarcodeScannerDialog({super.key});
@@ -159,24 +158,6 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
       );
       // Probe failure must not prevent the actual scanner from being tried.
     }
-  }
-
-  Future<void> _openReport() async {
-    _diagnostics.record('diagnostics.request');
-    await _probe();
-    try {
-      const scannerChannel = MethodChannel(
-        'dev.steenbakker.mobile_scanner/scanner/method',
-      );
-      final stats = await scannerChannel
-          .invokeMapMethod<String, dynamic>('diagnostics')
-          .timeout(const Duration(seconds: 3));
-      _diagnostics.record('android.analysis.counters', details: stats);
-    } catch (error, stack) {
-      _diagnostics.record('android.analysis.counters.error',
-          error: error, stack: stack);
-    }
-    if (mounted) await showDiagnosticsDialog(context);
   }
 
   Future<void> _start() async {
@@ -339,10 +320,6 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                 const SizedBox(height: 12),
                 SelectableText(message, textAlign: TextAlign.center),
                 const SizedBox(height: 12),
-                const Text(
-                  'Hisobotda xatoning bosqichi va Android qaytargan asl sabab ko‘rsatiladi.',
-                  textAlign: TextAlign.center,
-                ),
                 FilledButton.icon(
                   onPressed: _busy || _closing ? null : () => _session.retry(),
                   icon: const Icon(Icons.refresh),
@@ -370,7 +347,8 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
         if (!didPop) unawaited(_finish());
       },
       child: Dialog(
-        insetPadding: const EdgeInsets.all(12),
+        insetPadding: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
           width: 520,
@@ -379,7 +357,11 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
             children: [
               AppBar(
                 automaticallyImplyLeading: false,
-                title: const Text('Shtrix-kod'),
+                backgroundColor: const Color(0xFF10243D),
+                foregroundColor: Colors.white,
+                title: const Text('Shtrix-kodni skanerlash',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 actions: [
                   IconButton(
                     tooltip: 'Yopish',
@@ -408,6 +390,25 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                       errorBuilder: (context, error) =>
                           _failure(error.toString()),
                     ),
+                    if (_lastError == null &&
+                        stateError == null &&
+                        !_busy &&
+                        !_closing)
+                      Center(
+                        child: IgnorePointer(
+                          child: Container(
+                            width: 260,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white, width: 3),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: const [
+                                BoxShadow(color: Colors.black26, blurRadius: 12)
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     if (_lastError != null || stateError != null)
                       _failure(_lastError ?? stateError.toString()),
                     if (_busy || _closing)
@@ -421,7 +422,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                               const SizedBox(height: 16),
                               Text(
                                 _slow
-                                    ? 'Android javobi kutilmoqda. Hisobotni ochishingiz mumkin.'
+                                    ? 'Kamera javobi kutilmoqda...'
                                     : (_closing
                                         ? 'Kamera yopilmoqda...'
                                         : 'Kamera ochilmoqda...'),
@@ -456,11 +457,6 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                     onPressed: _busy || _closing ? null : _switchCamera,
                     icon: const Icon(Icons.cameraswitch),
                     label: const Text('Boshqa kamera'),
-                  ),
-                  TextButton.icon(
-                    onPressed: _openReport,
-                    icon: const Icon(Icons.bug_report_outlined),
-                    label: const Text('Xato hisoboti'),
                   ),
                 ],
               ),

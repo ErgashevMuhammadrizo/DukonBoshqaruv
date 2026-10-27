@@ -27,7 +27,6 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _minStockController = TextEditingController(text: '0');
   final _descriptionController = TextEditingController();
 
-  int? _selectedCategoryId;
   String _selectedUnit = 'dona';
 
   final List<String> _units = [
@@ -60,7 +59,6 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriesAsync = ref.watch(categoriesProvider);
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
@@ -114,47 +112,6 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               const SizedBox(height: 16),
               _buildBarcodeField(),
             ],
-
-            const SizedBox(height: 24),
-
-            // Category Section
-            _SectionHeader(
-              title: 'Kategoriya',
-              icon: Icons.category_outlined,
-            ),
-            const SizedBox(height: 16),
-
-            categoriesAsync.when(
-              data: (categories) {
-                return DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(
-                    labelText: 'Kategoriya',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.category),
-                  ),
-                  value: _selectedCategoryId,
-                  items: [
-                    const DropdownMenuItem<int>(
-                      value: null,
-                      child: Text('Kategoriasiz'),
-                    ),
-                    ...categories.map((category) {
-                      return DropdownMenuItem<int>(
-                        value: category.id,
-                        child: Text(category.name),
-                      );
-                    }),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategoryId = value;
-                    });
-                  },
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Kategoriyalar yuklanmadi'),
-            ),
 
             const SizedBox(height: 24),
 
@@ -529,7 +486,6 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         'barcode': _barcodeController.text.trim().isEmpty
             ? null
             : _barcodeController.text.trim(),
-        'category': _selectedCategoryId,
         'purchase_price': _purchasePriceController.text.isEmpty
             ? '0'
             : _purchasePriceController.text,

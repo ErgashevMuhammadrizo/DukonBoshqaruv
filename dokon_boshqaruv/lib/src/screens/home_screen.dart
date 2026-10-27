@@ -1,4 +1,3 @@
-import '../diagnostics/diagnostics_view.dart';
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -11,8 +10,7 @@ import '../screens/admin_panel.dart';
 import '../screens/change_password.dart';
 
 import '../../features/products/screens/products_screen.dart';
-import '../../features/products/providers/products_provider.dart'
-    as products;
+import '../../features/products/providers/products_provider.dart' as products;
 import '../../features/pos/screens/pos_screen.dart';
 import '../../features/pos/providers/cart_provider.dart';
 import '../../features/reports/screens/reports_screen.dart';
@@ -73,8 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       (results) {
         if (!mounted || _leaving) return;
 
-        final disconnected =
-            results.every((r) => r == ConnectivityResult.none);
+        final disconnected = results.every((r) => r == ConnectivityResult.none);
 
         setState(() {
           _networkUnavailable = disconnected;
@@ -130,8 +127,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (!mounted || _leaving) return;
 
       setState(() {
-        _isAdmin = profile['is_superadmin'] == true ||
-            profile['superadmin'] == true;
+        _isAdmin =
+            profile['is_superadmin'] == true || profile['superadmin'] == true;
         _username = profile['username']?.toString();
       });
     } catch (_) {
@@ -168,9 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       final queue = ref.read(queueProvider);
       final result = await queue.syncOnce(api);
 
-      if (!mounted ||
-          _leaving ||
-          api.sessionKey != owner) {
+      if (!mounted || _leaving || api.sessionKey != owner) {
         return;
       }
 
@@ -180,11 +175,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (result.networkError) {
         message = 'Serverga ulanish yo‘q. Sotuvlar qurilmada saqlangan.';
       } else if (result.conflicts > 0) {
-        message =
-            '${result.conflicts} ta sotuv tekshirishni talab qiladi.';
+        message = '${result.conflicts} ta sotuv tekshirishni talab qiladi.';
       } else if (result.acked > 0) {
-        message =
-            '${result.acked} ta sotuv serverda tasdiqlandi.';
+        message = '${result.acked} ta sotuv serverda tasdiqlandi.';
       } else if (remaining > 0) {
         message = '$remaining ta sotuv hali tasdiqlanmagan.';
       } else {
@@ -195,9 +188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // serverdagi yangi mahsulot qoldiqlarini olamiz.
       if (result.acked > 0 && remaining == 0) {
         try {
-          await ref
-              .read(products.productsProvider.notifier)
-              .refresh();
+          await ref.read(products.productsProvider.notifier).refresh();
         } catch (_) {
           // Mahsulot yangilanmasligi tasdiqlangan sotuvni
           // qayta yuborishga sabab bo‘lmaydi.
@@ -205,9 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         }
       }
 
-      if (!mounted ||
-          _leaving ||
-          api.sessionKey != owner) {
+      if (!mounted || _leaving || api.sessionKey != owner) {
         return;
       }
 
@@ -228,8 +217,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } catch (_) {
       if (mounted && !_leaving) {
         setState(() {
-          _syncMessage =
-              'Sinxronlash bajarilmadi. Sotuvlar o‘chirilmagan.';
+          _syncMessage = 'Sinxronlash bajarilmadi. Sotuvlar o‘chirilmagan.';
         });
 
         if (manual) {
@@ -277,13 +265,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Ortga'),
           ),
           FilledButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Chiqish'),
           ),
         ],
@@ -364,9 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         : _syncMessage ?? 'Sotuvlarni sinxronlash';
 
     return Material(
-      color: _networkUnavailable
-          ? Colors.orange.shade50
-          : Colors.blue.shade50,
+      color: _networkUnavailable ? Colors.orange.shade50 : Colors.blue.shade50,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: 12,
@@ -375,9 +359,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         child: Row(
           children: [
             Icon(
-              _networkUnavailable
-                  ? Icons.cloud_off
-                  : Icons.cloud_sync_outlined,
+              _networkUnavailable ? Icons.cloud_off : Icons.cloud_sync_outlined,
               size: 22,
             ),
             const SizedBox(width: 10),
@@ -389,9 +371,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             IconButton(
               tooltip: 'Sinxronlash',
-              onPressed: _syncing || _leaving
-                  ? null
-                  : () => _syncNow(manual: true),
+              onPressed:
+                  _syncing || _leaving ? null : () => _syncNow(manual: true),
               icon: _syncing
                   ? const SizedBox(
                       width: 20,
@@ -501,11 +482,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Diagnostika',
-            onPressed: () => showDiagnosticsDialog(context),
-            icon: const Icon(Icons.bug_report_outlined),
-          ),
           PopupMenuButton<String>(
             onSelected: _handleMenu,
             itemBuilder: (_) => const [
@@ -545,8 +521,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           _labels.length,
                           (index) => NavigationRailDestination(
                             icon: Icon(_icons[index]),
-                            selectedIcon:
-                                Icon(_selectedIcons[index]),
+                            selectedIcon: Icon(_selectedIcons[index]),
                             label: Text(_labels[index]),
                           ),
                         ),
