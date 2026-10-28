@@ -18,6 +18,7 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
   List<dynamic> payments = const [];
   List<dynamic> subscriptions = const [];
   bool loading = true;
+  bool _purchasing = false;
   String? error;
 
   @override
@@ -171,6 +172,41 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
     );
   }
 
+  Future<void> _purchase(Map<String, dynamic> plan) async {
+    if (_purchasing) return;
+    final controller = TextEditingController();
+    final reference = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${plan['name']} · ${plan['price']} ${plan['currency']}'),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Bu tugma kartadan pul yechmaydi. To‘lov rekvizitlarini administrator bilan kelishing. To‘lovdan keyin izoh yoki tranzaksiya raqamini kiriting.'),
+          const SizedBox(height: 16),
+          TextField(controller: controller, maxLength: 160,
+            decoration: const InputDecoration(labelText: 'To‘lov izohi / tranzaksiya raqami')),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Bekor qilish')),
+          FilledButton(onPressed: () {
+            if (controller.text.trim().isNotEmpty) Navigator.pop(ctx, controller.text.trim());
+          }, child: const Text('Ariza yuborish')),
+        ],
+      ),
+    );
+    if (!mounted || reference == null) return;
+    setState(() => _purchasing = true);
+    try {
+      await ref.read(apiProvider).dio.post('payments/', data: {'plan_id': plan['id'], 'reference': reference});
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ariza yuborildi. Administrator tasdiqlashini kuting.')));
+      await _load();
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ariza yuborilmadi. Internetni tekshirib qayta urining.')));
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
+    }
+  }
+
   Widget _plansSection() => Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -179,23 +215,40 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
             Text('Tariflar', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             const Text(
-                'To‘lov provayderi merchant sozlamalari ulanmaguncha tarif xaridi yopiq.'),
+                'Tarifni tanlang va to‘lov arizasini yuboring. Obuna administrator to‘lovni tasdiqlagach faollashadi.'),
             ...plans.map((raw) {
               final plan = Map<String, dynamic>.from(raw as Map);
               final features =
                   (plan['features'] as List? ?? const []).join(' · ');
               final current = plan['name'] == profile?['subscription']?['plan'];
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(current ? Icons.verified : Icons.sell_outlined,
-                    color: current ? Colors.green : null),
-                title: Text(
-                    '${plan['name']}  ·  ${plan['price']} ${plan['currency']}/oy${current ? ' · Joriy' : ''}'),
-                subtitle: Text(
-                    '${plan['annual_price'] ?? '—'} ${plan['currency']}/yil\n'
-                    'User: ${plan['user_limit']} · Mahsulot: ${plan['product_limit']}\n$features'),
-                isThreeLine: true,
-                trailing: const Icon(Icons.lock_outline),
+              return Container(
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: current ? const Color(0xFFF0F8F6) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: current ? const Color(0xFF126B63) : const Color(0xFFDCE3E8)),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Row(children: [
+                    const Icon(Icons.workspace_premium_outlined, color: Color(0xFF126B63)),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text('${plan['name']}', style: Theme.of(context).textTheme.titleLarge)),
+                    if (current) const Chip(label: Text('Joriy tarif')),
+                  ]),
+                  const SizedBox(height: 16),
+                  Text('${plan['price']} ${plan['currency']}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
+                  const Text('Tarifning bir to‘lov davri uchun'),
+                  const Divider(height: 28),
+                  Text('${plan['user_limit']} foydalanuvchi · ${plan['product_limit']} mahsulot'),
+                  if (features.isNotEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(features)),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: _purchasing ? null : () => _purchase(plan),
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: Text(_purchasing ? 'Yuborilmoqda...' : current ? 'Tarifni uzaytirish' : 'Tarifni tanlash'),
+                  ),
+                ]),
               );
             }),
           ]),

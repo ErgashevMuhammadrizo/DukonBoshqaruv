@@ -2,6 +2,7 @@ from decimal import Decimal
 from datetime import date
 from itertools import groupby
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
 from django.db.models import Sum,Count,F, Q
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoError
@@ -269,7 +270,15 @@ class CategoryView(TenantMixin,viewsets.ModelViewSet):
 class ProductView(TenantMixin,viewsets.ModelViewSet):
     queryset=Product.objects.all(); serializer_class=ProductSerializer
     parser_classes=[JSONParser,MultiPartParser,FormParser]
-    http_method_names=['get','post','patch','head','options']
+    http_method_names=['get','post','patch','delete','head','options']
+    def destroy(self,request,*args,**kwargs):
+        product=self.get_object()
+        try:
+            with transaction.atomic():
+                product.delete()
+        except ProtectedError:
+            return Response({'error':{'code':'product_has_history','message':'Mahsulot savdo yoki ombor tarixida mavjud. Uni arxivlang.'}},status=409)
+        return Response(status=204)
     def get_queryset(self):
         qs=super().get_queryset()
         q=self.request.query_params.get('q')
@@ -431,6 +440,24 @@ class Plans(APIView):
     def get(self,request):
         return Response(list(SubscriptionPlan.objects.filter(active=True).values('id','code','name','description','months','price','annual_price','currency','trial_days','user_limit','product_limit','features','discount_percent')))
 class Payments(APIView):
+    @transaction.atomic
+    def post(self,request):
+        store=getattr(request.user,'store',None)
+        if store is None: return err('Do‘kon biriktirilmagan')
+        Store.objects.select_for_update().get(pk=store.pk)
+        try:
+            plan=SubscriptionPlan.objects.get(pk=request.data.get('plan_id'),active=True)
+        except (SubscriptionPlan.DoesNotExist,ValueError,TypeError):
+            return err('Tarif topilmadi')
+        reference=str(request.data.get('reference','')).strip()
+        if not reference or len(reference)>160:
+            return err('To‘lov izohini kiriting (160 belgigacha)')
+        existing=PaymentRecord.objects.filter(store=store,plan=plan,status='pending',provider='manual').first()
+        if existing:
+            return Response({'id':existing.pk,'status':'pending','message':'Ariza allaqachon yuborilgan'},status=200)
+        payment=PaymentRecord.objects.create(store=store,plan=plan,amount=plan.price,
+            currency=plan.currency,reference=reference,provider='manual',billing_period='month')
+        return Response({'id':payment.pk,'status':payment.status,'message':'To‘lov arizasi yuborildi'},status=201)
     def get(self,request):
         return Response(list(PaymentRecord.objects.filter(store=request.user.store).values(
             'id','order_id','plan_name','provider','provider_transaction_id','amount','currency','status',

@@ -84,10 +84,30 @@ class DokonApp extends StatelessWidget {
       title: 'Dokon Boshqaruv',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff165cdb),
-        ),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF126B63)),
+        scaffoldBackgroundColor: const Color(0xFFF5F7F9),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white, foregroundColor: Color(0xFF152D3B),
+          elevation: 0, centerTitle: false,
+          titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF152D3B)),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true, fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDCE3E8))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDCE3E8))),
+        ),
+        filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        )),
+        outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        )),
+        dividerTheme: const DividerThemeData(color: Color(0xFFE2E8ED), thickness: 1),
+        navigationBarTheme: const NavigationBarThemeData(backgroundColor: Colors.white, elevation: 0),
       ),
       home: const Startup(),
     );
