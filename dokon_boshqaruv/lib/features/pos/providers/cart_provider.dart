@@ -7,8 +7,10 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 
   bool addProduct(Product product, {double quantity = 1.0}) {
     if (!quantity.isFinite ||
+        !(quantity * 1000).isFinite ||
         quantity <= 0 ||
-        quantity * 1000 != (quantity * 1000).roundToDouble() ||
+        (quantity * 1000).round() <= 0 ||
+        (quantity * 1000 - (quantity * 1000).round()).abs() > 0.000001 ||
         (!{'kg', 'gramm', 'litr', 'ml', 'metr', 'm²', 'm³'}
                 .contains(product.unit) &&
             quantity != quantity.truncateToDouble())) {
@@ -22,9 +24,11 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
       final updatedState = [...state];
       final existingItem = updatedState[existingIndex];
       final currentStock = double.tryParse(product.stock) ?? 0;
-      final newQuantity = existingItem.quantity + quantity;
+      final newQuantity =
+          (existingItem.quantityMilli + (quantity * 1000).round()) / 1000;
 
-      if (newQuantity <= currentStock) {
+      if (currentStock.isFinite &&
+          (newQuantity * 1000).round() <= (currentStock * 1000).round()) {
         updatedState[existingIndex] = CartItem(
           productId: existingItem.productId,
           name: existingItem.name,
@@ -32,7 +36,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
           salePrice: existingItem.salePrice,
           availableStock: currentStock,
           unit: existingItem.unit,
-          quantity: newQuantity,
+          quantity: (newQuantity * 1000).round() / 1000,
         );
         state = updatedState;
         return true;
@@ -41,7 +45,8 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     } else {
       // Add new item
       final currentStock = double.tryParse(product.stock) ?? 0;
-      if (quantity <= currentStock) {
+      if (currentStock.isFinite &&
+          (quantity * 1000).round() <= (currentStock * 1000).round()) {
         state = [
           ...state,
           CartItem(
@@ -51,7 +56,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
             salePrice: double.tryParse(product.salePrice) ?? 0,
             availableStock: currentStock,
             unit: product.unit,
-            quantity: quantity,
+            quantity: (quantity * 1000).round() / 1000,
           ),
         ];
         return true;
@@ -61,9 +66,15 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   }
 
   void updateQuantity(int productId, double newQuantity) {
+    if (newQuantity == 0) {
+      removeProduct(productId);
+      return;
+    }
     if (!newQuantity.isFinite ||
+        !(newQuantity * 1000).isFinite ||
         newQuantity <= 0 ||
-        newQuantity * 1000 != (newQuantity * 1000).roundToDouble()) {
+        (newQuantity * 1000).round() <= 0 ||
+        (newQuantity * 1000 - (newQuantity * 1000).round()).abs() > 0.000001) {
       return;
     }
     final selected =
@@ -76,7 +87,9 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     }
     final updatedState = state.map((item) {
       if (item.productId == productId) {
-        if (newQuantity <= item.availableStock) {
+        if (item.availableStock.isFinite &&
+            (newQuantity * 1000).round() <=
+                (item.availableStock * 1000).round()) {
           return CartItem(
             productId: item.productId,
             name: item.name,
@@ -84,7 +97,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
             salePrice: item.salePrice,
             availableStock: item.availableStock,
             unit: item.unit,
-            quantity: newQuantity,
+            quantity: (newQuantity * 1000).round() / 1000,
           );
         }
       }
@@ -114,7 +127,9 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   }
 
   void decrementQuantity(int productId) {
-    final item = state.firstWhere((item) => item.productId == productId);
+    final matches = state.where((item) => item.productId == productId);
+    if (matches.isEmpty) return;
+    final item = matches.first;
     if (item.quantity <= 1) {
       removeProduct(productId);
     } else {

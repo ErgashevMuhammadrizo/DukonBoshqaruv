@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -37,8 +39,8 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         if (!mounted) return;
         if (status.isDenied || status.isPermanentlyDenied) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Kamera ruxsati berilmagan. Sozlamalardan ruxsatni yoqing.'),
+            SnackBar(
+              content: Text(tr('m202')),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -49,8 +51,8 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         if (!mounted) return;
         if (status.isDenied || status.isPermanentlyDenied) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Galereya ruxsati berilmagan. Sozlamalardan ruxsatni yoqing.'),
+            SnackBar(
+              content: Text(tr('m149')),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -69,10 +71,10 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         final extension = image.name.split('.').last.toLowerCase();
         final size = await image.length();
         if (!{'jpg', 'jpeg', 'png', 'webp'}.contains(extension)) {
-          throw const FormatException('JPG, PNG yoki WebP rasm tanlang.');
+          throw FormatException(tr('m184'));
         }
         if (size > 5 * 1024 * 1024) {
-          throw const FormatException('Rasm hajmi 5 MB dan oshmasligi kerak.');
+          throw FormatException(tr('m406'));
         }
         setState(() => _imagePath = image.path);
         widget.onImageSelected(image.path);
@@ -83,15 +85,14 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 8),
+                Icon(Icons.error_outline,
+                    color: adaptiveColor(context, Colors.white)),
+                SizedBox(width: 8),
                 Expanded(
-                    child: Text(e is FormatException
-                        ? e.message
-                        : 'Rasmni tanlab bo‘lmadi.')),
+                    child: Text(e is FormatException ? e.message : tr('m412'))),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: adaptiveColor(context, Colors.red),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -104,7 +105,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -113,7 +114,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
             defaultTargetPlatform == TargetPlatform.iOS;
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(vertical: 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -121,33 +122,34 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: adaptiveColor(context, Colors.grey[300]!),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Rasm yuklash',
+                SizedBox(height: 20),
+                Text(
+                  tr('m409'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 if (supportsCamera)
                   ListTile(
                     leading: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: adaptiveColor(context, Colors.blue[50]!),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.photo_camera_rounded,
-                          color: Colors.blue[700]),
+                          color: adaptiveColor(context, Colors.blue[700]!,
+                              foreground: true)),
                     ),
-                    title: const Text('Kamera',
+                    title: Text(tr('m197'),
                         style: TextStyle(fontWeight: FontWeight.w500)),
-                    subtitle: const Text('Yangi surat olish'),
+                    subtitle: Text(tr('m591')),
                     onTap: () {
                       Navigator.pop(context);
                       _pickImage(ImageSource.camera);
@@ -155,17 +157,18 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                   ),
                 ListTile(
                   leading: Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.green[50],
+                      color: adaptiveColor(context, Colors.green[50]!),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(Icons.photo_library_rounded,
-                        color: Colors.green[700]),
+                        color: adaptiveColor(context, Colors.green[700]!,
+                            foreground: true)),
                   ),
-                  title: const Text('Galereyadan',
+                  title: Text(tr('m150'),
                       style: TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: const Text('Mavjud rasmdan tanlash'),
+                  subtitle: Text(tr('m272')),
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage(ImageSource.gallery);
@@ -174,19 +177,23 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                 if (_imagePath != null)
                   ListTile(
                     leading: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.red[50],
+                        color: adaptiveColor(context, Colors.red[50]!),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.delete_rounded, color: Colors.red[700]),
+                      child: Icon(Icons.delete_rounded,
+                          color: adaptiveColor(context, Colors.red[700]!,
+                              foreground: true)),
                     ),
-                    title: const Text(
-                      'Rasmni o\'chirish',
+                    title: Text(
+                      tr('m410'),
                       style: TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.w500),
+                          color: adaptiveColor(context, Colors.red,
+                              foreground: true),
+                          fontWeight: FontWeight.w500),
                     ),
-                    subtitle: const Text('Mahsulot rasmisiz bo\'ladi'),
+                    subtitle: Text(tr('m251')),
                     onTap: () {
                       Navigator.pop(context);
                       setState(() {
@@ -194,14 +201,14 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                       });
                       widget.onImageSelected(null);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Rasm o\'chirildi'),
+                        SnackBar(
+                          content: Text(tr('m407')),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
                     },
                   ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
               ],
             ),
           ),
@@ -212,6 +219,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -227,20 +235,23 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
             borderRadius: BorderRadius.circular(16),
             gradient: _imagePath == null
                 ? LinearGradient(
-                    colors: [Colors.grey[100]!, Colors.grey[50]!],
+                    colors: [
+                      adaptiveColor(context, Colors.grey[100]!),
+                      adaptiveColor(context, Colors.grey[50]!)
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
                 : null,
           ),
           child: _isProcessing
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CircularProgressIndicator(),
                       SizedBox(height: 16),
-                      Text('Yuklanmoqda...'),
+                      Text(tr('m605')),
                     ],
                   ),
                 )
@@ -253,15 +264,15 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                           child: _imagePath!.startsWith('http')
                               ? Image.network(_imagePath!,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Center(
-                                      child: Icon(Icons.broken_image)))
+                                  errorBuilder: (_, __, ___) =>
+                                      Center(child: Icon(Icons.broken_image)))
                               : FutureBuilder<Uint8List>(
                                   future: XFile(_imagePath!).readAsBytes(),
                                   builder: (context, snapshot) => snapshot
                                           .hasData
                                       ? Image.memory(snapshot.data!,
                                           fit: BoxFit.cover)
-                                      : const Center(
+                                      : Center(
                                           child: CircularProgressIndicator()),
                                 ),
                         ),
@@ -270,13 +281,14 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                           right: 12,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.black54,
+                              color: adaptiveColor(context, Colors.black54),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
+                                  color: adaptiveColor(context,
+                                      Colors.black.withValues(alpha: 0.3)),
                                   blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                                  offset: Offset(0, 2),
                                 ),
                               ],
                             ),
@@ -284,13 +296,14 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.edit_rounded,
-                                    color: Colors.white,
+                                    color: adaptiveColor(context, Colors.white,
+                                        foreground: true),
                                     size: 20,
                                   ),
                                   onPressed: _showImageSourceDialog,
-                                  tooltip: 'Rasmni o\'zgartirish',
+                                  tooltip: tr('m411'),
                                 ),
                               ],
                             ),
@@ -301,22 +314,25 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                           left: 12,
                           right: 12,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.black54,
+                              color: adaptiveColor(context, Colors.black54),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
                                 Icon(Icons.check_circle_rounded,
-                                    color: Colors.green, size: 18),
+                                    color: adaptiveColor(context, Colors.green),
+                                    size: 18),
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Rasm yuklandi',
+                                    tr('m408'),
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: adaptiveColor(
+                                          context, Colors.white,
+                                          foreground: true),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -332,38 +348,40 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: adaptiveColor(context, Colors.blue[50]!),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.add_photo_alternate_rounded,
                             size: 48,
-                            color: Colors.blue[700],
+                            color: adaptiveColor(context, Colors.blue[700]!,
+                                foreground: true),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Mahsulot rasmini yuklash',
+                        SizedBox(height: 16),
+                        Text(
+                          tr('m250'),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 6),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: adaptiveColor(context, Colors.blue[50]!),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'Bosing',
+                            tr('m77'),
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.blue[700],
+                              color: adaptiveColor(context, Colors.blue[700]!,
+                                  foreground: true),
                               fontWeight: FontWeight.w500,
                             ),
                           ),

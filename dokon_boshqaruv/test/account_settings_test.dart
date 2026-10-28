@@ -65,8 +65,10 @@ void main() {
 
     expect(find.text('seller'), findsOneWidget);
     expect(find.text('Mini Market'), findsOneWidget);
-    expect(find.textContaining('Joriy'), findsOneWidget);
-    expect(find.textContaining('490000.00 UZS/yil'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Joriy tarif'), 250,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Joriy tarif'), findsOneWidget);
+    expect(find.text('Tarifni uzaytirish'), findsOneWidget);
   });
 
   testWidgets('username form posts the new value and refreshes the profile',
@@ -78,6 +80,8 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.widgetWithText(OutlinedButton, 'Username'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, 'Username'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'new-seller');

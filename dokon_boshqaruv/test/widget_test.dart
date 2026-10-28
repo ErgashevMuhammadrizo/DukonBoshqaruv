@@ -6,6 +6,8 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dokon_boshqaruv/src/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,6 +16,8 @@ import 'package:dokon_boshqaruv/src/app.dart';
 void main() {
   testWidgets('App boots and renders Dokon Boshqaruv',
       (WidgetTester tester) async {
+    activeLanguage = 'uz';
+    FlutterSecureStorage.setMockInitialValues({});
     await tester.pumpWidget(
       const ProviderScope(child: DokonApp()),
     );

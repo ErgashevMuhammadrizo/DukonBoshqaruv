@@ -1,3 +1,4 @@
+import '../../../src/l10n/app_strings.dart';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +11,8 @@ import '../models/product.dart';
 
 final productsStaleProvider = StateProvider<bool>((ref) => false);
 
-final productsProvider = StateNotifierProvider<ProductsNotifier,
-    AsyncValue<List<Product>>>((ref) {
+final productsProvider =
+    StateNotifierProvider<ProductsNotifier, AsyncValue<List<Product>>>((ref) {
   return ProductsNotifier(
     ref.read(apiProvider),
     ref.read(queueProvider),
@@ -26,7 +27,7 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
   Future<void>? _loading;
 
   ProductsNotifier(this._api, this._queue, this._setStale)
-      : super(const AsyncValue.loading()) {
+      : super(AsyncValue.loading()) {
     loadProducts();
   }
 
@@ -45,7 +46,7 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
 
   Future<void> _load() async {
     if (!mounted) return;
-    state = const AsyncValue.loading();
+    state = AsyncValue.loading();
     try {
       // Oldingi payment_dialog.dart lokal qoldiqni shu keshda kamaytiradi.
       // Navbat bor ekan uni server qoldig‘i bilan almashtirmaymiz.
@@ -65,11 +66,10 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
 
         // HTTP so‘rovi davomida yangi offline savdo qo‘shilgan bo‘lishi mumkin.
         if (pending > 0) {
-          final rows = await tx.query('cache', where: 'key = ?',
-              whereArgs: ['products'], limit: 1);
+          final rows = await tx.query('cache',
+              where: 'key = ?', whereArgs: ['products'], limit: 1);
           if (rows.isEmpty) {
-            throw StateError('Tasdiqlanmagan sotuvlar bor, mahsulot keshi yo‘q. '
-                'Avval sotuvlarni sinxronlang.');
+            throw StateError(tr('m510'));
           }
           return List<dynamic>.from(
               jsonDecode(rows.first['payload'] as String) as List);
@@ -79,15 +79,19 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
         for (final raw in fresh) {
           Product.fromJson(Map<String, dynamic>.from(raw as Map));
         }
-        await tx.insert('cache', {
-          'key': 'products',
-          'payload': jsonEncode(fresh),
-        }, conflictAlgorithm: ConflictAlgorithm.replace);
+        await tx.insert(
+            'cache',
+            {
+              'key': 'products',
+              'payload': jsonEncode(fresh),
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace);
         return fresh;
       });
 
-      final parsed = chosen.map((raw) => Product.fromJson(
-          Map<String, dynamic>.from(raw as Map))).toList();
+      final parsed = chosen
+          .map((raw) => Product.fromJson(Map<String, dynamic>.from(raw as Map)))
+          .toList();
       final stale = await _queue.pendingCount() > 0;
       if (!mounted) return;
       _setStale(stale);
@@ -111,16 +115,16 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
 
   Future<void> _showReservedCache() async {
     final database = await _queue.db;
-    final rows = await database.query('cache', where: 'key = ?',
-        whereArgs: ['products'], limit: 1);
+    final rows = await database.query('cache',
+        where: 'key = ?', whereArgs: ['products'], limit: 1);
     if (rows.isEmpty) {
-      throw StateError('Saqlangan mahsulotlar yo‘q. Internet bilan '
-          'mahsulotlarni bir marta yuklang.');
+      throw StateError(tr('m424'));
     }
-    final raw = List<dynamic>.from(
-        jsonDecode(rows.first['payload'] as String) as List);
-    final parsed = raw.map((item) => Product.fromJson(
-        Map<String, dynamic>.from(item as Map))).toList();
+    final raw =
+        List<dynamic>.from(jsonDecode(rows.first['payload'] as String) as List);
+    final parsed = raw
+        .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
     if (!mounted) return;
     _setStale(true);
     state = AsyncValue.data(parsed);
@@ -130,8 +134,7 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
 
   Future<void> _requireSynced() async {
     if (await _queue.pendingCount() > 0) {
-      throw StateError('Avval tasdiqlanmagan sotuvlarni sinxronlang yoki '
-          'ziddiyatlarni hal qiling. Keyin mahsulotni o‘zgartiring.');
+      throw StateError(tr('m42'));
     }
   }
 
@@ -170,9 +173,11 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
     if (!mounted || !newStock.isFinite || newStock < 0) return;
     final list = state.asData?.value;
     if (list == null) return;
-    state = AsyncValue.data(list.map((product) => product.id == productId
-        ? product.copyWith(stock: newStock.toStringAsFixed(3))
-        : product).toList());
+    state = AsyncValue.data(list
+        .map((product) => product.id == productId
+            ? product.copyWith(stock: newStock.toStringAsFixed(3))
+            : product)
+        .toList());
   }
 
   void adjustStockLocally(int productId, double delta) {
@@ -203,10 +208,13 @@ final filteredProductsProvider = Provider<List<Product>>((ref) {
   var list = List<Product>.of(source);
   final query = filters.searchQuery?.trim().toLowerCase() ?? '';
   if (query.isNotEmpty) {
-    list = list.where((p) => p.name.toLowerCase().contains(query) ||
-        p.sku.toLowerCase().contains(query) ||
-        (p.barcode?.toLowerCase().contains(query) ?? false) ||
-        (p.categoryName?.toLowerCase().contains(query) ?? false)).toList();
+    list = list
+        .where((p) =>
+            p.name.toLowerCase().contains(query) ||
+            p.sku.toLowerCase().contains(query) ||
+            (p.barcode?.toLowerCase().contains(query) ?? false) ||
+            (p.categoryName?.toLowerCase().contains(query) ?? false))
+        .toList();
   }
   if (filters.categoryId != null) {
     list = list.where((p) => p.categoryId == filters.categoryId).toList();
@@ -215,12 +223,14 @@ final filteredProductsProvider = Provider<List<Product>>((ref) {
     list = list.where((p) => p.stockStatus == filters.stockStatus).toList();
   }
   if (filters.minPrice != null) {
-    list = list.where((p) =>
-        (double.tryParse(p.salePrice) ?? 0) >= filters.minPrice!).toList();
+    list = list
+        .where((p) => (double.tryParse(p.salePrice) ?? 0) >= filters.minPrice!)
+        .toList();
   }
   if (filters.maxPrice != null) {
-    list = list.where((p) =>
-        (double.tryParse(p.salePrice) ?? 0) <= filters.maxPrice!).toList();
+    list = list
+        .where((p) => (double.tryParse(p.salePrice) ?? 0) <= filters.maxPrice!)
+        .toList();
   }
   list.sort((a, b) {
     int compared;
@@ -261,20 +271,27 @@ final categoriesProvider = FutureProvider<List<Category>>((ref) async {
   } catch (error) {
     if (!Api.isNetworkError(error)) rethrow;
     final database = await queue.db;
-    final rows = await database.query('cache', where: 'key = ?',
-        whereArgs: ['categories'], limit: 1);
+    final rows = await database.query('cache',
+        where: 'key = ?', whereArgs: ['categories'], limit: 1);
     if (rows.isEmpty) rethrow;
-    data = List<dynamic>.from(
-        jsonDecode(rows.first['payload'] as String) as List);
-    return data.map((item) => Category.fromJson(
-        Map<String, dynamic>.from(item as Map))).toList();
+    data =
+        List<dynamic>.from(jsonDecode(rows.first['payload'] as String) as List);
+    return data
+        .map(
+            (item) => Category.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
   final database = await queue.db;
-  await database.insert('cache', {
-    'key': 'categories', 'payload': jsonEncode(data),
-  }, conflictAlgorithm: ConflictAlgorithm.replace);
-  return data.map((item) => Category.fromJson(
-      Map<String, dynamic>.from(item as Map))).toList();
+  await database.insert(
+      'cache',
+      {
+        'key': 'categories',
+        'payload': jsonEncode(data),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace);
+  return data
+      .map((item) => Category.fromJson(Map<String, dynamic>.from(item as Map)))
+      .toList();
 });
 
 final productProvider = FutureProvider.family<Product?, int>((ref, id) async {
@@ -289,8 +306,7 @@ final productProvider = FutureProvider.family<Product?, int>((ref, id) async {
   if (await queue.pendingCount() > 0) {
     final cached = await queue.cachedProducts();
     for (final raw in cached) {
-      final product = Product.fromJson(
-          Map<String, dynamic>.from(raw as Map));
+      final product = Product.fromJson(Map<String, dynamic>.from(raw as Map));
       if (product.id == id) return product;
     }
     return null;
@@ -302,8 +318,7 @@ final productProvider = FutureProvider.family<Product?, int>((ref, id) async {
     if (!Api.isNetworkError(error)) rethrow;
     final cached = await queue.cachedProducts();
     for (final raw in cached) {
-      final product = Product.fromJson(
-          Map<String, dynamic>.from(raw as Map));
+      final product = Product.fromJson(Map<String, dynamic>.from(raw as Map));
       if (product.id == id) return product;
     }
     rethrow;

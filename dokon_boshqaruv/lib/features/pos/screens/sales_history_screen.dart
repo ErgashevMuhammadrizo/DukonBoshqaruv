@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -16,18 +18,19 @@ class SalesHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    AppLocaleScope.of(context);
     final salesAsync = ref.watch(salesHistoryProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sotuvlar tarixi'),
+        title: Text(tr('m481')),
         actions: [
           IconButton(
             onPressed: () {
               ref.invalidate(salesHistoryProvider);
             },
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Yangilash',
+            icon: Icon(Icons.refresh_rounded),
+            tooltip: tr('m595'),
           ),
         ],
       ),
@@ -41,14 +44,15 @@ class SalesHistoryScreen extends ConsumerWidget {
                   Icon(
                     Icons.receipt_long_outlined,
                     size: 80,
-                    color: Colors.grey[400],
+                    color: adaptiveColor(context, Colors.grey[400]!),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
-                    'Sotuvlar yo\'q',
+                    tr('m482'),
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.grey[600],
+                      color: adaptiveColor(context, Colors.grey[600]!,
+                          foreground: true),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -58,7 +62,7 @@ class SalesHistoryScreen extends ConsumerWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             itemCount: sales.length,
             itemBuilder: (context, index) {
               final sale = sales[index];
@@ -66,31 +70,37 @@ class SalesHistoryScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline,
+                  size: 64, color: adaptiveColor(context, Colors.red[300]!)),
+              SizedBox(height: 16),
               Text(
-                'Xatolik yuz berdi',
-                style: TextStyle(fontSize: 18, color: Colors.red[700]),
+                tr('m575'),
+                style: TextStyle(
+                    fontSize: 18,
+                    color: adaptiveColor(context, Colors.red[700]!,
+                        foreground: true)),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+                padding: EdgeInsets.symmetric(horizontal: 32),
                 child: Text(
                   error.toString(),
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                      color: adaptiveColor(context, Colors.grey[600]!,
+                          foreground: true)),
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: () => ref.invalidate(salesHistoryProvider),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Qayta urinish'),
+                icon: Icon(Icons.refresh),
+                label: Text(tr('m381')),
               ),
             ],
           ),
@@ -107,11 +117,12 @@ class _SaleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final numberFormat = NumberFormat('#,##0', 'uz_UZ');
+    AppLocaleScope.of(context);
+    final numberFormat = NumberFormat('#,##0', activeLanguage);
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
@@ -122,7 +133,7 @@ class _SaleCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -132,35 +143,38 @@ class _SaleCard extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: adaptiveColor(context, Colors.blue[50]!),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '№${sale.receiptNumber}',
                           style: TextStyle(
-                            color: Colors.blue[700],
+                            color: adaptiveColor(context, Colors.blue[700]!,
+                                foreground: true),
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         dateFormat.format(sale.createdAt),
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[600],
+                          color: adaptiveColor(context, Colors.grey[600]!,
+                              foreground: true),
                         ),
                       ),
                     ],
                   ),
-                  Icon(Icons.chevron_right, color: Colors.grey[400]),
+                  Icon(Icons.chevron_right,
+                      color: adaptiveColor(context, Colors.grey[400]!)),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -168,35 +182,41 @@ class _SaleCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Mahsulotlar: ${sale.items.length}',
+                        tr('m259', [sale.items.length]),
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[600],
+                          color: adaptiveColor(context, Colors.grey[600]!,
+                              foreground: true),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Row(
                         children: [
                           if (sale.cash > 0)
                             Container(
-                              margin: const EdgeInsets.only(right: 4),
-                              padding: const EdgeInsets.symmetric(
+                              margin: EdgeInsets.only(right: 4),
+                              padding: EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.green[50],
+                                color:
+                                    adaptiveColor(context, Colors.green[50]!),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.money,
-                                      size: 12, color: Colors.green[700]),
-                                  const SizedBox(width: 2),
+                                      size: 12,
+                                      color: adaptiveColor(
+                                          context, Colors.green[700]!)),
+                                  SizedBox(width: 2),
                                   Text(
-                                    'Naqd',
+                                    tr('m298'),
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.green[700],
+                                      color: adaptiveColor(
+                                          context, Colors.green[700]!,
+                                          foreground: true),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -205,23 +225,27 @@ class _SaleCard extends StatelessWidget {
                             ),
                           if (sale.card > 0)
                             Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: adaptiveColor(context, Colors.blue[50]!),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.credit_card,
-                                      size: 12, color: Colors.blue[700]),
-                                  const SizedBox(width: 2),
+                                      size: 12,
+                                      color: adaptiveColor(
+                                          context, Colors.blue[700]!)),
+                                  SizedBox(width: 2),
                                   Text(
-                                    'Karta',
+                                    tr('m204'),
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.blue[700],
+                                      color: adaptiveColor(
+                                          context, Colors.blue[700]!,
+                                          foreground: true),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -233,7 +257,7 @@ class _SaleCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    '${numberFormat.format(sale.total)} so\'m',
+                    tr('m641', [numberFormat.format(sale.total)]),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

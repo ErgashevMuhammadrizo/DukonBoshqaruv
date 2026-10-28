@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,9 +19,10 @@ class CartPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    AppLocaleScope.of(context);
     final cart = ref.watch(cartProvider);
     final subtotal = ref.watch(cartSubtotalProvider);
-    final numberFormat = NumberFormat('#,##0', 'uz_UZ');
+    final numberFormat = NumberFormat('#,##0', activeLanguage);
     final isBottomSheet = scrollController != null;
 
     return Column(
@@ -29,48 +32,52 @@ class CartPanel extends ConsumerWidget {
           padding: EdgeInsets.fromLTRB(
               20, isBottomSheet ? 16 : 12, 12, isBottomSheet ? 12 : 8),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: [Color(0xFF1565C0), Color(0xFF1976D2)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: isBottomSheet
-                ? const BorderRadius.vertical(top: Radius.circular(24))
+                ? BorderRadius.vertical(top: Radius.circular(24))
                 : null,
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: adaptiveColor(
+                      context, Colors.white.withValues(alpha: 0.15)),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.shopping_cart_rounded,
-                    color: Colors.white, size: 20),
+                child: Icon(Icons.shopping_cart_rounded,
+                    color:
+                        adaptiveColor(context, Colors.white, foreground: true),
+                    size: 20),
               ),
-              const SizedBox(width: 10),
-              const Text(
-                'Savat',
+              SizedBox(width: 10),
+              Text(
+                tr('m429'),
                 style: TextStyle(
-                  color: Colors.white,
+                  color: adaptiveColor(context, Colors.white, foreground: true),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Spacer(),
+              Spacer(),
               if (cart.isNotEmpty)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: adaptiveColor(
+                        context, Colors.white.withValues(alpha: 0.2)),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '${cart.length} mahsulot',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    tr('m638', [cart.length]),
+                    style: TextStyle(
+                      color: adaptiveColor(context, Colors.white,
+                          foreground: true),
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),
@@ -79,7 +86,9 @@ class CartPanel extends ConsumerWidget {
               if (isBottomSheet)
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  icon: Icon(Icons.close_rounded,
+                      color: adaptiveColor(context, Colors.white,
+                          foreground: true)),
                 ),
             ],
           ),
@@ -88,10 +97,10 @@ class CartPanel extends ConsumerWidget {
         // ──── Cart Items ────
         Expanded(
           child: cart.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(context)
               : ListView.builder(
                   controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                  padding: EdgeInsets.fromLTRB(12, 12, 12, 8),
                   itemCount: cart.length,
                   itemBuilder: (context, index) {
                     return _CartItemTile(item: cart[index], index: index);
@@ -106,10 +115,10 @@ class CartPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -117,29 +126,32 @@ class CartPanel extends ConsumerWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD),
+                color: adaptiveColor(context, Color(0xFFE3F2FD)),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.shopping_cart_outlined,
                 size: 48,
-                color: Color(0xFF1976D2),
+                color:
+                    adaptiveColor(context, Color(0xFF1976D2), foreground: true),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Savat bo\'sh',
+            SizedBox(height: 20),
+            Text(
+              tr('m430'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color:
+                    adaptiveColor(context, Color(0xFF424242), foreground: true),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'Mahsulotni tanlang va savatga qo\'shing',
+              tr('m267'),
               style: TextStyle(
-                color: Colors.grey[500],
+                color:
+                    adaptiveColor(context, Colors.grey[500]!, foreground: true),
                 fontSize: 13,
               ),
               textAlign: TextAlign.center,
@@ -153,14 +165,14 @@ class CartPanel extends ConsumerWidget {
   Widget _buildSummarySection(
       double subtotal, NumberFormat numberFormat, BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: adaptiveColor(context, Colors.white),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: adaptiveColor(context, Colors.black.withValues(alpha: 0.06)),
             blurRadius: 16,
-            offset: const Offset(0, -4),
+            offset: Offset(0, -4),
           ),
         ],
       ),
@@ -168,69 +180,73 @@ class CartPanel extends ConsumerWidget {
         children: [
           // Total Row
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F8FF),
+              color: adaptiveColor(context, Color(0xFFF3F8FF)),
               borderRadius: BorderRadius.circular(12),
               border:
-                  Border.all(color: const Color(0xFF1976D2).withOpacity(0.15)),
+                  Border.all(color: Color(0xFF1976D2).withValues(alpha: 0.15)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Jami:',
+                Text(
+                  tr('m188'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF424242),
+                    color: adaptiveColor(context, Color(0xFF424242),
+                        foreground: true),
                   ),
                 ),
                 Text(
-                  '${numberFormat.format(subtotal)} so\'m',
-                  style: const TextStyle(
+                  tr('m641', [numberFormat.format(subtotal)]),
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1565C0),
+                    color: adaptiveColor(context, Color(0xFF1565C0),
+                        foreground: true),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           // Checkout Button
           SizedBox(
             width: double.infinity,
             height: 52,
             child: Material(
-              color: Colors.transparent,
+              color: adaptiveColor(context, Colors.transparent),
               child: InkWell(
                 onTap: onCheckout,
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
                     ),
                     borderRadius: BorderRadius.circular(14),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x552E7D32),
+                        color: adaptiveColor(context, Color(0x552E7D32)),
                         blurRadius: 10,
                         offset: Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.payment_rounded,
-                          color: Colors.white, size: 22),
+                          color: adaptiveColor(context, Colors.white),
+                          size: 22),
                       SizedBox(width: 10),
                       Text(
-                        'To\'lovga o\'tish',
+                        tr('m530'),
                         style: TextStyle(
-                          color: Colors.white,
+                          color: adaptiveColor(context, Colors.white,
+                              foreground: true),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.3,
@@ -269,10 +285,10 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
     super.initState();
     _slideCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 250),
+      duration: Duration(milliseconds: 250),
     );
     _slideAnim = Tween<Offset>(
-      begin: const Offset(0.3, 0),
+      begin: Offset(0.3, 0),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut));
     _slideCtrl.forward();
@@ -295,7 +311,7 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           widget.item.name,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -303,20 +319,22 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Mavjud: ${widget.item.availableStock} ${widget.item.unit}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              tr('m273', [widget.item.availableStock, widget.item.unit]),
+              style: TextStyle(
+                  color: adaptiveColor(context, Colors.grey[600]!,
+                      foreground: true),
+                  fontSize: 13),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             TextField(
               controller: ctrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],
               autofocus: true,
               decoration: InputDecoration(
-                labelText: 'Miqdor',
+                labelText: tr('m285'),
                 suffixText: widget.item.unit,
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -327,20 +345,20 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Bekor'),
+            child: Text(tr('m55')),
           ),
           FilledButton(
             onPressed: () {
               final v = double.tryParse(ctrl.text);
               if (v == null || v <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Miqdor noldan katta bo‘lishi kerak.'),
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(tr('m287')),
                 ));
                 return;
               }
               if (v > widget.item.availableStock) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Omborda yetarli mahsulot yo‘q.'),
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(tr('m343')),
                 ));
                 return;
               }
@@ -349,7 +367,7 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                   .updateQuantity(widget.item.productId, v);
               Navigator.pop(ctx);
             },
-            child: const Text('OK'),
+            child: Text(tr('m321')),
           ),
         ],
       ),
@@ -358,27 +376,28 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
 
   @override
   Widget build(BuildContext context) {
-    final numberFormat = NumberFormat('#,##0', 'uz_UZ');
+    AppLocaleScope.of(context);
+    final numberFormat = NumberFormat('#,##0', activeLanguage);
     final canIncrement = widget.item.canIncrement();
 
     return SlideTransition(
       position: _slideAnim,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: adaptiveColor(context, Colors.white),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
-          boxShadow: const [
+          border: Border.all(color: adaptiveColor(context, Color(0xFFE0E0E0))),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0A000000),
+              color: adaptiveColor(context, Color(0x0A000000)),
               blurRadius: 6,
               offset: Offset(0, 2),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -391,45 +410,52 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE3F2FD),
+                      color: adaptiveColor(context, Color(0xFFE3F2FD)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
                       child: Text(
                         '${widget.index + 1}',
-                        style: const TextStyle(
-                          color: Color(0xFF1976D2),
+                        style: TextStyle(
+                          color: adaptiveColor(context, Color(0xFF1976D2),
+                              foreground: true),
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.item.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
-                            color: Color(0xFF212121),
+                            color: adaptiveColor(context, Color(0xFF212121),
+                                foreground: true),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Row(
                           children: [
                             Icon(Icons.qr_code_2_rounded,
-                                size: 11, color: Colors.grey[500]),
-                            const SizedBox(width: 3),
+                                size: 11,
+                                color:
+                                    adaptiveColor(context, Colors.grey[500]!)),
+                            SizedBox(width: 3),
                             Text(
                               widget.item.sku,
                               style: TextStyle(
-                                  fontSize: 11, color: Colors.grey[500]),
+                                  fontSize: 11,
+                                  color: adaptiveColor(
+                                      context, Colors.grey[500]!,
+                                      foreground: true)),
                             ),
                           ],
                         ),
@@ -442,14 +468,16 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                         .read(cartProvider.notifier)
                         .removeProduct(widget.item.productId),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.08),
+                        color: adaptiveColor(
+                            context, Colors.red.withValues(alpha: 0.08)),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.delete_outline_rounded,
-                        color: Colors.red,
+                        color: adaptiveColor(context, Colors.red,
+                            foreground: true),
                         size: 18,
                       ),
                     ),
@@ -457,7 +485,7 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                 ],
               ),
 
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
 
               // ── Bottom Row: qty controls + line total ──
               Row(
@@ -466,9 +494,10 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                   Container(
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: adaptiveColor(context, Color(0xFFF5F5F5)),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
+                      border: Border.all(
+                          color: adaptiveColor(context, Color(0xFFE0E0E0))),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -484,16 +513,17 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                         GestureDetector(
                           onTap: () => _showQuantityEditor(context),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
                               widget.item.quantity ==
                                       widget.item.quantity.truncate()
                                   ? '${widget.item.quantity.toInt()}'
-                                  : '${widget.item.quantity.toStringAsFixed(1)}',
-                              style: const TextStyle(
+                                  : widget.item.quantity.toStringAsFixed(1),
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: Color(0xFF212121),
+                                color: adaptiveColor(context, Color(0xFF212121),
+                                    foreground: true),
                               ),
                             ),
                           ),
@@ -512,33 +542,34 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                     ),
                   ),
 
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
 
                   // Unit price
                   Text(
-                    '× ${numberFormat.format(widget.item.salePrice)}',
+                    tr('m658', [numberFormat.format(widget.item.salePrice)]),
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: adaptiveColor(context, Colors.grey[600]!,
+                          foreground: true),
                     ),
                   ),
 
-                  const Spacer(),
+                  Spacer(),
 
                   // Line total
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
+                      color: adaptiveColor(context, Color(0xFFE8F5E9)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${numberFormat.format(widget.item.lineTotal)} so\'m',
-                      style: const TextStyle(
+                      tr('m641', [numberFormat.format(widget.item.lineTotal)]),
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E7D32),
+                        color: adaptiveColor(context, Color(0xFF2E7D32),
+                            foreground: true),
                       ),
                     ),
                   ),
@@ -548,17 +579,20 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
               // Stock warning
               if (!canIncrement)
                 Padding(
-                  padding: const EdgeInsets.only(top: 6),
+                  padding: EdgeInsets.only(top: 6),
                   child: Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded,
-                          size: 13, color: Colors.orange),
-                      const SizedBox(width: 4),
+                      Icon(Icons.warning_amber_rounded,
+                          size: 13,
+                          color: adaptiveColor(context, Colors.orange)),
+                      SizedBox(width: 4),
                       Text(
-                        'Max: ${widget.item.availableStock} ${widget.item.unit}',
-                        style: const TextStyle(
+                        tr('m275',
+                            [widget.item.availableStock, widget.item.unit]),
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.orange,
+                          color: adaptiveColor(context, Colors.orange,
+                              foreground: true),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -587,6 +621,7 @@ class _QtyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -595,13 +630,13 @@ class _QtyButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: disabled
               ? Colors.grey[200]
-              : const Color(0xFF1976D2).withOpacity(0.1),
+              : Color(0xFF1976D2).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(9),
         ),
         child: Icon(
           icon,
           size: 16,
-          color: disabled ? Colors.grey[400] : const Color(0xFF1976D2),
+          color: disabled ? Colors.grey[400] : Color(0xFF1976D2),
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'l10n/translations.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -72,10 +73,9 @@ class OfflineQueue {
   });
 
   void _checkOwner() {
-    if (ownerKey != null &&
-        currentOwner?.call() != ownerKey) {
+    if (ownerKey != null && currentOwner?.call() != ownerKey) {
       throw StateError(
-        'Akkaunt o‘zgargan. Eski sessiya bilan ishlash mumkin emas.',
+        tr('m17'),
       );
     }
   }
@@ -134,7 +134,7 @@ class OfflineQueue {
   ]) async {
     _checkOwner();
 
-    final id = operationId ?? const Uuid().v4();
+    final id = operationId ?? Uuid().v4();
     final encoded = jsonEncode(payload);
     final database = await db;
 
@@ -151,7 +151,7 @@ class OfflineQueue {
       if (existing.isNotEmpty) {
         if (existing.first['payload'] != encoded) {
           throw StateError(
-            'Bir operatsiya ID si bilan boshqa sotuv saqlanmoqda.',
+            tr('m59'),
           );
         }
 
@@ -215,7 +215,7 @@ class OfflineQueue {
   Future<void> retryOp(String id) async {
     if (_syncing) {
       throw StateError(
-        'Sinxronlash tugagach qayta urinib ko‘ring.',
+        tr('m464'),
       );
     }
 
@@ -233,7 +233,7 @@ class OfflineQueue {
   Future<void> cancelOp(String id) async {
     if (_syncing) {
       throw StateError(
-        'Sinxronlash tugagach bekor qiling.',
+        tr('m463'),
       );
     }
 
@@ -254,11 +254,11 @@ class OfflineQueue {
     _checkOwner();
 
     if (ownerKey != null && api.sessionKey != ownerKey) {
-      throw StateError('Sotuv egasi va API akkaunti mos emas.');
+      throw StateError(tr('m470'));
     }
 
     if (_syncing) {
-      return const SyncResult(
+      return SyncResult(
         acked: 0,
         conflicts: 0,
         networkError: false,
@@ -287,7 +287,7 @@ class OfflineQueue {
       final operations = rows.map(OfflineOp.fromRow).toList();
 
       if (operations.isEmpty) {
-        return const SyncResult(
+        return SyncResult(
           acked: 0,
           conflicts: 0,
           networkError: false,
@@ -318,8 +318,8 @@ class OfflineQueue {
         final results = response['results'];
 
         if (results is! List) {
-          throw const FormatException(
-            'Sinxronlash javobida results ro‘yxati yo‘q.',
+          throw FormatException(
+            tr('m462'),
           );
         }
 
@@ -331,9 +331,7 @@ class OfflineQueue {
 
             final id = raw['operation_id']?.toString();
 
-            if (id == null ||
-                !ids.contains(id) ||
-                !handled.add(id)) {
+            if (id == null || !ids.contains(id) || !handled.add(id)) {
               continue;
             }
 
@@ -355,7 +353,7 @@ class OfflineQueue {
                   'status': 'conflict',
                   'error': raw['message']?.toString() ??
                       raw['error']?.toString() ??
-                      'Sotuvni tekshirish kerak.',
+                      tr('m484'),
                 },
                 where: 'id = ? AND status = ?',
                 whereArgs: [id, 'pending'],
@@ -366,8 +364,7 @@ class OfflineQueue {
               await transaction.update(
                 'operations',
                 {
-                  'error':
-                      'Server noma’lum holat qaytardi: $status',
+                  'error': tr('m444', [status]),
                 },
                 where: 'id = ? AND status = ?',
                 whereArgs: [id, 'pending'],
@@ -439,7 +436,7 @@ class OfflineQueue {
 
   Future<void> close() async {
     if (_syncing) {
-      throw StateError('Sinxronlash hali davom etmoqda.');
+      throw StateError(tr('m461'));
     }
 
     final opening = _opening;
@@ -468,8 +465,7 @@ class OfflineSyncService {
     if (_running) return;
     _running = true;
 
-    _connectivitySub =
-        Connectivity().onConnectivityChanged.listen(
+    _connectivitySub = Connectivity().onConnectivityChanged.listen(
       (results) {
         final connected = results.any(
           (result) => result != ConnectivityResult.none,
@@ -485,7 +481,7 @@ class OfflineSyncService {
     );
 
     _periodicTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      Duration(seconds: 30),
       (_) => unawaited(_triggerSync()),
     );
 

@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
@@ -43,7 +45,7 @@ class _ProductSearchState extends State<ProductSearch> {
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 350), () {
+    _debounce = Timer(Duration(milliseconds: 350), () {
       widget.onSearch(query);
     });
     setState(() {});
@@ -51,6 +53,7 @@ class _ProductSearchState extends State<ProductSearch> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final supportsCamera = kIsWeb ||
         defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS;
@@ -70,15 +73,15 @@ class _ProductSearchState extends State<ProductSearch> {
             if (mounted) _focusNode.requestFocus();
           },
           decoration: InputDecoration(
-            labelText: 'Shtrix-kod (USB skaner uchun)',
-            hintText: 'Kodni skanerlang va Enter bosing',
-            prefixIcon: const Icon(Icons.qr_code_2_rounded),
+            labelText: tr('m456'),
+            hintText: tr('m226'),
+            prefixIcon: Icon(Icons.qr_code_2_rounded),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: adaptiveColor(context, Colors.white),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -86,13 +89,13 @@ class _ProductSearchState extends State<ProductSearch> {
                 onFocusChange: (hasFocus) =>
                     setState(() => _hasFocus = hasFocus),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: Duration(milliseconds: 200),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: _hasFocus
-                        ? const [
+                        ? [
                             BoxShadow(
-                              color: Color(0x331565C0),
+                              color: adaptiveColor(context, Color(0x331565C0)),
                               blurRadius: 10,
                               offset: Offset(0, 3),
                             ),
@@ -104,17 +107,15 @@ class _ProductSearchState extends State<ProductSearch> {
                     onChanged: _onSearchChanged,
                     onSubmitted: widget.onSearch,
                     decoration: InputDecoration(
-                      hintText:
-                          'Shtrix-kodni skanerlang yoki mahsulotni qidiring...',
+                      hintText: tr('m457'),
                       hintStyle: TextStyle(
-                        color: Colors.grey[400],
+                        color: adaptiveColor(context, Colors.grey[400]!,
+                            foreground: true),
                         fontSize: 14,
                       ),
                       prefixIcon: Icon(
                         Icons.search_rounded,
-                        color: _hasFocus
-                            ? const Color(0xFF1565C0)
-                            : Colors.grey[400],
+                        color: _hasFocus ? Color(0xFF1565C0) : Colors.grey[400],
                         size: 22,
                       ),
                       suffixIcon: widget.controller.text.isNotEmpty
@@ -125,15 +126,17 @@ class _ProductSearchState extends State<ProductSearch> {
                                 setState(() {});
                               },
                               child: Container(
-                                margin: const EdgeInsets.all(8),
+                                margin: EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[200],
+                                  color:
+                                      adaptiveColor(context, Colors.grey[200]!),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.close_rounded,
                                   size: 16,
-                                  color: Colors.grey,
+                                  color: adaptiveColor(context, Colors.grey,
+                                      foreground: true),
                                 ),
                               ),
                             )
@@ -148,14 +151,15 @@ class _ProductSearchState extends State<ProductSearch> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF1565C0),
+                        borderSide: BorderSide(
+                          color: adaptiveColor(context, Color(0xFF1565C0),
+                              foreground: true),
                           width: 2,
                         ),
                       ),
                       filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(
+                      fillColor: adaptiveColor(context, Colors.white),
+                      contentPadding: EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 13,
                       ),
@@ -164,18 +168,18 @@ class _ProductSearchState extends State<ProductSearch> {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             // Barcode scanner button
             if (supportsCamera)
               Tooltip(
-                message: 'Shtrix kod skanerlash',
+                message: tr('m454'),
                 child: Material(
-                  color: Colors.transparent,
+                  color: adaptiveColor(context, Colors.transparent),
                   child: InkWell(
                     onTap: () async {
                       final code = await showDialog<String>(
                         context: context,
-                        builder: (_) => const BarcodeScannerDialog(),
+                        builder: (_) => BarcodeScannerDialog(),
                       );
                       if (code != null && code.trim().isNotEmpty && mounted) {
                         await widget.onBarcodeSubmitted?.call(code.trim());
@@ -188,23 +192,24 @@ class _ProductSearchState extends State<ProductSearch> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                        gradient: LinearGradient(
                           colors: [Color(0xFF1565C0), Color(0xFF1976D2)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0x441565C0),
+                            color: adaptiveColor(context, Color(0x441565C0)),
                             blurRadius: 8,
                             offset: Offset(0, 3),
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.qr_code_scanner_rounded,
-                        color: Colors.white,
+                        color: adaptiveColor(context, Colors.white,
+                            foreground: true),
                         size: 22,
                       ),
                     ),

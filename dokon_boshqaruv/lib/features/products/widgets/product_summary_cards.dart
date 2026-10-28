@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 
@@ -8,52 +10,53 @@ class ProductSummaryCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     if (isSmallScreen) {
       return Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
             Row(
               children: [
                 Expanded(
                   child: _SummaryCard(
-                    title: 'Jami',
+                    title: tr('m185'),
                     value: summary.totalProducts.toString(),
                     icon: Icons.inventory_2,
-                    color: Colors.blue,
+                    color: adaptiveColor(context, Colors.blue),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: _SummaryCard(
-                    title: 'Qoldiq',
+                    title: tr('m396'),
                     value: summary.totalStock.toStringAsFixed(0),
                     icon: Icons.storage,
-                    color: Colors.green,
+                    color: adaptiveColor(context, Colors.green),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: _SummaryCard(
-                    title: 'Kam qolgan',
+                    title: tr('m195'),
                     value: summary.lowStockCount.toString(),
                     icon: Icons.warning_amber,
-                    color: Colors.orange,
+                    color: adaptiveColor(context, Colors.orange),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: _SummaryCard(
-                    title: 'Tugagan',
+                    title: tr('m557'),
                     value: summary.outOfStockCount.toString(),
                     icon: Icons.error_outline,
-                    color: Colors.red,
+                    color: adaptiveColor(context, Colors.red),
                   ),
                 ),
               ],
@@ -65,45 +68,45 @@ class ProductSummaryCards extends StatelessWidget {
 
     // Desktop/tablet layout
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(16.0),
       child: Row(
         children: [
           Expanded(
             child: _SummaryCard(
-              title: 'Jami mahsulotlar',
+              title: tr('m186'),
               value: summary.totalProducts.toString(),
               icon: Icons.inventory_2,
-              color: Colors.blue,
+              color: adaptiveColor(context, Colors.blue),
               isLarge: true,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: _SummaryCard(
-              title: 'Jami qoldiq',
+              title: tr('m187'),
               value: summary.totalStock.toStringAsFixed(0),
               icon: Icons.storage,
-              color: Colors.green,
+              color: adaptiveColor(context, Colors.green),
               isLarge: true,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: _SummaryCard(
-              title: 'Kam qolgan',
+              title: tr('m195'),
               value: summary.lowStockCount.toString(),
               icon: Icons.warning_amber,
-              color: Colors.orange,
+              color: adaptiveColor(context, Colors.orange),
               isLarge: true,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: _SummaryCard(
-              title: 'Tugagan',
+              title: tr('m557'),
               value: summary.outOfStockCount.toString(),
               icon: Icons.error_outline,
-              color: Colors.red,
+              color: adaptiveColor(context, Colors.red),
               isLarge: true,
             ),
           ),
@@ -130,6 +133,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Card(
       elevation: 2,
       child: Padding(
@@ -157,7 +161,8 @@ class _SummaryCard extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: isLarge ? 14 : 12,
-                color: Colors.grey[600],
+                color:
+                    adaptiveColor(context, Colors.grey[600]!, foreground: true),
               ),
             ),
             if (!isLarge)

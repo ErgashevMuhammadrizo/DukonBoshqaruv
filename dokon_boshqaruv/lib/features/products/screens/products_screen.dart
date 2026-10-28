@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/products_provider.dart';
@@ -20,6 +22,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final productsAsync = ref.watch(productsProvider);
     final filteredProducts = ref.watch(filteredProductsProvider);
     final summary = ref.watch(productSummaryProvider);
@@ -28,12 +31,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Mahsulotlar'),
+            Text(tr('m255')),
             Text(
-              'Mahsulotlarni boshqarish',
+              tr('m260'),
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
             ),
           ],
@@ -49,20 +52,19 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                   _viewMode = _viewMode == 'list' ? 'grid' : 'list';
                 });
               },
-              tooltip:
-                  _viewMode == 'list' ? 'Grid ko\'rinish' : 'List ko\'rinish',
+              tooltip: _viewMode == 'list' ? tr('m151') : tr('m232'),
             ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: () {
               ref.read(productsProvider.notifier).refresh();
             },
-            tooltip: 'Yangilash',
+            tooltip: tr('m595'),
           ),
           IconButton(
             icon: Stack(
               children: [
-                const Icon(Icons.filter_list),
+                Icon(Icons.filter_list),
                 if (filters.hasActiveFilters)
                   Positioned(
                     right: 0,
@@ -70,8 +72,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: adaptiveColor(context, Colors.red),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -81,7 +83,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             onPressed: () {
               _showFiltersSheet(context);
             },
-            tooltip: 'Filtrlar',
+            tooltip: tr('m140'),
           ),
         ],
       ),
@@ -103,7 +105,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 ),
 
                 if (productsStale)
-                  const SliverToBoxAdapter(child: _StaleInventoryNotice()),
+                  SliverToBoxAdapter(child: _StaleInventoryNotice()),
 
                 SliverToBoxAdapter(
                   child: _StockWarnings(
@@ -116,15 +118,15 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 // Search bar
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(16.0),
                     child: TextField(
                       decoration: InputDecoration(
-                        hintText: 'Qidirish (nom, kod, shtrix-kod)...',
-                        prefixIcon: const Icon(Icons.search),
+                        hintText: tr('m388'),
+                        prefixIcon: Icon(Icons.search),
                         suffixIcon: filters.searchQuery != null &&
                                 filters.searchQuery!.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear),
+                                icon: Icon(Icons.clear),
                                 onPressed: () {
                                   ref
                                           .read(productFiltersProvider.notifier)
@@ -150,13 +152,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 if (filters.hasActiveFilters)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
                       child: Wrap(
                         spacing: 8,
                         children: [
                           if (filters.categoryId != null)
                             Chip(
-                              label: const Text('Kategoriya'),
+                              label: Text(tr('m212')),
                               onDeleted: () {
                                 ref
                                     .read(productFiltersProvider.notifier)
@@ -166,7 +168,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           if (filters.stockStatus != null &&
                               filters.stockStatus != 'all')
                             Chip(
-                              label: Text('Holat: ${filters.stockStatus}'),
+                              label: Text(tr('m164', [filters.stockStatus])),
                               onDeleted: () {
                                 ref
                                         .read(productFiltersProvider.notifier)
@@ -177,7 +179,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           if (filters.minPrice != null ||
                               filters.maxPrice != null)
                             Chip(
-                              label: const Text('Narx oralig\'i'),
+                              label: Text(tr('m306')),
                               onDeleted: () {
                                 ref
                                     .read(productFiltersProvider.notifier)
@@ -192,8 +194,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                               ref.read(productFiltersProvider.notifier).state =
                                   filters.clearFilters();
                             },
-                            icon: const Icon(Icons.clear_all, size: 16),
-                            label: const Text('Barchasini tozalash'),
+                            icon: Icon(Icons.clear_all, size: 16),
+                            label: Text(tr('m54')),
                           ),
                         ],
                       ),
@@ -202,21 +204,28 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
                 // Products list/grid
                 if (filteredProducts.isEmpty)
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_off, size: 64, color: Colors.grey),
+                          Icon(Icons.search_off,
+                              size: 64,
+                              color: adaptiveColor(context, Colors.grey)),
                           SizedBox(height: 16),
                           Text(
-                            'Hech narsa topilmadi',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                            tr('m158'),
+                            style: TextStyle(
+                                fontSize: 18,
+                                color: adaptiveColor(context, Colors.grey,
+                                    foreground: true)),
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Filtrlarni o\'zgartiring yoki qidiruvni tozalang',
-                            style: TextStyle(color: Colors.grey),
+                            tr('m141'),
+                            style: TextStyle(
+                                color: adaptiveColor(context, Colors.grey,
+                                    foreground: true)),
                           ),
                         ],
                       ),
@@ -225,7 +234,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 else if (_viewMode == 'grid' &&
                     MediaQuery.of(context).size.width > 600)
                   SliverPadding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     sliver: SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount:
@@ -261,28 +270,29 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                   ),
 
                 // Bottom padding
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: SizedBox(height: 80),
                 ),
               ],
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Xatolik: $error'),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline,
+                  size: 64, color: adaptiveColor(context, Colors.red)),
+              SizedBox(height: 16),
+              Text(friendlyFailure(error)),
+              SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () {
                   ref.read(productsProvider.notifier).refresh();
                 },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Qayta urinish'),
+                icon: Icon(Icons.refresh),
+                label: Text(tr('m381')),
               ),
             ],
           ),
@@ -290,8 +300,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToAddProduct(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Mahsulot qo\'shish'),
+        icon: Icon(Icons.add),
+        label: Text(tr('m248')),
       ),
     );
   }
@@ -299,7 +309,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   void _navigateToAddProduct(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const AddProductScreen()),
+      MaterialPageRoute(builder: (_) => AddProductScreen()),
     );
   }
 
@@ -316,7 +326,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const ProductFiltersSheet(),
+      builder: (context) => ProductFiltersSheet(),
     );
   }
 }
@@ -327,11 +337,12 @@ class _StockWarnings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (products.isEmpty) return const SizedBox.shrink();
+    AppLocaleScope.of(context);
+    if (products.isEmpty) return SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Card(
-        color: const Color(0xFFFFF8E1),
+        color: adaptiveColor(context, Color(0xFFFFF8E1)),
         child: Column(
           children: products.map((product) {
             final empty = product.stockStatus == 'tugagan';
@@ -342,14 +353,13 @@ class _StockWarnings extends StatelessWidget {
               leading: Icon(empty ? Icons.error_outline : Icons.warning_amber,
                   color: color),
               title: Text(
-                empty
-                    ? '${product.name} tugagan!'
-                    : '${product.name} kam qoldi.',
+                empty ? tr('m649', [product.name]) : tr('m637', [product.name]),
                 style: TextStyle(color: color, fontWeight: FontWeight.w700),
               ),
               subtitle: Text(empty
-                  ? 'Omborda mahsulot qolmagan. Ogohlantirish chegarasi: ${product.minStock} ${product.unit}.'
-                  : 'Omborda $stock ${product.unit}. Ogohlantirish chegarasi: ${product.minStock} ${product.unit}.'),
+                  ? tr('m342', [product.minStock, product.unit])
+                  : tr('m345',
+                      [stock, product.unit, product.minStock, product.unit])),
             );
           }).toList(),
         ),
@@ -362,20 +372,23 @@ class _StaleInventoryNotice extends StatelessWidget {
   const _StaleInventoryNotice();
 
   @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-        child: Card(
-          color: Color(0xFFFFF3E0),
-          child: ListTile(
-            dense: true,
-            leading: Icon(Icons.cloud_off, color: Colors.deepOrange),
-            title:
-                Text('Internet yo‘q — qoldiq keshlangan ma’lumotdan olingan.'),
-            subtitle:
-                Text('Sotuv serverga yuborilganda qoldiq qayta tekshiriladi.'),
-          ),
+  Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Card(
+        color: adaptiveColor(context, Color(0xFFFFF3E0)),
+        child: ListTile(
+          dense: true,
+          leading: Icon(Icons.cloud_off,
+              color:
+                  adaptiveColor(context, Colors.deepOrange, foreground: true)),
+          title: Text(tr('m173')),
+          subtitle: Text(tr('m479')),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class ProductFiltersSheet extends ConsumerStatefulWidget {
@@ -389,6 +402,7 @@ class ProductFiltersSheet extends ConsumerStatefulWidget {
 class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final filters = ref.watch(productFiltersProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
@@ -399,15 +413,15 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Filtrlar',
+                  Text(
+                    tr('m140'),
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
@@ -415,28 +429,28 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                       ref.read(productFiltersProvider.notifier).state =
                           filters.clearFilters();
                     },
-                    child: const Text('Tozalash'),
+                    child: Text(tr('m533')),
                   ),
                 ],
               ),
-              const Divider(),
+              Divider(),
               Expanded(
                 child: ListView(
                   controller: scrollController,
                   children: [
                     // Category filter
-                    const Text(
-                      'Kategoriya',
+                    Text(
+                      tr('m212'),
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     categoriesAsync.when(
                       data: (categories) {
                         return Wrap(
                           spacing: 8,
                           children: [
                             FilterChip(
-                              label: const Text('Barchasi'),
+                              label: Text(tr('m53')),
                               selected: filters.categoryId == null,
                               onSelected: (selected) {
                                 if (selected) {
@@ -463,22 +477,22 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           ],
                         );
                       },
-                      loading: () => const CircularProgressIndicator(),
-                      error: (_, __) => const Text('Kategoriyalar yuklanmadi'),
+                      loading: () => CircularProgressIndicator(),
+                      error: (_, __) => Text(tr('m213')),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Stock status filter
-                    const Text(
-                      'Ombordagi holati',
+                    Text(
+                      tr('m346'),
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       children: [
                         FilterChip(
-                          label: const Text('Barchasi'),
+                          label: Text(tr('m53')),
                           selected: filters.stockStatus == null ||
                               filters.stockStatus == 'all',
                           onSelected: (selected) {
@@ -487,7 +501,7 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           },
                         ),
                         FilterChip(
-                          label: const Text('Mavjud'),
+                          label: Text(tr('m270')),
                           selected: filters.stockStatus == 'mavjud',
                           onSelected: (selected) {
                             ref.read(productFiltersProvider.notifier).state =
@@ -497,7 +511,7 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           },
                         ),
                         FilterChip(
-                          label: const Text('Kam qolgan'),
+                          label: Text(tr('m195')),
                           selected: filters.stockStatus == 'kam_qolgan',
                           onSelected: (selected) {
                             ref.read(productFiltersProvider.notifier).state =
@@ -507,7 +521,7 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           },
                         ),
                         FilterChip(
-                          label: const Text('Tugagan'),
+                          label: Text(tr('m557')),
                           selected: filters.stockStatus == 'tugagan',
                           onSelected: (selected) {
                             ref.read(productFiltersProvider.notifier).state =
@@ -518,19 +532,19 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Sort by
-                    const Text(
-                      'Saralash',
+                    Text(
+                      tr('m428'),
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       children: [
                         ChoiceChip(
-                          label: const Text('Nomi'),
+                          label: Text(tr('m310')),
                           selected: filters.sortBy == 'name',
                           onSelected: (selected) {
                             ref.read(productFiltersProvider.notifier).state =
@@ -538,7 +552,7 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           },
                         ),
                         ChoiceChip(
-                          label: const Text('Sotuv narxi'),
+                          label: Text(tr('m471')),
                           selected: filters.sortBy == 'sale_price',
                           onSelected: (selected) {
                             ref.read(productFiltersProvider.notifier).state =
@@ -546,7 +560,7 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           },
                         ),
                         ChoiceChip(
-                          label: const Text('Qoldiq'),
+                          label: Text(tr('m396')),
                           selected: filters.sortBy == 'stock',
                           onSelected: (selected) {
                             ref.read(productFiltersProvider.notifier).state =
@@ -555,9 +569,9 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     SwitchListTile(
-                      title: const Text('O\'sish tartibida'),
+                      title: Text(tr('m316')),
                       value: filters.sortAscending,
                       onChanged: (value) {
                         ref.read(productFiltersProvider.notifier).state =
@@ -567,10 +581,10 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               FilledButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Qo\'llash'),
+                child: Text(tr('m392')),
               ),
             ],
           ),

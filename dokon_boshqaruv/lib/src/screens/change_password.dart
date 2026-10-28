@@ -1,3 +1,5 @@
+import '../adaptive_colors.dart';
+import '../l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app.dart';
@@ -24,20 +26,19 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return PopScope(
       canPop: !widget.isFirstTime,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.isFirstTime
-              ? 'Parolni yangilash'
-              : 'Parolni o\'zgartirish'),
+          title: Text(widget.isFirstTime ? tr('m367') : tr('m364')),
           automaticallyImplyLeading: !widget.isFirstTime,
         ),
         body: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: BoxConstraints(maxWidth: 480),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -46,37 +47,36 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
                     size: 64,
                     color: widget.isFirstTime ? Colors.orange : Colors.blue,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
-                    widget.isFirstTime
-                        ? 'Parolingizni yangilang'
-                        : 'Parolni o\'zgartirish',
+                    widget.isFirstTime ? tr('m361') : tr('m364'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
-                    widget.isFirstTime
-                        ? 'Xavfsizlik uchun parolingizni o\'zgartirish shart'
-                        : 'Xavfsizlik uchun parolingizni muntazam yangilang',
+                    widget.isFirstTime ? tr('m578') : tr('m577'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.blueGrey),
+                    style: TextStyle(
+                        color: adaptiveColor(context, Colors.blueGrey,
+                            foreground: true)),
                   ),
                   if (widget.isFirstTime)
                     Padding(
-                      padding: const EdgeInsets.only(top: 12),
+                      padding: EdgeInsets.only(top: 12),
                       child: Card(
-                        color: Colors.orange[50],
+                        color: adaptiveColor(context, Colors.orange[50]!),
                         child: Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(12),
                           child: Row(
                             children: [
-                              Icon(Icons.info, color: Colors.orange[700]),
-                              const SizedBox(width: 12),
-                              const Expanded(
+                              Icon(Icons.info,
+                                  color: adaptiveColor(
+                                      context, Colors.orange[700]!)),
+                              SizedBox(width: 12),
+                              Expanded(
                                 child: Text(
-                                  'Bu birinchi kirish. Yangi parol o\'rnating.',
+                                  tr('m80'),
                                   style: TextStyle(fontSize: 13),
                                 ),
                               ),
@@ -85,14 +85,14 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                   TextField(
                     controller: oldPasswordController,
                     obscureText: obscureOld,
                     decoration: InputDecoration(
-                      labelText: 'Joriy parol',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.lock_outline),
+                      labelText: tr('m189'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
                           obscureOld ? Icons.visibility : Icons.visibility_off,
@@ -103,14 +103,14 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   TextField(
                     controller: newPasswordController,
                     obscureText: obscureNew,
                     decoration: InputDecoration(
-                      labelText: 'Yangi parol',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.lock),
+                      labelText: tr('m582'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
                           obscureNew ? Icons.visibility : Icons.visibility_off,
@@ -121,14 +121,14 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   TextField(
                     controller: confirmPasswordController,
                     obscureText: obscureConfirm,
                     decoration: InputDecoration(
-                      labelText: 'Yangi parolni tasdiqlang',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.lock_clock),
+                      labelText: tr('m587'),
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock_clock),
                       suffixIcon: IconButton(
                         icon: Icon(
                           obscureConfirm
@@ -141,59 +141,57 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Card(
-                    color: Color(0xFFF3F4F6),
+                  SizedBox(height: 12),
+                  Card(
+                    color: adaptiveColor(context, Color(0xFFF3F4F6)),
                     child: Padding(
                       padding: EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Parol talablari:',
+                            tr('m359'),
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           SizedBox(height: 4),
-                          Text('• Kamida 10 ta belgi'),
-                          Text('• Faqat raqamlardan iborat bo\'lmasligi kerak'),
-                          Text('• Umumiy parollardan foydalanmang'),
-                          Text('• Eski paroldan farqli bo\'lishi kerak'),
+                          Text(tr('m662')),
+                          Text(tr('m660')),
+                          Text(tr('m663')),
+                          Text(tr('m659')),
                         ],
                       ),
                     ),
                   ),
                   if (error != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 12),
+                      padding: EdgeInsets.only(top: 12),
                       child: Card(
-                        color: Colors.red[50],
+                        color: adaptiveColor(context, Colors.red[50]!),
                         child: Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(12),
                           child: Text(
                             error!,
-                            style: const TextStyle(color: Colors.red),
+                            style: TextStyle(
+                                color: adaptiveColor(context, Colors.red,
+                                    foreground: true)),
                           ),
                         ),
                       ),
                     ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   FilledButton(
                     onPressed: busy ? null : _changePassword,
                     style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: Text(busy
-                        ? 'O\'zgartirilmoqda...'
-                        : 'Parolni o\'zgartirish'),
+                    child: Text(busy ? tr('m320') : tr('m364')),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   TextButton(
                     onPressed: widget.isFirstTime
                         ? null
                         : () => Navigator.pop(context),
-                    child: Text(widget.isFirstTime
-                        ? 'Parol o\'zgartirish majburiy'
-                        : 'Bekor qilish'),
+                    child: Text(widget.isFirstTime ? tr('m358') : tr('m57')),
                   ),
                 ],
               ),
@@ -213,7 +211,7 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
     // Validation
     if (oldPasswordController.text.isEmpty) {
       setState(() {
-        error = 'Joriy parolni kiriting';
+        error = tr('m190');
         busy = false;
       });
       return;
@@ -221,7 +219,7 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
 
     if (newPasswordController.text.isEmpty) {
       setState(() {
-        error = 'Yangi parolni kiriting';
+        error = tr('m586');
         busy = false;
       });
       return;
@@ -229,7 +227,7 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
 
     if (newPasswordController.text != confirmPasswordController.text) {
       setState(() {
-        error = 'Yangi parollar mos kelmadi';
+        error = tr('m585');
         busy = false;
       });
       return;
@@ -237,7 +235,7 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
 
     if (newPasswordController.text.length < 10) {
       setState(() {
-        error = 'Yangi parol kamida 10 ta belgidan iborat bo\'lishi kerak';
+        error = tr('m584');
         busy = false;
       });
       return;
@@ -245,7 +243,7 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
 
     if (oldPasswordController.text == newPasswordController.text) {
       setState(() {
-        error = 'Yangi parol eski paroldan farqli bo\'lishi kerak';
+        error = tr('m583');
         busy = false;
       });
       return;
@@ -265,20 +263,19 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Muvaffaqiyatli!'),
+          title: Text(tr('m296')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 48),
-              const SizedBox(height: 16),
-              Text(result['message'] ?? 'Parolingiz o\'zgartirildi'),
-              const SizedBox(height: 16),
+              Icon(Icons.check_circle,
+                  color: adaptiveColor(context, Colors.green), size: 48),
+              SizedBox(height: 16),
+              Text(result['message'] ?? tr('m360')),
+              SizedBox(height: 16),
               Text(
-                widget.isFirstTime
-                    ? 'Endi tizimga kirish mumkin'
-                    : 'Xavfsizlik uchun qayta kirish kerak bo\'ladi',
+                widget.isFirstTime ? tr('m127') : tr('m579'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontStyle: FontStyle.italic),
+                style: TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
           ),
@@ -289,7 +286,7 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
                   // For first-time change, go to Home screen directly
                   if (context.mounted) {
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      MaterialPageRoute(builder: (_) => HomeScreen()),
                       (route) => false,
                     );
                   }
@@ -298,15 +295,13 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
                   await ref.read(apiProvider).logout();
                   if (context.mounted) {
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const Login()),
+                      MaterialPageRoute(builder: (_) => Login()),
                       (route) => false,
                     );
                   }
                 }
               },
-              child: Text(widget.isFirstTime
-                  ? 'Davom etish'
-                  : 'Kirish sahifasiga o\'tish'),
+              child: Text(widget.isFirstTime ? tr('m107') : tr('m219')),
             ),
           ],
         ),
@@ -314,7 +309,7 @@ class _ChangePasswordState extends ConsumerState<ChangePassword> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        error = 'Xatolik: ${e.toString()}';
+        error = friendlyFailure(e);
         busy = false;
       });
     }

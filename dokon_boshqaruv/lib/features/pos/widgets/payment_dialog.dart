@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -10,30 +12,25 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../src/api.dart';
-import '../../../src/app.dart'
-    show apiProvider, queueProvider;
+import '../../../src/app.dart' show apiProvider, queueProvider;
 
 import '../providers/cart_provider.dart';
 import '../screens/receipt_screen.dart';
 
-import '../../products/providers/api.dart'
-    show ApiPosExtension;
+import '../../products/providers/api.dart' show ApiPosExtension;
 import '../../products/providers/products_provider.dart';
 
 class PaymentDialog extends ConsumerStatefulWidget {
   const PaymentDialog({super.key});
 
   @override
-  ConsumerState<PaymentDialog> createState() =>
-      _PaymentDialogState();
+  ConsumerState<PaymentDialog> createState() => _PaymentDialogState();
 }
 
-class _PaymentDialogState
-    extends ConsumerState<PaymentDialog> {
+class _PaymentDialogState extends ConsumerState<PaymentDialog> {
   final _cashController = TextEditingController();
   final _cardController = TextEditingController();
-  final _discountController =
-      TextEditingController(text: '0');
+  final _discountController = TextEditingController(text: '0');
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
 
@@ -43,8 +40,8 @@ class _PaymentDialogState
   String? _operationId;
   Map<String, dynamic>? _frozenPayload;
 
-  static const _blue = Color(0xFF1565C0);
-  static const _green = Color(0xFF2E7D32);
+  static final _blue = Color(0xFF1565C0);
+  static final _green = Color(0xFF2E7D32);
 
   @override
   void dispose() {
@@ -57,7 +54,7 @@ class _PaymentDialogState
   }
 
   String _format(double value) {
-    return NumberFormat('#,##0.##', 'uz_UZ').format(value);
+    return NumberFormat('#,##0.##', activeLanguage).format(value);
   }
 
   double? _parse(String value) {
@@ -137,34 +134,30 @@ class _PaymentDialogState
 
     final status = error.response?.statusCode;
 
-    return status == null
-        ? 'Serverga ulanish amalga oshmadi.'
-        : 'Server xatosi: HTTP $status.';
+    return status == null ? tr('m449') : tr('m446', [status]);
   }
 
   Map<String, dynamic>? _buildPayload() {
     final cart = ref.read(cartProvider);
 
     if (cart.isEmpty) {
-      _message('Savat bo‘sh.', error: true);
+      _message(tr('m432'), error: true);
       return null;
     }
 
     final subtotal = ref.read(cartSubtotalProvider);
 
     if (!subtotal.isFinite || subtotal < 0) {
-      _message('Savat summasi noto‘g‘ri.', error: true);
+      _message(tr('m433'), error: true);
       return null;
     }
 
     final subtotalCents = (subtotal * 100).round();
-    final discountCents =
-        _moneyCents(_discountController.text);
+    final discountCents = _moneyCents(_discountController.text);
 
-    if (discountCents == null ||
-        discountCents > subtotalCents) {
+    if (discountCents == null || discountCents > subtotalCents) {
       _message(
-        'Chegirma noto‘g‘ri yoki jami summadan katta.',
+        tr('m91'),
         error: true,
       );
       return null;
@@ -181,7 +174,7 @@ class _PaymentDialogState
 
       if (received == null || received < totalCents) {
         _message(
-          'Naqd pul miqdorini tekshiring.',
+          tr('m301'),
           error: true,
         );
         return null;
@@ -193,7 +186,7 @@ class _PaymentDialogState
 
       if (entered == null || entered != totalCents) {
         _message(
-          'Karta summasi to‘lov summasiga teng bo‘lishi kerak.',
+          tr('m207'),
           error: true,
         );
         return null;
@@ -201,23 +194,20 @@ class _PaymentDialogState
 
       cardCents = entered;
     } else if (_paymentType == 2) {
-      final receivedCash =
-          _moneyCents(_cashController.text);
-      final enteredCard =
-          _moneyCents(_cardController.text);
+      final receivedCash = _moneyCents(_cashController.text);
+      final enteredCard = _moneyCents(_cardController.text);
 
       if (receivedCash == null || enteredCard == null) {
         _message(
-          'Naqd va karta summalarini tekshiring.',
+          tr('m302'),
           error: true,
         );
         return null;
       }
 
-      if (enteredCard > totalCents ||
-          receivedCash + enteredCard < totalCents) {
+      if (enteredCard > totalCents || receivedCash + enteredCard < totalCents) {
         _message(
-          'To‘lov yetarli emas yoki karta summasi ortiqcha.',
+          tr('m549'),
           error: true,
         );
         return null;
@@ -229,7 +219,7 @@ class _PaymentDialogState
       final customerName = _customerNameController.text.trim();
       if (customerName.isEmpty) {
         _message(
-          'Mijoz nomini kiriting.',
+          tr('m282'),
           error: true,
         );
         return null;
@@ -246,8 +236,7 @@ class _PaymentDialogState
 
     if (debtCents > 0) {
       payload['debt'] = (debtCents / 100).toStringAsFixed(2);
-      payload['customer_name'] =
-          _customerNameController.text.trim();
+      payload['customer_name'] = _customerNameController.text.trim();
       final phone = _customerPhoneController.text.trim();
       if (phone.isNotEmpty) {
         payload['customer_phone'] = phone;
@@ -263,10 +252,8 @@ class _PaymentDialogState
     final subtotal = ref.read(cartSubtotalProvider);
     final discount = _parse(_discountController.text);
 
-    if (discount == null ||
-        discount < 0 ||
-        discount > subtotal) {
-      _message('Chegirmani tekshiring.', error: true);
+    if (discount == null || discount < 0 || discount > subtotal) {
+      _message(tr('m94'), error: true);
       return;
     }
 
@@ -281,8 +268,7 @@ class _PaymentDialogState
         final card = _parse(_cardController.text) ?? 0;
 
         if (card >= 0 && card <= total) {
-          _cashController.text =
-              (total - card).toStringAsFixed(2);
+          _cashController.text = (total - card).toStringAsFixed(2);
         }
       }
     });
@@ -293,8 +279,11 @@ class _PaymentDialogState
 
     final subtotal = ref.read(cartSubtotalProvider);
     final discount = _parse(_discountController.text) ?? 0;
-    if (!subtotal.isFinite || subtotal < 0 || discount < 0 || discount > subtotal) {
-      _message('Chegirma yoki umumiy summa noto‘g‘ri.', error: true);
+    if (!subtotal.isFinite ||
+        subtotal < 0 ||
+        discount < 0 ||
+        discount > subtotal) {
+      _message(tr('m92'), error: true);
       return;
     }
 
@@ -330,15 +319,14 @@ class _PaymentDialogState
 
     for (final item in _items(payload)) {
       final id = int.tryParse('${item['product_id']}');
-      final quantity =
-          double.tryParse('${item['quantity']}');
+      final quantity = double.tryParse('${item['quantity']}');
 
       if (id == null ||
           quantity == null ||
           !quantity.isFinite ||
           quantity <= 0) {
-        throw const FormatException(
-          'Sotuvdagi mahsulot yoki miqdor noto‘g‘ri.',
+        throw FormatException(
+          tr('m480'),
         );
       }
 
@@ -363,7 +351,7 @@ class _PaymentDialogState
     // Baza yozuvi tugamaguncha savat tozalanmaydi.
     return database.transaction<bool>((transaction) async {
       if (owner == null || api.sessionKey != owner) {
-        throw StateError('Akkaunt o‘zgargan.');
+        throw StateError(tr('m16'));
       }
 
       final existing = await transaction.query(
@@ -376,7 +364,7 @@ class _PaymentDialogState
       if (existing.isNotEmpty) {
         if (existing.first['payload'] != encoded) {
           throw StateError(
-            'Operatsiya ID si boshqa sotuvga tegishli.',
+            tr('m347'),
           );
         }
 
@@ -398,26 +386,24 @@ class _PaymentDialogState
         );
 
         final updated = cached.map<dynamic>((raw) {
-          final product =
-              Map<String, dynamic>.from(raw as Map);
+          final product = Map<String, dynamic>.from(raw as Map);
 
           final id = int.tryParse('${product['id']}');
           final sold = quantities[id];
 
           if (sold != null) {
-            final stock =
-                double.tryParse('${product['stock']}');
+            final stock = double.tryParse('${product['stock']}');
 
             if (stock == null || !stock.isFinite) {
-              throw const FormatException(
-                'Keshlangan mahsulot qoldig‘i noto‘g‘ri.',
+              throw FormatException(
+                tr('m215'),
               );
             }
 
             final remaining = stock - sold;
 
-            product['stock'] = (remaining < 0 ? 0.0 : remaining)
-                .toStringAsFixed(3);
+            product['stock'] =
+                (remaining < 0 ? 0.0 : remaining).toStringAsFixed(3);
           }
 
           return product;
@@ -464,8 +450,7 @@ class _PaymentDialogState
   Future<void> _processSale() async {
     if (_processing) return;
 
-    final newPayload =
-        _frozenPayload == null ? _buildPayload() : null;
+    final newPayload = _frozenPayload == null ? _buildPayload() : null;
 
     if (_frozenPayload == null && newPayload == null) {
       return;
@@ -476,7 +461,7 @@ class _PaymentDialogState
     _frozenPayload ??= Map<String, dynamic>.from(
       jsonDecode(jsonEncode(newPayload)) as Map,
     );
-    _operationId ??= const Uuid().v4();
+    _operationId ??= Uuid().v4();
 
     final payload = _frozenPayload!;
     final operationId = _operationId!;
@@ -486,7 +471,7 @@ class _PaymentDialogState
 
     if (owner == null) {
       _message(
-        'Akkauntga qayta kiring.',
+        tr('m22'),
         error: true,
       );
       return;
@@ -526,13 +511,10 @@ class _PaymentDialogState
       bool refreshFailed = false;
 
       try {
-        final pending =
-            await ref.read(queueProvider).pendingCount();
+        final pending = await ref.read(queueProvider).pendingCount();
 
         if (pending == 0) {
-          await ref
-              .read(productsProvider.notifier)
-              .refresh();
+          await ref.read(productsProvider.notifier).refresh();
         }
       } catch (_) {
         refreshFailed = true;
@@ -555,9 +537,9 @@ class _PaymentDialogState
 
       if (refreshFailed) {
         messenger.showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Sotuv saqlandi. Mahsulotlarni keyinroq yangilang.',
+              tr('m478'),
             ),
           ),
         );
@@ -590,18 +572,16 @@ class _PaymentDialogState
           navigator.pop(true);
 
           messenger.showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
-                'Sotuv qurilmada saqlandi. '
-                'Server tasdig‘i sinxronlashdan keyin olinadi.',
+                tr('m477'),
               ),
             ),
           );
         } catch (_) {
           if (mounted) {
             _message(
-              'Sotuvni qurilmaga saqlab bo‘lmadi. '
-              'Savat saqlangan. Qayta urinib ko‘ring.',
+              tr('m483'),
               error: true,
             );
           }
@@ -624,8 +604,7 @@ class _PaymentDialogState
     } catch (_) {
       if (mounted && api.sessionKey == owner) {
         _message(
-          'Sotuv natijasini aniqlab bo‘lmadi. '
-          'Shu oynada qayta urining: operatsiya ID si saqlangan.',
+          tr('m476'),
           error: true,
         );
       }
@@ -643,22 +622,18 @@ class _PaymentDialogState
       final shouldClose = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Sotuv natijasi noaniq'),
-          content: const Text(
-            'Server sotuvni qabul qilgan bo‘lishi mumkin. '
-            'Takroriy sotuv yaratishdan oldin sotuvlar '
-            'tarixini tekshiring. Oynani yopasizmi?',
+          title: Text(tr('m475')),
+          content: Text(
+            tr('m445'),
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(false),
-              child: const Text('Qolish'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(tr('m403')),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(true),
-              child: const Text('Yopish'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(tr('m601')),
             ),
           ],
         ),
@@ -677,14 +652,13 @@ class _PaymentDialogState
     return TextField(
       controller: controller,
       enabled: !_processing && _frozenPayload == null,
-      keyboardType: const TextInputType.numberWithOptions(
+      keyboardType: TextInputType.numberWithOptions(
         decimal: true,
       ),
       inputFormatters: [
         TextInputFormatter.withFunction(
           (oldValue, newValue) {
-            return RegExp(r'^\d*([.,]\d{0,2})?$')
-                    .hasMatch(newValue.text)
+            return RegExp(r'^\d*([.,]\d{0,2})?$').hasMatch(newValue.text)
                 ? newValue
                 : oldValue;
           },
@@ -693,8 +667,8 @@ class _PaymentDialogState
       onChanged: (_) => setState(() {}),
       decoration: InputDecoration(
         labelText: label,
-        suffixText: 'so‘m',
-        border: const OutlineInputBorder(),
+        suffixText: tr('m626'),
+        border: OutlineInputBorder(),
       ),
     );
   }
@@ -702,8 +676,10 @@ class _PaymentDialogState
   Widget _quickAmountChip(String label, double ratio) {
     return ActionChip(
       label: Text(label),
-      avatar: const Icon(Icons.auto_awesome, size: 16),
-      onPressed: _processing || _frozenPayload != null ? null : () => _applyQuickPayment(ratio),
+      avatar: Icon(Icons.auto_awesome, size: 16),
+      onPressed: _processing || _frozenPayload != null
+          ? null
+          : () => _applyQuickPayment(ratio),
       backgroundColor: Colors.blue.shade50,
       side: BorderSide(color: Colors.blue.shade200),
     );
@@ -715,16 +691,14 @@ class _PaymentDialogState
     bool bold = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
           Expanded(child: Text(label)),
           Text(
-            '${_format(value)} so‘m',
+            tr('m642', [_format(value)]),
             style: TextStyle(
-              fontWeight: bold
-                  ? FontWeight.bold
-                  : FontWeight.normal,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
               fontSize: bold ? 18 : 14,
             ),
           ),
@@ -735,6 +709,7 @@ class _PaymentDialogState
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final subtotal = ref.watch(cartSubtotalProvider);
     final cart = ref.watch(cartProvider);
     final total = subtotal - _discountPreview;
@@ -745,12 +720,9 @@ class _PaymentDialogState
       _ => _cashPreview + _cardPreview,
     };
 
-    final change = _paymentType == 1
-        ? 0.0
-        : received - total;
+    final change = _paymentType == 1 ? 0.0 : received - total;
 
-    final locked =
-        _processing || _frozenPayload != null;
+    final locked = _processing || _frozenPayload != null;
 
     final screenHeight = MediaQuery.sizeOf(context).height;
 
@@ -762,7 +734,7 @@ class _PaymentDialogState
         }
       },
       child: Dialog(
-        insetPadding: const EdgeInsets.all(16),
+        insetPadding: EdgeInsets.all(16),
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -773,8 +745,8 @@ class _PaymentDialogState
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                color: _blue,
-                padding: const EdgeInsets.fromLTRB(
+                color: adaptiveColor(context, _blue),
+                padding: EdgeInsets.fromLTRB(
                   20,
                   12,
                   8,
@@ -782,16 +754,17 @@ class _PaymentDialogState
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.payment,
-                      color: Colors.white,
+                      color: adaptiveColor(context, Colors.white),
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        'To‘lov',
+                        tr('m539'),
                         style: TextStyle(
-                          color: Colors.white,
+                          color: adaptiveColor(context, Colors.white,
+                              foreground: true),
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -799,9 +772,10 @@ class _PaymentDialogState
                     ),
                     IconButton(
                       onPressed: _processing ? null : _close,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close,
-                        color: Colors.white,
+                        color: adaptiveColor(context, Colors.white,
+                            foreground: true),
                       ),
                     ),
                   ],
@@ -809,49 +783,49 @@ class _PaymentDialogState
               ),
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _summaryRow(
-                        'Mahsulotlar jami',
+                        tr('m256'),
                         subtotal,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       _amountField(
                         _discountController,
-                        'Chegirma',
+                        tr('m89'),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       _summaryRow(
-                        'To‘lov summasi',
+                        tr('m547'),
                         total,
                         bold: true,
                       ),
-                      const Divider(height: 28),
+                      Divider(height: 28),
                       DropdownButtonFormField<int>(
+                        isExpanded: true,
                         initialValue: _paymentType,
-                        decoration: const InputDecoration(
-                          labelText: 'To‘lov turi',
+                        decoration: InputDecoration(
+                          labelText: tr('m548'),
                           border: OutlineInputBorder(),
                         ),
-                        items: const [
+                        items: [
                           DropdownMenuItem(
                             value: 0,
-                            child: Text('Naqd'),
+                            child: Text(tr('m298')),
                           ),
                           DropdownMenuItem(
                             value: 1,
-                            child: Text('Karta'),
+                            child: Text(tr('m204')),
                           ),
                           DropdownMenuItem(
                             value: 2,
-                            child: Text('Naqd + karta'),
+                            child: Text(tr('m299')),
                           ),
                           DropdownMenuItem(
                             value: 3,
-                            child: Text('Qarz'),
+                            child: Text(tr('m375')),
                           ),
                         ],
                         onChanged: locked
@@ -864,16 +838,21 @@ class _PaymentDialogState
                                   if (_paymentType != 3 &&
                                       (_cashController.text.isEmpty ||
                                           _cardController.text.isEmpty)) {
-                                    final subtotal = ref.read(cartSubtotalProvider);
-                                    final discount = _parse(_discountController.text) ?? 0;
+                                    final subtotal =
+                                        ref.read(cartSubtotalProvider);
+                                    final discount =
+                                        _parse(_discountController.text) ?? 0;
                                     final total = subtotal - discount;
                                     if (total > 0) {
                                       if (_paymentType == 0) {
-                                        _cashController.text = total.toStringAsFixed(2);
+                                        _cashController.text =
+                                            total.toStringAsFixed(2);
                                       } else if (_paymentType == 1) {
-                                        _cardController.text = total.toStringAsFixed(2);
+                                        _cardController.text =
+                                            total.toStringAsFixed(2);
                                       } else {
-                                        _cardController.text = total.toStringAsFixed(2);
+                                        _cardController.text =
+                                            total.toStringAsFixed(2);
                                         _cashController.text = '0.00';
                                       }
                                     }
@@ -881,7 +860,7 @@ class _PaymentDialogState
                                 }
                               },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       if (_paymentType != 3) ...[
                         Align(
                           alignment: Alignment.centerLeft,
@@ -892,87 +871,87 @@ class _PaymentDialogState
                               _quickAmountChip('25%', 0.25),
                               _quickAmountChip('50%', 0.50),
                               _quickAmountChip('75%', 0.75),
-                              _quickAmountChip('To‘liq', 1.0),
+                              _quickAmountChip(tr('m537'), 1.0),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                       ],
                       if (_paymentType == 3) ...[
                         TextField(
                           controller: _customerNameController,
                           enabled: !_processing && _frozenPayload == null,
-                          decoration: const InputDecoration(
-                            labelText: 'Mijoz nomi',
+                          decoration: InputDecoration(
+                            labelText: tr('m281'),
                             border: OutlineInputBorder(),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         TextField(
                           controller: _customerPhoneController,
                           enabled: !_processing && _frozenPayload == null,
                           keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'Telefon (ixtiyoriy)',
+                          decoration: InputDecoration(
+                            labelText: tr('m516'),
                             border: OutlineInputBorder(),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                       ] else ...[
                         if (_paymentType != 1)
                           _amountField(
                             _cashController,
-                            'Mijoz bergan naqd pul',
+                            tr('m280'),
                           ),
-                        if (_paymentType == 2)
-                          const SizedBox(height: 16),
+                        if (_paymentType == 2) SizedBox(height: 16),
                         if (_paymentType != 0)
                           _amountField(
                             _cardController,
-                            'Karta orqali to‘lov',
+                            tr('m205'),
                           ),
                       ],
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: locked ? null : _setExact,
-                        icon: const Icon(Icons.calculate),
-                        label: const Text(
-                          'Aniq summani kiritish',
+                        icon: Icon(Icons.calculate),
+                        label: Text(
+                          tr('m30'),
                         ),
                       ),
                       if (change > 0) ...[
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         _summaryRow(
-                          'Qaytim',
+                          tr('m385'),
                           change,
                           bold: true,
                         ),
                       ],
                       if (_frozenPayload != null) ...[
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Qayta urinish uchun dastlabki '
-                          'sotuv ma’lumotlari saqlangan.',
+                        SizedBox(height: 12),
+                        Text(
+                          tr('m382'),
                           style: TextStyle(
-                            color: Colors.orange,
+                            color: adaptiveColor(context, Colors.orange,
+                                foreground: true),
                           ),
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Karta summasi bu yerda qayd qilinadi. '
-                        'Ilova bank kartasidan pul yechmaydi.',
+                      SizedBox(height: 16),
+                      Text(
+                        tr('m206'),
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: adaptiveColor(context, Colors.grey,
+                              foreground: true),
                           fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       if (_paymentType == 3)
-                        const Text(
-                          'Qarz miqdori avtomatik ravishda daftar qarziga yoziladi.',
+                        Text(
+                          tr('m377'),
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: adaptiveColor(context, Colors.grey,
+                                foreground: true),
                             fontSize: 12,
                           ),
                         ),
@@ -981,41 +960,37 @@ class _PaymentDialogState
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed:
-                            _processing ? null : _close,
-                        child: const Text('Ortga'),
+                        onPressed: _processing ? null : _close,
+                        child: Text(tr('m348')),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       flex: 2,
                       child: FilledButton(
                         onPressed:
-                            _processing || cart.isEmpty
-                                ? null
-                                : _processSale,
+                            _processing || cart.isEmpty ? null : _processSale,
                         style: FilledButton.styleFrom(
-                          backgroundColor: _green,
+                          backgroundColor: adaptiveColor(context, _green),
                         ),
                         child: _processing
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 22,
                                 height: 22,
-                                child:
-                                    CircularProgressIndicator(
+                                child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: adaptiveColor(context, Colors.white),
                                 ),
                               )
                             : Text(
                                 _frozenPayload == null
-                                    ? 'Tasdiqlash'
-                                    : 'Qayta urinish',
+                                    ? tr('m511')
+                                    : tr('m381'),
                               ),
                       ),
                     ),

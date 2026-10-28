@@ -1,3 +1,5 @@
+import '../adaptive_colors.dart';
+import '../l10n/app_strings.dart';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +11,7 @@ class ActivateAccount extends ConsumerStatefulWidget {
   const ActivateAccount({super.key});
 
   @override
-  ConsumerState<ActivateAccount> createState() =>
-      _ActivateAccountState();
+  ConsumerState<ActivateAccount> createState() => _ActivateAccountState();
 }
 
 class _ActivateAccountState extends ConsumerState<ActivateAccount> {
@@ -25,49 +26,52 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
+          constraints: BoxConstraints(maxWidth: 480),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
+                Icon(
                   Icons.lock_open,
                   size: 64,
-                  color: Colors.blue,
+                  color: adaptiveColor(context, Colors.blue),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Hisobni aktivatsiya qilish',
+                SizedBox(height: 16),
+                Text(
+                  tr('m161'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Admin tomonidan berilgan kodni kiriting va parolingizni o‘rnating',
+                SizedBox(height: 8),
+                Text(
+                  tr('m11'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.blueGrey),
+                  style: TextStyle(
+                      color: adaptiveColor(context, Colors.blueGrey,
+                          foreground: true)),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // Aktivatsiya kodi
                 TextField(
                   controller: codeController,
                   autocorrect: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Aktivatsiya kodi',
+                  decoration: InputDecoration(
+                    labelText: tr('m24'),
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.vpn_key),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Yangi parol
                 TextField(
@@ -76,9 +80,9 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
                   autocorrect: false,
                   enableSuggestions: false,
                   decoration: InputDecoration(
-                    labelText: 'Yangi parol',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock),
+                    labelText: tr('m582'),
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
                         obscurePassword
@@ -93,7 +97,7 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Parolni tasdiqlash
                 TextField(
@@ -102,9 +106,9 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
                   autocorrect: false,
                   enableSuggestions: false,
                   decoration: InputDecoration(
-                    labelText: 'Parolni tasdiqlang',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    labelText: tr('m366'),
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         obscureConfirm
@@ -119,28 +123,28 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
 
                 // Parol talablari
-                const Card(
-                  color: Color(0xFFF3F4F6),
+                Card(
+                  color: adaptiveColor(context, Color(0xFFF3F4F6)),
                   child: Padding(
                     padding: EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Parol talablari:',
+                          tr('m359'),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         SizedBox(height: 4),
-                        Text('• Kamida 10 ta belgi'),
+                        Text(tr('m662')),
                         Text(
-                          '• Faqat raqamlardan iborat bo‘lmasligi kerak',
+                          tr('m661'),
                         ),
-                        Text('• Umumiy parollardan foydalanmang'),
+                        Text(tr('m663')),
                       ],
                     ),
                   ),
@@ -149,34 +153,34 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
                 // Xatolik xabari
                 if (error != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 12),
+                    padding: EdgeInsets.only(top: 12),
                     child: Card(
-                      color: Colors.red[50],
+                      color: adaptiveColor(context, Colors.red[50]!),
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12),
                         child: Text(
                           error!,
-                          style: const TextStyle(color: Colors.red),
+                          style: TextStyle(
+                              color: adaptiveColor(context, Colors.red,
+                                  foreground: true)),
                         ),
                       ),
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Aktivatsiya tugmasi
                 FilledButton(
                   onPressed: busy ? null : _activate,
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: Text(
-                    busy
-                        ? 'Aktivatsiya qilinmoqda...'
-                        : 'Hisobni aktivatsiya qilish',
+                    busy ? tr('m26') : tr('m161'),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 TextButton(
                   onPressed: busy
@@ -184,11 +188,11 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
                       : () {
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
-                              builder: (_) => const Login(),
+                              builder: (_) => Login(),
                             ),
                           );
                         },
-                  child: const Text('Kirish sahifasiga qaytish'),
+                  child: Text(tr('m221')),
                 ),
               ],
             ),
@@ -207,23 +211,23 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
 
     // Mahalliy tekshiruvlar
     if (code.isEmpty) {
-      setState(() => error = 'Aktivatsiya kodini kiriting');
+      setState(() => error = tr('m25'));
       return;
     }
 
     if (password.isEmpty) {
-      setState(() => error = 'Parolni kiriting');
+      setState(() => error = tr('m363'));
       return;
     }
 
     if (password != confirmation) {
-      setState(() => error = 'Parollar mos kelmadi');
+      setState(() => error = tr('m362'));
       return;
     }
 
     if (password.length < 10) {
       setState(() {
-        error = 'Parol kamida 10 ta belgidan iborat bo‘lishi kerak';
+        error = tr('m357');
       });
       return;
     }
@@ -245,26 +249,25 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Muvaffaqiyatli!'),
+          title: Text(tr('m296')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
+              Icon(
                 Icons.check_circle,
-                color: Colors.green,
+                color: adaptiveColor(context, Colors.green),
                 size: 48,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
-                result['message']?.toString() ??
-                    'Hisobingiz aktivatsiya qilindi',
+                result['message']?.toString() ?? tr('m160'),
               ),
-              const SizedBox(height: 8),
-              Text('Username: ${result['username'] ?? ''}'),
-              const SizedBox(height: 16),
-              const Text(
-                'Endi username va yangi parolingiz bilan kirishingiz mumkin.',
+              SizedBox(height: 8),
+              Text(tr('m568', [result['username'] ?? ''])),
+              SizedBox(height: 16),
+              Text(
+                tr('m128'),
               ),
             ],
           ),
@@ -274,11 +277,11 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
                 Navigator.of(dialogContext).pop();
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
-                    builder: (_) => const Login(),
+                    builder: (_) => Login(),
                   ),
                 );
               },
-              child: const Text('Kirish sahifasiga o‘tish'),
+              child: Text(tr('m220')),
             ),
           ],
         ),
@@ -287,7 +290,7 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
       if (!mounted) return;
 
       final data = e.response?.data;
-      var message = 'Aktivatsiya amalga oshmadi.';
+      var message = tr('m23');
 
       if (data is Map) {
         final errorData = data['error'];
@@ -299,24 +302,24 @@ class _ActivateAccountState extends ConsumerState<ActivateAccount> {
         } else if (data['message'] != null) {
           message = data['message'].toString();
         } else {
-          message = 'Server javobi: ${data.toString()}';
+          message = tr('m443', [data.toString()]);
         }
       } else if (e.response == null) {
-        message = 'Serverga ulanib bo‘lmadi. Internetni tekshiring.';
+        message = tr('m448');
       } else if (data != null) {
         message = data.toString();
       } else {
-        message = 'HTTP ${e.response?.statusCode}: server xatosi';
+        message = tr('m153', [e.response?.statusCode]);
       }
 
       setState(() {
-        error = 'Aktivatsiya xatosi: $message';
+        error = tr('m27', [message]);
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        error = 'Kutilmagan xatolik: $e';
+        error = friendlyFailure(e);
       });
     } finally {
       if (mounted) {

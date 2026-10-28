@@ -1,16 +1,18 @@
+import 'l10n/app_strings.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api.dart';
+import 'preferences.dart';
 import 'offline.dart';
 import 'screens/activate_account.dart';
 import 'screens/admin_panel.dart';
 import 'screens/change_password.dart';
 import 'screens/home_screen.dart';
 
-import '../features/products/providers/products_provider.dart'
-    as products;
+import '../features/products/providers/products_provider.dart' as products;
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -20,7 +22,7 @@ final apiProvider = Provider<Api>((ref) {
   api.onLogout = () {
     appNavigatorKey.currentState?.pushAndRemoveUntil(
       MaterialPageRoute<void>(
-        builder: (_) => const Login(),
+        builder: (_) => Login(),
       ),
       (_) => false,
     );
@@ -39,7 +41,7 @@ final queueProvider = Provider<OfflineQueue>((ref) {
 
   if (owner == null) {
     throw StateError(
-      'Offline bazani ochish uchun akkauntga kirish kerak.',
+      tr('m334'),
     );
   }
 
@@ -60,56 +62,39 @@ void _resetAccountProviders(WidgetRef ref) {
 }
 
 Widget _screenForProfile(Map<String, dynamic> profile) {
-  final changePassword =
-      profile['needs_password_change'] == true ||
+  final changePassword = profile['needs_password_change'] == true ||
       profile['force_password_change'] == true;
 
   if (changePassword) {
-    return const ChangePassword(isFirstTime: true);
+    return ChangePassword(isFirstTime: true);
   }
 
-  final isAdmin = profile['is_superadmin'] == true ||
-      profile['superadmin'] == true;
+  final isAdmin =
+      profile['is_superadmin'] == true || profile['superadmin'] == true;
 
-  return isAdmin ? const AdminPanel() : const HomeScreen();
+  return isAdmin ? AdminPanel() : HomeScreen();
 }
 
-class DokonApp extends StatelessWidget {
+class DokonApp extends ConsumerWidget {
   const DokonApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    AppLocaleScope.of(context);
+    final language = ref.watch(languageProvider);
     return MaterialApp(
+      locale: Locale(language),
+      supportedLocales: const [Locale('uz'), Locale('ru'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      builder: (context, child) => AppLocaleScope(
+          language: language, child: child ?? const SizedBox.shrink()),
       navigatorKey: appNavigatorKey,
-      title: 'Dokon Boshqaruv',
+      title: tr('m113'),
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF126B63)),
-        scaffoldBackgroundColor: const Color(0xFFF5F7F9),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white, foregroundColor: Color(0xFF152D3B),
-          elevation: 0, centerTitle: false,
-          titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF152D3B)),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true, fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDCE3E8))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDCE3E8))),
-        ),
-        filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
-          minimumSize: const Size(48, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        )),
-        outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
-          minimumSize: const Size(48, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        )),
-        dividerTheme: const DividerThemeData(color: Color(0xFFE2E8ED), thickness: 1),
-        navigationBarTheme: const NavigationBarThemeData(backgroundColor: Colors.white, elevation: 0),
-      ),
-      home: const Startup(),
+      theme: buildAppTheme(Brightness.light),
+      darkTheme: buildAppTheme(Brightness.dark),
+      themeMode: ref.watch(themeModeProvider),
+      home: Startup(),
     );
   }
 }
@@ -149,19 +134,19 @@ class _StartupState extends ConsumerState<Startup> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return FutureBuilder<Map<String, dynamic>?>(
       future: _startup,
       builder: (context, snapshot) {
-        if (snapshot.connectionState !=
-            ConnectionState.done) {
-          return const Scaffold(
+        if (snapshot.connectionState != ConnectionState.done) {
+          return Scaffold(
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Akkaunt tekshirilmoqda...'),
+                  Text(tr('m18')),
                 ],
               ),
             ),
@@ -171,7 +156,7 @@ class _StartupState extends ConsumerState<Startup> {
         final profile = snapshot.data;
 
         if (profile == null) {
-          return const Login();
+          return Login();
         }
 
         return _screenForProfile(profile);
@@ -206,7 +191,7 @@ class _LoginState extends ConsumerState<Login> {
 
     if (user.text.trim().isEmpty || pass.text.isEmpty) {
       setState(() {
-        error = 'Login va parolni kiriting.';
+        error = tr('m233');
       });
       return;
     }
@@ -239,19 +224,19 @@ class _LoginState extends ConsumerState<Login> {
 
       setState(() {
         error = switch (status) {
-          400 => 'Kiritilgan ma’lumotlarni tekshiring.',
-          401 => 'Login yoki parol noto‘g‘ri.',
-          403 => 'Akkauntga kirish cheklangan.',
-          429 => 'Ko‘p urinish bo‘ldi. Biroz kuting.',
-          null => 'Serverga ulanish yo‘q. Internetni tekshiring.',
-          _ => 'Server xatosi: HTTP $status.',
+          400 => tr('m222'),
+          401 => tr('m234'),
+          403 => tr('m21'),
+          429 => tr('m228'),
+          null => tr('m450'),
+          _ => tr('m446', [status]),
         };
       });
     } catch (_) {
       if (!mounted) return;
 
       setState(() {
-        error = 'Kirish amalga oshmadi. Qayta urinib ko‘ring.';
+        error = tr('m218');
       });
     } finally {
       if (mounted) {
@@ -262,100 +247,98 @@ class _LoginState extends ConsumerState<Login> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: BoxConstraints(maxWidth: 420),
               child: AutofillGroup(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.storefront,
                       size: 64,
                       color: Colors.blue,
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Dokon Boshqaruv',
+                    SizedBox(height: 16),
+                    Text(
+                      tr('m113'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28),
                     TextField(
                       controller: user,
                       enabled: !busy,
                       autocorrect: false,
                       textInputAction: TextInputAction.next,
-                      autofillHints: const [
+                      autofillHints: [
                         AutofillHints.username,
                       ],
-                      decoration: const InputDecoration(
-                        labelText: 'Foydalanuvchi nomi',
+                      decoration: InputDecoration(
+                        labelText: tr('m143'),
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     TextField(
                       controller: pass,
                       enabled: !busy,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
-                      autofillHints: const [
+                      autofillHints: [
                         AutofillHints.password,
                       ],
                       onSubmitted: (_) => _login(),
-                      decoration: const InputDecoration(
-                        labelText: 'Parol',
+                      decoration: InputDecoration(
+                        labelText: tr('m356'),
                         border: OutlineInputBorder(),
                       ),
                     ),
                     if (error != null)
                       Padding(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                           vertical: 16,
                         ),
                         child: Text(
                           error!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.red,
                           ),
                         ),
                       ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     FilledButton(
                       onPressed: busy ? null : _login,
                       child: Text(
-                        busy ? 'Tekshirilmoqda...' : 'Kirish',
+                        busy ? tr('m514') : tr('m217'),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     TextButton(
                       onPressed: busy
                           ? null
                           : () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      const ActivateAccount(),
+                                  builder: (_) => ActivateAccount(),
                                 ),
                               );
                             },
-                      child: const Text(
-                        'Hisobni aktivatsiya qilish',
+                      child: Text(
+                        tr('m161'),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Birinchi kirish uchun internet kerak. '
-                      'Offline ishlash oldindan tasdiqlangan '
-                      'akkaunt uchun mavjud.',
+                    SizedBox(height: 12),
+                    Text(
+                      tr('m60'),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -376,6 +359,7 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const HomeScreen();
+    AppLocaleScope.of(context);
+    return HomeScreen();
   }
 }

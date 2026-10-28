@@ -22,7 +22,8 @@ class CartItem {
   int get lineTotalCents => (salePriceCents * quantityMilli + 500) ~/ 1000;
   double get lineTotal => lineTotalCents / 100;
 
-  bool canIncrement() => quantity < availableStock;
+  bool canIncrement() =>
+      (quantityMilli + 1000) <= (availableStock * 1000).round();
 
   Map<String, dynamic> toJson() => {
         'product_id': productId,

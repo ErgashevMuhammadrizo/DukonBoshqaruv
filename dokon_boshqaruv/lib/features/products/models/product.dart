@@ -1,3 +1,5 @@
+import '../../../src/l10n/translations.dart';
+
 class Product {
   final int id;
   final String name;
@@ -82,13 +84,13 @@ class Product {
   String get stockStatusLabel {
     switch (stockStatus) {
       case 'tugagan':
-        return 'Tugagan';
+        return tr('m557');
       case 'kam_qolgan':
-        return 'Kam qolgan';
+        return tr('m195');
       case 'mavjud':
-        return 'Mavjud';
+        return tr('m270');
       default:
-        return 'Noma\'lum';
+        return tr('m309');
     }
   }
 

@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
@@ -41,13 +43,13 @@ class _QuickStockAdjustmentDialogState
 
   Future<void> _submitAdjustment(bool isAdding) async {
     if (_quantityController.text.isEmpty) {
-      setState(() => _error = 'Miqdorni kiriting');
+      setState(() => _error = tr('m288'));
       return;
     }
 
     final quantity = double.tryParse(_quantityController.text);
     if (quantity == null || quantity <= 0) {
-      setState(() => _error = 'To\'g\'ri miqdor kiriting');
+      setState(() => _error = tr('m527'));
       return;
     }
 
@@ -56,7 +58,7 @@ class _QuickStockAdjustmentDialogState
 
     // Check if subtraction would result in negative stock
     if (!isAdding && (currentStock + delta) < 0) {
-      setState(() => _error = 'Qoldiq manfiy bo\'lishi mumkin emas');
+      setState(() => _error = tr('m397'));
       return;
     }
 
@@ -70,7 +72,7 @@ class _QuickStockAdjustmentDialogState
             widget.product.id,
             delta.toStringAsFixed(3),
             _reasonController.text.isEmpty
-                ? (isAdding ? 'Qo\'shildi' : 'Ayrildi')
+                ? (isAdding ? tr('m394') : tr('m44'))
                 : _reasonController.text,
           );
 
@@ -85,16 +87,21 @@ class _QuickStockAdjustmentDialogState
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
-                const SizedBox(width: 8),
+                Icon(Icons.check_circle_rounded,
+                    color: adaptiveColor(context, Colors.white)),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Qoldiq ${isAdding ? "qo\'shildi" : "ayrildi"}: ${quantity.toStringAsFixed(1)} ${widget.product.unit}',
+                    tr('m398', [
+                      isAdding ? "qo'shildi" : "ayrildi",
+                      quantity.toStringAsFixed(1),
+                      widget.product.unit
+                    ]),
                   ),
                 ),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: adaptiveColor(context, Colors.green),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -103,7 +110,7 @@ class _QuickStockAdjustmentDialogState
       if (mounted) {
         setState(() {
           _isSubmitting = false;
-          _error = e.toString();
+          _error = friendlyFailure(e);
         });
       }
     }
@@ -111,64 +118,69 @@ class _QuickStockAdjustmentDialogState
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final isAdding = _tabController.index == 0;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
+        constraints: BoxConstraints(maxWidth: 500, maxHeight: 700),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.blue[600]!, Colors.blue[400]!],
                 ),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: adaptiveColor(
+                              context, Colors.white.withValues(alpha: 0.2)),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.inventory_2_rounded,
-                          color: Colors.white,
+                          color: adaptiveColor(context, Colors.white,
+                              foreground: true),
                           size: 24,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
+                      SizedBox(width: 12),
+                      Expanded(
                         child: Text(
-                          'Qoldiqni boshqarish',
+                          tr('m400'),
                           style: TextStyle(
-                            color: Colors.white,
+                            color: adaptiveColor(context, Colors.white,
+                                foreground: true),
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded,
-                            color: Colors.white),
+                        icon: Icon(Icons.close_rounded,
+                            color: adaptiveColor(context, Colors.white,
+                                foreground: true)),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: adaptiveColor(
+                          context, Colors.white.withValues(alpha: 0.2)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -179,19 +191,26 @@ class _QuickStockAdjustmentDialogState
                             children: [
                               Text(
                                 widget.product.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: adaptiveColor(context, Colors.white,
+                                      foreground: true),
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
-                                'Joriy qoldiq: ${double.tryParse(widget.product.stock)?.toStringAsFixed(1) ?? widget.product.stock} ${widget.product.unit}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
+                                tr('m193', [
+                                  double.tryParse(widget.product.stock)
+                                          ?.toStringAsFixed(1) ??
+                                      widget.product.stock,
+                                  widget.product.unit
+                                ]),
+                                style: TextStyle(
+                                  color: adaptiveColor(context, Colors.white70,
+                                      foreground: true),
                                   fontSize: 13,
                                 ),
                               ),
@@ -208,7 +227,7 @@ class _QuickStockAdjustmentDialogState
             // Tab Bar
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: adaptiveColor(context, Colors.grey[100]!),
                 border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
               ),
               child: TabBar(
@@ -221,14 +240,14 @@ class _QuickStockAdjustmentDialogState
                 labelColor: Colors.blue[700],
                 unselectedLabelColor: Colors.grey[600],
                 onTap: (_) => setState(() {}),
-                tabs: const [
+                tabs: [
                   Tab(
                     icon: Icon(Icons.add_circle_outline_rounded),
-                    text: 'Qo\'shish',
+                    text: tr('m395'),
                   ),
                   Tab(
                     icon: Icon(Icons.remove_circle_outline_rounded),
-                    text: 'Ayirish',
+                    text: tr('m43'),
                   ),
                 ],
               ),
@@ -237,20 +256,21 @@ class _QuickStockAdjustmentDialogState
             // Content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Presets
-                    const Text(
-                      'Tez tanlov',
+                    Text(
+                      tr('m520'),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                        color: adaptiveColor(context, Colors.grey,
+                            foreground: true),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -261,9 +281,11 @@ class _QuickStockAdjustmentDialogState
                             isAdding ? Icons.add_rounded : Icons.remove_rounded,
                             size: 18,
                           ),
-                          backgroundColor: Colors.blue[50],
+                          backgroundColor:
+                              adaptiveColor(context, Colors.blue[50]!),
                           labelStyle: TextStyle(
-                            color: Colors.blue[700],
+                            color: adaptiveColor(context, Colors.blue[700]!,
+                                foreground: true),
                             fontWeight: FontWeight.w500,
                           ),
                           side: BorderSide(color: Colors.blue[200]!),
@@ -274,14 +296,14 @@ class _QuickStockAdjustmentDialogState
                       }).toList(),
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Quantity Input
                     TextField(
                       controller: _quantityController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'Miqdor *',
+                        labelText: tr('m286'),
                         hintText: '0.0',
                         suffixText: widget.product.unit,
                         prefixIcon: Icon(
@@ -294,51 +316,54 @@ class _QuickStockAdjustmentDialogState
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Colors.grey[50],
+                        fillColor: adaptiveColor(context, Colors.grey[50]!),
                       ),
                       autofocus: true,
                       onChanged: (_) => setState(() => _error = null),
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Reason Input
                     TextField(
                       controller: _reasonController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        labelText: 'Sabab',
-                        hintText: isAdding
-                            ? 'Masalan: Yangi partiya keldi'
-                            : 'Masalan: Singan mahsulotlar',
-                        prefixIcon: const Icon(Icons.notes_rounded),
+                        labelText: tr('m416'),
+                        hintText: isAdding ? tr('m269') : tr('m268'),
+                        prefixIcon: Icon(Icons.notes_rounded),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: Colors.grey[50],
+                        fillColor: adaptiveColor(context, Colors.grey[50]!),
                       ),
                     ),
 
                     if (_error != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 16),
+                        padding: EdgeInsets.only(top: 16),
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red[50],
+                            color: adaptiveColor(context, Colors.red[50]!),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
                               Icon(Icons.error_outline_rounded,
-                                  color: Colors.red[700], size: 20),
-                              const SizedBox(width: 8),
+                                  color:
+                                      adaptiveColor(context, Colors.red[700]!),
+                                  size: 20),
+                              SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _error!,
                                   style: TextStyle(
-                                      color: Colors.red[700], fontSize: 13),
+                                      color: adaptiveColor(
+                                          context, Colors.red[700]!,
+                                          foreground: true),
+                                      fontSize: 13),
                                 ),
                               ),
                             ],
@@ -346,11 +371,11 @@ class _QuickStockAdjustmentDialogState
                         ),
                       ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Preview
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: isAdding
@@ -370,29 +395,33 @@ class _QuickStockAdjustmentDialogState
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Joriy qoldiq:',
+                                tr('m192'),
                                 style: TextStyle(
-                                  color: Colors.grey[700],
+                                  color: adaptiveColor(
+                                      context, Colors.grey[700]!,
+                                      foreground: true),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               Text(
                                 '${double.tryParse(widget.product.stock)?.toStringAsFixed(1) ?? widget.product.stock} ${widget.product.unit}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                          const Divider(height: 24),
+                          Divider(height: 24),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Yangi qoldiq:',
+                                tr('m590'),
                                 style: TextStyle(
-                                  color: Colors.grey[700],
+                                  color: adaptiveColor(
+                                      context, Colors.grey[700]!,
+                                      foreground: true),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -418,9 +447,9 @@ class _QuickStockAdjustmentDialogState
 
             // Actions
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: adaptiveColor(context, Colors.grey[50]!),
                 border: Border(top: BorderSide(color: Colors.grey[200]!)),
               ),
               child: Row(
@@ -430,15 +459,15 @@ class _QuickStockAdjustmentDialogState
                       onPressed:
                           _isSubmitting ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Bekor qilish'),
+                      child: Text(tr('m57')),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     flex: 2,
                     child: FilledButton.icon(
@@ -446,7 +475,7 @@ class _QuickStockAdjustmentDialogState
                           ? null
                           : () => _submitAdjustment(isAdding),
                       style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: EdgeInsets.symmetric(vertical: 16),
                         backgroundColor:
                             isAdding ? Colors.green : Colors.orange,
                         shape: RoundedRectangleBorder(
@@ -454,12 +483,12 @@ class _QuickStockAdjustmentDialogState
                         ),
                       ),
                       icon: _isSubmitting
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: adaptiveColor(context, Colors.white),
                               ),
                             )
                           : Icon(isAdding
@@ -467,8 +496,8 @@ class _QuickStockAdjustmentDialogState
                               : Icons.remove_rounded),
                       label: Text(
                         _isSubmitting
-                            ? 'Saqlanmoqda...'
-                            : (isAdding ? 'Qo\'shish' : 'Ayirish'),
+                            ? tr('m425')
+                            : (isAdding ? tr('m395') : tr('m43')),
                       ),
                     ),
                   ),

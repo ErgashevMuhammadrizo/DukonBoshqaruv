@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -30,8 +32,10 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
   DateTime? _end;
   final _search = TextEditingController();
   bool _busy = false;
-  String _money(dynamic raw) =>
-      '${NumberFormat('#,##0.##', 'uz_UZ').format(double.tryParse('$raw') ?? 0)} so‘m';
+  String _money(dynamic raw) => tr('m642', [
+        NumberFormat('#,##0.##', activeLanguage)
+            .format(double.tryParse('$raw') ?? 0)
+      ]);
   String get _queryKey =>
       '${_direction ?? ''}|${_search.text.trim()}|${_status ?? ''}|${_due ?? ''}|${_sort == 'newest' ? '' : _sort}|${_start == null ? '' : DateFormat('yyyy-MM-dd').format(_start!)}|${_end == null ? '' : DateFormat('yyyy-MM-dd').format(_end!)}';
   Future<void> _refresh() async => ref.invalidate(debtsProvider(_queryKey));
@@ -44,96 +48,99 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final data = ref.watch(debtsProvider(_queryKey));
     return Scaffold(
       body: RefreshIndicator(
           onRefresh: _refresh,
-          child: ListView(padding: const EdgeInsets.all(16), children: [
+          child: ListView(padding: EdgeInsets.all(16), children: [
             Row(children: [
               Expanded(
-                  child: Text('Daftar',
+                  child: Text(tr('m103'),
                       style: Theme.of(context)
                           .textTheme
                           .headlineMedium
                           ?.copyWith(fontWeight: FontWeight.bold))),
               FilledButton.icon(
                   onPressed: _busy ? null : _newDebt,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Yangi qarz'))
+                  icon: Icon(Icons.add),
+                  label: Text(tr('m588')))
             ]),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             DropdownButtonFormField<String?>(
+                isExpanded: true,
                 initialValue: _direction,
-                decoration: const InputDecoration(
-                    labelText: 'Qarz turi', border: OutlineInputBorder()),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Barcha qarzlar')),
-                  DropdownMenuItem(
-                      value: 'customer', child: Text('Mijozdan olinadi')),
-                  DropdownMenuItem(value: 'store', child: Text('Do‘kon qarzi'))
+                decoration: InputDecoration(
+                    labelText: tr('m379'), border: OutlineInputBorder()),
+                items: [
+                  DropdownMenuItem(value: null, child: Text(tr('m50'))),
+                  DropdownMenuItem(value: 'customer', child: Text(tr('m283'))),
+                  DropdownMenuItem(value: 'store', child: Text(tr('m117')))
                 ],
                 onChanged: (v) => setState(() => _direction = v)),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             TextField(
                 controller: _search,
                 decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    hintText: 'Ism yoki telefon',
+                    prefixIcon: Icon(Icons.search),
+                    hintText: tr('m180'),
                     suffixIcon: IconButton(
-                        icon: const Icon(Icons.search),
+                        icon: Icon(Icons.search),
                         onPressed: () => setState(() {})),
-                    border: const OutlineInputBorder()),
+                    border: OutlineInputBorder()),
                 onSubmitted: (_) => setState(() {})),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Wrap(spacing: 8, runSpacing: 8, children: [
               SizedBox(
                   width: 165,
                   child: DropdownButtonFormField<String?>(
+                      isExpanded: true,
                       initialValue: _status,
-                      decoration: const InputDecoration(
-                          labelText: 'Holati', border: OutlineInputBorder()),
-                      items: const [
+                      decoration: InputDecoration(
+                          labelText: tr('m165'), border: OutlineInputBorder()),
+                      items: [
+                        DropdownMenuItem(value: null, child: Text(tr('m48'))),
                         DropdownMenuItem(
-                            value: null, child: Text('Barcha holatlar')),
+                            value: 'open', child: Text(tr('m536'))),
                         DropdownMenuItem(
-                            value: 'open', child: Text('To‘lanmagan')),
+                            value: 'partial', child: Text(tr('m390'))),
                         DropdownMenuItem(
-                            value: 'partial', child: Text('Qisman')),
+                            value: 'paid', child: Text(tr('m534'))),
                         DropdownMenuItem(
-                            value: 'paid', child: Text('To‘langan')),
-                        DropdownMenuItem(
-                            value: 'overdue', child: Text('Muddati o‘tgan'))
+                            value: 'overdue', child: Text(tr('m292')))
                       ],
                       onChanged: (v) => setState(() => _status = v))),
               SizedBox(
                   width: 165,
                   child: DropdownButtonFormField<String?>(
+                      isExpanded: true,
                       initialValue: _due,
-                      decoration: const InputDecoration(
-                          labelText: 'Muddat', border: OutlineInputBorder()),
-                      items: const [
+                      decoration: InputDecoration(
+                          labelText: tr('m289'), border: OutlineInputBorder()),
+                      items: [
+                        DropdownMenuItem(value: null, child: Text(tr('m49'))),
                         DropdownMenuItem(
-                            value: null, child: Text('Barcha muddatlar')),
-                        DropdownMenuItem(value: 'today', child: Text('Bugun')),
+                            value: 'today', child: Text(tr('m85'))),
                         DropdownMenuItem(
-                            value: 'overdue', child: Text('O‘tib ketgan'))
+                            value: 'overdue', child: Text(tr('m351')))
                       ],
                       onChanged: (v) => setState(() => _due = v))),
               SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       initialValue: _sort,
-                      decoration: const InputDecoration(
-                          labelText: 'Saralash', border: OutlineInputBorder()),
-                      items: const [
+                      decoration: InputDecoration(
+                          labelText: tr('m428'), border: OutlineInputBorder()),
+                      items: [
                         DropdownMenuItem(
-                            value: 'newest', child: Text('Yangi qarzlar')),
+                            value: 'newest', child: Text(tr('m589'))),
                         DropdownMenuItem(
-                            value: 'largest', child: Text('Eng katta qarz')),
+                            value: 'largest', child: Text(tr('m130'))),
                         DropdownMenuItem(
-                            value: 'oldest', child: Text('Eng eski qarz')),
+                            value: 'oldest', child: Text(tr('m129'))),
                         DropdownMenuItem(
-                            value: 'overdue', child: Text('Muddati o‘tganlar'))
+                            value: 'overdue', child: Text(tr('m293')))
                       ],
                       onChanged: (v) => setState(() => _sort = v ?? 'newest'))),
             ]),
@@ -148,9 +155,9 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                             lastDate: DateTime.now());
                         if (d != null) setState(() => _start = d);
                       },
-                      icon: const Icon(Icons.calendar_month),
+                      icon: Icon(Icons.calendar_month),
                       label: Text(_start == null
-                          ? 'Boshlanish sanasi'
+                          ? tr('m74')
                           : DateFormat('dd.MM.yyyy').format(_start!)))),
               Expanded(
                   child: TextButton.icon(
@@ -162,9 +169,9 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                             lastDate: DateTime.now());
                         if (d != null) setState(() => _end = d);
                       },
-                      icon: const Icon(Icons.calendar_month),
+                      icon: Icon(Icons.calendar_month),
                       label: Text(_end == null
-                          ? 'Tugash sanasi'
+                          ? tr('m558')
                           : DateFormat('dd.MM.yyyy').format(_end!)))),
               if (_start != null || _end != null)
                 IconButton(
@@ -172,20 +179,17 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                           _start = null;
                           _end = null;
                         }),
-                    icon: const Icon(Icons.clear))
+                    icon: Icon(Icons.clear))
             ]),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             data.when(
-                loading: () => const Padding(
+                loading: () => Padding(
                     padding: EdgeInsets.all(48),
                     child: Center(child: CircularProgressIndicator())),
                 error: (e, _) => Column(children: [
-                      const Icon(Icons.wifi_off, size: 48),
-                      const Text(
-                          'Daftarni yuklab bo‘lmadi. Internetni tekshiring.'),
-                      TextButton(
-                          onPressed: _refresh,
-                          child: const Text('Qayta urinish'))
+                      Icon(Icons.wifi_off, size: 48),
+                      Text(tr('m104')),
+                      TextButton(onPressed: _refresh, child: Text(tr('m381')))
                     ]),
                 data: (items) {
                   final visible = items;
@@ -225,40 +229,60 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                       children: [
                         Row(children: [
                           Expanded(
-                              child: _stat('Olinadigan', _money(receivable))),
-                          const SizedBox(width: 8),
-                          Expanded(
-                              child: _stat('Do‘kon qarzi', _money(payable)))
+                              child: _stat(tr('m336'), _money(receivable))),
+                          SizedBox(width: 8),
+                          Expanded(child: _stat(tr('m117'), _money(payable)))
                         ]),
-                        const SizedBox(height: 8),
-                        Row(children: [
-                          Expanded(
-                              child: _stat('Muddati o‘tgan',
-                                  '${_money(overdue.fold<double>(0, (s, x) => s + (double.tryParse('${x['balance']}') ?? 0)))} · ${overdue.length} ta')),
-                          const SizedBox(width: 8),
-                          Expanded(
-                              child: _stat('Bugun to‘lanadi',
-                                  '${_money(dueToday.fold<double>(0, (s, x) => s + (double.tryParse('${x['balance']}') ?? 0)))} · ${dueToday.length} ta'))
-                        ]),
-                        const SizedBox(height: 8),
-                        _stat('Qarzli mijozlar', '$customers ta'),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Row(children: [
                           Expanded(
                               child: _stat(
-                                  'Qisman to‘langan', '$partialCount ta')),
-                          const SizedBox(width: 8),
+                                  tr('m292'),
+                                  tr('m653', [
+                                    _money(overdue.fold<double>(
+                                        0,
+                                        (s, x) =>
+                                            s +
+                                            (double.tryParse(
+                                                    '${x['balance']}') ??
+                                                0))),
+                                    overdue.length
+                                  ]))),
+                          SizedBox(width: 8),
                           Expanded(
-                              child: _stat('To‘liq to‘langan', '$paidCount ta'))
+                              child: _stat(
+                                  tr('m86'),
+                                  tr('m653', [
+                                    _money(dueToday.fold<double>(
+                                        0,
+                                        (s, x) =>
+                                            s +
+                                            (double.tryParse(
+                                                    '${x['balance']}') ??
+                                                0))),
+                                    dueToday.length
+                                  ])))
                         ]),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 8),
+                        _stat(tr('m380'), tr('m643', [customers])),
+                        SizedBox(height: 8),
+                        Row(children: [
+                          Expanded(
+                              child: _stat(
+                                  tr('m391'), tr('m643', [partialCount]))),
+                          SizedBox(width: 8),
+                          Expanded(
+                              child: _stat(tr('m538'), tr('m643', [paidCount])))
+                        ]),
+                        SizedBox(height: 12),
                         if (visible.isEmpty)
-                          const Padding(
+                          Padding(
                               padding: EdgeInsets.all(36),
                               child: Column(children: [
                                 Icon(Icons.menu_book_outlined,
-                                    size: 54, color: Colors.grey),
-                                Text('Hozircha qarz yozuvi yo‘q')
+                                    size: 54,
+                                    color: adaptiveColor(context, Colors.grey)),
+                                Text(tr('m167'))
                               ]))
                         else
                           ...visible.map((d) => Card(
@@ -279,7 +303,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                                           CrossAxisAlignment.end,
                                       children: [
                                         Text(_money(d['balance']),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                                 fontWeight: FontWeight.bold)),
                                         if ((double.tryParse(
                                                     '${d['balance']}') ??
@@ -288,7 +312,7 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                                           TextButton(
                                               onPressed:
                                                   _busy ? null : () => _pay(d),
-                                              child: const Text('To‘lov'))
+                                              child: Text(tr('m539')))
                                       ]),
                                   onTap: () => _details(d))))
                       ]);
@@ -299,21 +323,20 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
 
   Widget _stat(String title, String value) => Card(
       child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(14),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Text(value,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))
           ])));
 
   String _statusLabel(dynamic status) => switch (status) {
-        'paid' => 'To‘langan',
-        'partial' => 'Qisman to‘langan',
-        'overdue' => 'Muddati o‘tgan',
-        _ => 'To‘lanmagan',
+        'paid' => tr('m534'),
+        'partial' => tr('m391'),
+        'overdue' => tr('m292'),
+        _ => tr('m536'),
       };
 
   Future<void> _newDebt() async {
@@ -329,43 +352,37 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
         context: context,
         builder: (ctx) => StatefulBuilder(
             builder: (ctx, set) => AlertDialog(
-                    title: const Text('Yangi qarz'),
+                    title: Text(tr('m588')),
                     content: SingleChildScrollView(
                         child:
                             Column(mainAxisSize: MainAxisSize.min, children: [
                       DropdownButtonFormField(
+                          isExpanded: true,
                           initialValue: direction,
-                          items: const [
+                          items: [
                             DropdownMenuItem(
-                                value: 'customer',
-                                child: Text('Mijozdan olinadi')),
+                                value: 'customer', child: Text(tr('m283'))),
                             DropdownMenuItem(
-                                value: 'store', child: Text('Do‘kon qarzi'))
+                                value: 'store', child: Text(tr('m117')))
                           ],
                           onChanged: (v) => set(() => direction = v!),
-                          decoration:
-                              const InputDecoration(labelText: 'Qarz turi')),
+                          decoration: InputDecoration(labelText: tr('m379'))),
                       TextField(
                           controller: name,
-                          decoration: const InputDecoration(
-                              labelText: 'Ism yoki tashkilot')),
+                          decoration: InputDecoration(labelText: tr('m179'))),
                       TextField(
                           controller: phone,
-                          decoration: const InputDecoration(
-                              labelText: 'Telefon (ixtiyoriy)')),
+                          decoration: InputDecoration(labelText: tr('m516'))),
                       TextField(
                           controller: amount,
                           keyboardType: TextInputType.number,
-                          decoration:
-                              const InputDecoration(labelText: 'Summa')),
+                          decoration: InputDecoration(labelText: tr('m488'))),
                       TextField(
                           controller: reason,
-                          decoration: const InputDecoration(
-                              labelText: 'Sabab / tavsif')),
+                          decoration: InputDecoration(labelText: tr('m418'))),
                       TextField(
                           controller: note,
-                          decoration: const InputDecoration(
-                              labelText: 'Izoh (ixtiyoriy)')),
+                          decoration: InputDecoration(labelText: tr('m183'))),
                       Row(children: [
                         Expanded(
                             child: TextButton.icon(
@@ -379,9 +396,10 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                                     set(() => createdOn = selected);
                                   }
                                 },
-                                icon: const Icon(Icons.event),
-                                label: Text(
-                                    'Sana: ${DateFormat('dd.MM.yyyy').format(createdOn)}'))),
+                                icon: Icon(Icons.event),
+                                label: Text(tr('m423', [
+                                  DateFormat('dd.MM.yyyy').format(createdOn)
+                                ])))),
                         Expanded(
                             child: TextButton.icon(
                                 onPressed: () async {
@@ -394,9 +412,9 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                                     set(() => dueDate = selected);
                                   }
                                 },
-                                icon: const Icon(Icons.event_available),
+                                icon: Icon(Icons.event_available),
                                 label: Text(dueDate == null
-                                    ? 'Muddat qo‘shish'
+                                    ? tr('m291')
                                     : DateFormat('dd.MM.yyyy')
                                         .format(dueDate!))))
                       ])
@@ -404,16 +422,16 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Bekor')),
+                          child: Text(tr('m55'))),
                       FilledButton(
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Saqlash'))
+                          child: Text(tr('m426')))
                     ])));
     if (ok != true || !mounted) return;
     final value = double.tryParse(amount.text.replaceAll(',', '.'));
     if (name.text.trim().isEmpty || value == null || value <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ism va musbat summa kiriting')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(tr('m178'))));
       return;
     }
     setState(() => _busy = true);
@@ -432,9 +450,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
       await _refresh();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text(
-                'Qarz saqlanmadi. Internetni tekshirib qayta urinib ko‘ring.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(tr('m378'))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -449,23 +466,23 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
         context: context,
         builder: (ctx) => StatefulBuilder(
             builder: (ctx, set) => AlertDialog(
-                    title: Text('${debt['party_name']} · to‘lov'),
+                    title: Text(tr('m651', [debt['party_name']])),
                     content: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text('Qoldiq: ${_money(debt['balance'])}'),
+                      Text(tr('m399', [_money(debt['balance'])])),
                       TextField(
                           controller: amount,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                              labelText: 'To‘lov summasi')),
+                          decoration: InputDecoration(labelText: tr('m547'))),
                       DropdownButtonFormField(
+                          isExpanded: true,
                           initialValue: method,
-                          items: const [
+                          items: [
                             DropdownMenuItem(
-                                value: 'cash', child: Text('Naqd')),
+                                value: 'cash', child: Text(tr('m298'))),
                             DropdownMenuItem(
-                                value: 'card', child: Text('Karta')),
+                                value: 'card', child: Text(tr('m204'))),
                             DropdownMenuItem(
-                                value: 'bank', child: Text('Bank o‘tkazmasi'))
+                                value: 'bank', child: Text(tr('m47')))
                           ],
                           onChanged: (v) => set(() => method = v!)),
                       TextButton.icon(
@@ -477,25 +494,25 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                                 lastDate: DateTime.now());
                             if (selected != null) set(() => paidOn = selected);
                           },
-                          icon: const Icon(Icons.event),
-                          label: Text(
-                              'To‘lov sanasi: ${DateFormat('dd.MM.yyyy').format(paidOn)}'))
+                          icon: Icon(Icons.event),
+                          label: Text(tr('m545',
+                              [DateFormat('dd.MM.yyyy').format(paidOn)])))
                     ]),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Bekor')),
+                          child: Text(tr('m55'))),
                       FilledButton(
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Qabul qilish'))
+                          child: Text(tr('m374')))
                     ])));
     if (ok != true || !mounted) return;
     final value = double.tryParse(amount.text.replaceAll(',', '.'));
     if (value == null ||
         value <= 0 ||
         value > (double.tryParse('${debt['balance']}') ?? 0)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('To‘lov musbat bo‘lsin va qoldiqdan oshmasin')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(tr('m544'))));
       return;
     }
     setState(() => _busy = true);
@@ -507,8 +524,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
       await _refresh();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('To‘lov saqlanmadi. Server javobini tekshiring.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(tr('m546'))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -529,13 +546,13 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Telefon: ${d['phone'] ?? '—'}'),
-                            Text('Boshlang‘ich: ${_money(d['amount'])}'),
-                            Text('To‘langan: ${_money(d['paid'])}'),
-                            Text('Qoldiq: ${_money(d['balance'])}'),
-                            Text('Sabab: ${d['reason'] ?? '—'}'),
-                            const Divider(),
-                            const Text('To‘lovlar',
+                            Text(tr('m517', [d['phone'] ?? '—'])),
+                            Text(tr('m73', [_money(d['amount'])])),
+                            Text(tr('m535', [_money(d['paid'])])),
+                            Text(tr('m399', [_money(d['balance'])])),
+                            Text(tr('m419', [d['reason'] ?? '—'])),
+                            Divider(),
+                            Text(tr('m550'),
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             ...((d['payments'] as List?) ?? []).map((p) => Text(
                                 '${p['paid_on']} · ${_money(p['amount'])} · ${p['method']}'))
@@ -546,16 +563,16 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                           Navigator.pop(ctx);
                           _editDetails(d);
                         },
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Tahrirlash')),
+                        icon: Icon(Icons.edit_outlined),
+                        label: Text(tr('m495'))),
                     TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Yopish'))
+                        child: Text(tr('m601')))
                   ]));
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tafsilotlarni yuklab bo‘lmadi')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(tr('m494'))));
       }
     }
   }
@@ -569,12 +586,12 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
         context: context,
         builder: (ctx) => StatefulBuilder(
             builder: (ctx, set) => AlertDialog(
-                  title: const Text('Qarz ma’lumotlarini tahrirlash'),
+                  title: Text(tr('m376')),
                   content: Column(mainAxisSize: MainAxisSize.min, children: [
                     TextField(
                         controller: note,
                         maxLines: 3,
-                        decoration: const InputDecoration(labelText: 'Izoh')),
+                        decoration: InputDecoration(labelText: tr('m182'))),
                     TextButton.icon(
                         onPressed: () async {
                           final picked = await showDatePicker(
@@ -584,22 +601,22 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                               lastDate: DateTime(2100));
                           if (picked != null) set(() => due = picked);
                         },
-                        icon: const Icon(Icons.event),
+                        icon: Icon(Icons.event),
                         label: Text(due == null
-                            ? 'To‘lov muddatini tanlash'
+                            ? tr('m543')
                             : DateFormat('dd.MM.yyyy').format(due!))),
                     if (due != null)
                       TextButton(
                           onPressed: () => set(() => due = null),
-                          child: const Text('Muddatni olib tashlash'))
+                          child: Text(tr('m294')))
                   ]),
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Bekor')),
+                        child: Text(tr('m55'))),
                     FilledButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Saqlash'))
+                        child: Text(tr('m426')))
                   ],
                 )));
     if (saved != true || !mounted) return;
@@ -612,8 +629,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
       await _refresh();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('O‘zgarishlarni saqlab bo‘lmadi')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(tr('m352'))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);

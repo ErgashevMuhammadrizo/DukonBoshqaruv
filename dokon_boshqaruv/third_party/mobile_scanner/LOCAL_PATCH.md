@@ -13,3 +13,5 @@ Local Android changes:
 The remaining upstream package code is unchanged. Upstream example/test/screenshots
 are omitted from this app dependency copy; runtime sources and license are included.
 No claim of device verification or Android build verification is made.
+
+Packaging: omitted example screenshot metadata and use the application flutter_lints configuration for local analysis; no runtime effect.

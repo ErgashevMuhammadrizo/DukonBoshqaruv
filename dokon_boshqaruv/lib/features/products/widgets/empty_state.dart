@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 
 class EmptyProductsState extends StatelessWidget {
@@ -7,42 +9,44 @@ class EmptyProductsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.inventory_2_outlined,
               size: 120,
-              color: Colors.grey[300],
+              color: adaptiveColor(context, Colors.grey[300]!),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Hozircha mahsulot yo\'q',
+            SizedBox(height: 24),
+            Text(
+              tr('m166'),
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: adaptiveColor(context, Colors.grey, foreground: true),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
-              'Birinchi mahsulotingizni qo\'shing va\nsotuvni boshlang',
+              tr('m61'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color:
+                    adaptiveColor(context, Colors.grey[600]!, foreground: true),
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             FilledButton.icon(
               onPressed: onAddProduct,
-              icon: const Icon(Icons.add),
-              label: const Text('Mahsulot qo\'shish'),
+              icon: Icon(Icons.add),
+              label: Text(tr('m248')),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 32,
                   vertical: 16,
                 ),

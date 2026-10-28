@@ -1,3 +1,4 @@
+import 'l10n/translations.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -6,8 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
-const _configuredApiBaseUrl =
-    String.fromEnvironment('API_BASE_URL');
+const _configuredApiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
 String get _apiBaseUrl {
   final configured = _configuredApiBaseUrl.trim();
@@ -22,14 +22,13 @@ class Api {
   final Dio dio = Dio(
     BaseOptions(
       baseUrl: _apiBaseUrl,
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 15),
-      sendTimeout: const Duration(seconds: 15),
+      connectTimeout: Duration(seconds: 8),
+      receiveTimeout: Duration(seconds: 15),
+      sendTimeout: Duration(seconds: 15),
     ),
   );
 
-  final FlutterSecureStorage secure =
-      const FlutterSecureStorage();
+  final FlutterSecureStorage secure = FlutterSecureStorage();
 
   void Function()? onLogout;
 
@@ -40,12 +39,12 @@ class Api {
   Object? _lastRefreshError;
   Future<bool>? _refreshFuture;
 
-  static const _profileKey = 'offline_profile_v2';
-  static const _checkedKey = 'offline_checked_v2';
-  static const _expiryKey = 'offline_expiry_v2';
-  static const _serverKey = 'offline_server_v2';
+  static final _profileKey = 'offline_profile_v2';
+  static final _checkedKey = 'offline_checked_v2';
+  static final _expiryKey = 'offline_expiry_v2';
+  static final _serverKey = 'offline_server_v2';
 
-  static const _exemptPaths = {
+  static final _exemptPaths = {
     'auth/login/',
     'auth/activate/',
     'auth/set-password/',
@@ -58,16 +57,15 @@ class Api {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           try {
-            final path =
-                options.path.replaceAll(RegExp(r'^/+'), '');
+            final path = options.path.replaceAll(RegExp(r'^/+'), '');
 
             if (_exemptPaths.contains(path)) {
-              options.headers.remove('Authorization');
+              options.headers.remove(tr('m40'));
             } else {
               final token = await secure.read(key: 'access');
 
               if (token != null && token.isNotEmpty) {
-                options.headers['Authorization'] = 'Bearer $token';
+                options.headers[tr('m40')] = 'Bearer $token';
               }
             }
 
@@ -82,8 +80,7 @@ class Api {
           }
         },
         onError: (error, handler) async {
-          final path =
-              error.requestOptions.path.replaceAll(RegExp(r'^/+'), '');
+          final path = error.requestOptions.path.replaceAll(RegExp(r'^/+'), '');
 
           final alreadyRetried =
               error.requestOptions.extra['auth_retried'] == true;
@@ -115,7 +112,7 @@ class Api {
                       ? refreshError.type
                       : DioExceptionType.connectionTimeout,
                   error: refreshError,
-                  message: 'Sessiyani yangilashda tarmoq uzildi.',
+                  message: tr('m453'),
                 ),
               );
             } else {
@@ -132,7 +129,7 @@ class Api {
             request.extra['auth_retried'] = true;
 
             if (token != null) {
-              request.headers['Authorization'] = 'Bearer $token';
+              request.headers[tr('m40')] = 'Bearer $token';
             }
 
             final response = await dio.fetch<dynamic>(request);
@@ -163,8 +160,8 @@ class Api {
     final id = profile['id'];
 
     if (id == null) {
-      throw const FormatException(
-        'Profil javobida foydalanuvchi ID mavjud emas.',
+      throw FormatException(
+        tr('m370'),
       );
     }
 
@@ -219,14 +216,13 @@ class Api {
         data: {'refresh': refresh},
       );
 
-      final data =
-          Map<String, dynamic>.from(response.data as Map);
+      final data = Map<String, dynamic>.from(response.data as Map);
 
       final access = data['access'];
 
       if (access is! String || access.isEmpty) {
-        throw const FormatException(
-          'Server access token qaytarmadi.',
+        throw FormatException(
+          tr('m440'),
         );
       }
 
@@ -246,8 +242,7 @@ class Api {
       _lastRefreshError = error;
 
       if (error is DioException) {
-        _refreshRejected =
-            error.response?.statusCode == 401 ||
+        _refreshRejected = error.response?.statusCode == 401 ||
             error.response?.statusCode == 403;
       }
 
@@ -281,14 +276,12 @@ class Api {
       final now = DateTime.now().toUtc();
 
       if (now.isBefore(checkedAt.toUtc()) ||
-          now.difference(checkedAt.toUtc()) >=
-              const Duration(hours: 24) ||
+          now.difference(checkedAt.toUtc()) >= Duration(hours: 24) ||
           !expiresAt.toUtc().isAfter(now)) {
         return null;
       }
 
-      final profile =
-          Map<String, dynamic>.from(jsonDecode(raw) as Map);
+      final profile = Map<String, dynamic>.from(jsonDecode(raw) as Map);
 
       if (profile['is_superadmin'] == true ||
           profile['superadmin'] == true ||
@@ -319,8 +312,7 @@ class Api {
       },
     );
 
-    final data =
-        Map<String, dynamic>.from(response.data as Map);
+    final data = Map<String, dynamic>.from(response.data as Map);
 
     await secure.write(
       key: 'access',
@@ -386,8 +378,7 @@ class Api {
 
     try {
       final response = await dio.get('me/');
-      profile =
-          Map<String, dynamic>.from(response.data as Map);
+      profile = Map<String, dynamic>.from(response.data as Map);
     } catch (error) {
       if (isNetworkError(error)) {
         final cached = await offlineProfile();
@@ -407,8 +398,8 @@ class Api {
 
     _setIdentity(profile);
 
-    final isAdmin = profile['is_superadmin'] == true ||
-        profile['superadmin'] == true;
+    final isAdmin =
+        profile['is_superadmin'] == true || profile['superadmin'] == true;
 
     final blocked = profile['is_active'] == false ||
         profile['needs_password_change'] == true ||
@@ -421,8 +412,7 @@ class Api {
 
     try {
       final response = await dio.get('subscription/status/');
-      final status =
-          Map<String, dynamic>.from(response.data as Map);
+      final status = Map<String, dynamic>.from(response.data as Map);
 
       final expiry = DateTime.tryParse(
         status['expires_at']?.toString() ?? '',
@@ -474,8 +464,7 @@ class Api {
     String path, {
     Map<String, dynamic>? query,
   }) async {
-    final response =
-        await dio.get(path, queryParameters: query);
+    final response = await dio.get(path, queryParameters: query);
 
     return Map<String, dynamic>.from(response.data as Map);
   }
@@ -484,8 +473,7 @@ class Api {
     String path, {
     Map<String, dynamic>? query,
   }) async {
-    final response =
-        await dio.get(path, queryParameters: query);
+    final response = await dio.get(path, queryParameters: query);
 
     return List<dynamic>.from(response.data as List);
   }
@@ -618,8 +606,7 @@ class Api {
         },
       );
 
-  Future<List<dynamic>> adminPlans() =>
-      _getList('admin/plans/');
+  Future<List<dynamic>> adminPlans() => _getList('admin/plans/');
 
   Future<Map<String, dynamic>> saveAdminPlan(
     Map<String, dynamic> data, {
@@ -723,8 +710,7 @@ class Api {
 
   // Mahsulotlar.
 
-  Future<List<dynamic>> products({String? search}) =>
-      _getList(
+  Future<List<dynamic>> products({String? search}) => _getList(
         'products/',
         query: {
           if (search != null && search.isNotEmpty) 'q': search,
@@ -783,8 +769,7 @@ class Api {
 
   // Toifalar.
 
-  Future<List<dynamic>> getCategories() =>
-      _getList('categories/');
+  Future<List<dynamic>> getCategories() => _getList('categories/');
 
   Future<Map<String, dynamic>> createCategory(String name) =>
       _postMap('categories/', {'name': name});
@@ -829,8 +814,7 @@ class Api {
 
   Future<List<dynamic>> sales() => _getList('sales/');
 
-  Future<Map<String, dynamic>> report() =>
-      _getMap('reports/summary/');
+  Future<Map<String, dynamic>> report() => _getMap('reports/summary/');
 
   Future<Map<String, dynamic>> checkout(
     Map<String, dynamic> data,
@@ -904,8 +888,7 @@ class Api {
   ) =>
       _postMap('debts/', data);
 
-  Future<Map<String, dynamic>> debtDetail(int id) =>
-      _getMap('debts/$id/');
+  Future<Map<String, dynamic>> debtDetail(int id) => _getMap('debts/$id/');
 
   Future<Map<String, dynamic>> updateDebt(
     int id, {
@@ -934,7 +917,7 @@ class Api {
       _postMap(
         'debts/$id/payments/',
         {
-          'operation_id': const Uuid().v4(),
+          'operation_id': Uuid().v4(),
           'amount': amount,
           'method': method,
           'paid_on': paidOn,

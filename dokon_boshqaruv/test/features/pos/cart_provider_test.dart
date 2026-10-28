@@ -33,7 +33,7 @@ void main() {
     cart.updateQuantity(1, 3);
     expect(cart.state.single.quantity, 1);
     cart.updateQuantity(1, 0);
-    expect(cart.state.single.quantity, 1);
+    expect(cart.state, isEmpty);
   });
 
   test('kasrli birlik uchun qator summasi sentga yaxlitlanadi', () {
@@ -41,5 +41,44 @@ void main() {
     cart.addProduct(product(unit: 'kg', price: '2.50', stock: '5'),
         quantity: 1.255);
     expect(cart.state.single.lineTotalCents, 314);
+  });
+  test('kasrli qoldiqda +1 ombor chegarasini buzmaydi', () {
+    final cart = CartNotifier();
+    cart.addProduct(product(unit: 'kg', stock: '1.5'));
+    expect(cart.state.single.canIncrement(), isFalse);
+    cart.incrementQuantity(1);
+    expect(cart.state.single.quantity, 1);
+    cart.decrementQuantity(999);
+    expect(cart.state.single.quantity, 1);
+  });
+  test('miqdor oshirish, kamaytirish va tozalash', () {
+    final cart = CartNotifier();
+    cart.addProduct(product());
+    cart.incrementQuantity(1);
+    expect(cart.state.single.quantity, 2);
+    cart.updateQuantity(1, 4);
+    cart.decrementQuantity(1);
+    expect(cart.state.single.quantity, 3);
+    expect(cart.subtotalCents, 303);
+    expect(cart.state.single.toJson()['quantity'], '3.000');
+    cart.clear();
+    expect(cart.state, isEmpty);
+  });
+
+  test('decimal quantity is normalized to three places without binary drift',
+      () {
+    final cart = CartNotifier();
+    expect(cart.addProduct(product(unit: 'kg', stock: '5'), quantity: 1.001),
+        isTrue);
+    expect(cart.addProduct(product(unit: 'kg', stock: '5'), quantity: .009),
+        isTrue);
+    expect(cart.state.single.quantity, 1.010);
+    cart.updateQuantity(1, 1.003);
+    expect(cart.state.single.quantityMilli, 1003);
+    expect(cart.addProduct(product(unit: 'kg'), quantity: .0001), isFalse);
+    expect(
+        cart.addProduct(product(unit: 'kg'), quantity: .0000000001), isFalse);
+    expect(cart.addProduct(product(unit: 'kg'), quantity: double.infinity),
+        isFalse);
   });
 }

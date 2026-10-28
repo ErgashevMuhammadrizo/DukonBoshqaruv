@@ -129,16 +129,18 @@ void main() {
       final ackId = const Uuid().v4();
       await queue.enqueueSale({'items': []}, ackId);
 
-      final api = _FakeSyncApi({ackId: {'operation_id': ackId, 'status': 'ack'}});
+      final api = _FakeSyncApi({
+        ackId: {'operation_id': ackId, 'status': 'ack'}
+      });
       final result = await queue.syncOnce(api);
 
       expect(result.acked, 1);
       expect((await queue.pendingOps()).isEmpty, isTrue);
     });
 
-    test('conflict flow keeps the failed op visible and retry requeues it', () async {
-      final queue =
-          OfflineQueue(dbName: 'test_queue_${const Uuid().v4()}.db');
+    test('conflict flow keeps the failed op visible and retry requeues it',
+        () async {
+      final queue = OfflineQueue(dbName: 'test_queue_${const Uuid().v4()}.db');
       final conflictId = const Uuid().v4();
       await queue.enqueueSale({'items': []}, conflictId);
 
@@ -155,7 +157,8 @@ void main() {
       expect((await queue.conflictOps()).length, 1);
 
       await queue.retryOp(conflictId);
-      expect((await queue.pendingOps()).any((op) => op.id == conflictId), isTrue);
+      expect(
+          (await queue.pendingOps()).any((op) => op.id == conflictId), isTrue);
     });
   });
 }
@@ -166,7 +169,8 @@ class _FakeSyncApi extends Api {
   _FakeSyncApi(this._responses);
 
   @override
-  Future<Map<String, dynamic>> syncPush(List<Map<String, dynamic>> operations) async {
+  Future<Map<String, dynamic>> syncPush(
+      List<Map<String, dynamic>> operations) async {
     final results = <Map<String, dynamic>>[];
     for (final operation in operations) {
       final id = operation['operation_id'] as String;

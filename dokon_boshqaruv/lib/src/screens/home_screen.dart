@@ -1,3 +1,5 @@
+import '../adaptive_colors.dart';
+import '../l10n/app_strings.dart';
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -32,27 +34,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   int _pendingCount = 0;
   bool _syncing = false;
   bool _leaving = false;
-  bool _networkUnavailable = false;
   String? _syncMessage;
 
   Timer? _timer;
   StreamSubscription<List<ConnectivityResult>>? _connectivity;
 
-  static const _labels = [
-    'Mahsulotlar',
-    'Savdo',
-    'Hisobot',
-    'Daftar',
-  ];
+  static List<String> get _labels => [
+        tr('m255'),
+        tr('sales'),
+        tr('m162'),
+        tr('m103'),
+      ];
 
-  static const _icons = [
+  static final _icons = [
     Icons.inventory_2_outlined,
     Icons.point_of_sale_outlined,
     Icons.assessment_outlined,
     Icons.menu_book_outlined,
   ];
 
-  static const _selectedIcons = [
+  static final _selectedIcons = [
     Icons.inventory_2_rounded,
     Icons.point_of_sale_rounded,
     Icons.assessment_rounded,
@@ -73,10 +74,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         final disconnected = results.every((r) => r == ConnectivityResult.none);
 
-        setState(() {
-          _networkUnavailable = disconnected;
-        });
-
         if (!disconnected) {
           unawaited(_syncNow());
         }
@@ -87,7 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
 
     _timer = Timer.periodic(
-      const Duration(seconds: 30),
+      Duration(seconds: 30),
       (_) => unawaited(_syncNow()),
     );
 
@@ -173,15 +170,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       String message;
 
       if (result.networkError) {
-        message = 'Serverga ulanish yo‘q. Sotuvlar qurilmada saqlangan.';
+        message = tr('m451');
       } else if (result.conflicts > 0) {
-        message = '${result.conflicts} ta sotuv tekshirishni talab qiladi.';
+        message = tr('m647', [result.conflicts]);
       } else if (result.acked > 0) {
-        message = '${result.acked} ta sotuv serverda tasdiqlandi.';
+        message = tr('m646', [result.acked]);
       } else if (remaining > 0) {
-        message = '$remaining ta sotuv hali tasdiqlanmagan.';
+        message = tr('m645', [remaining]);
       } else {
-        message = 'Yuborilmagan sotuvlar yo‘q.';
+        message = tr('m603');
       }
 
       // Barcha lokal sotuvlar tasdiqlangandan keyin
@@ -192,7 +189,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         } catch (_) {
           // Mahsulot yangilanmasligi tasdiqlangan sotuvni
           // qayta yuborishga sabab bo‘lmaydi.
-          message += ' Mahsulotlarni keyinroq yangilang.';
+          message += tr('m0');
         }
       }
 
@@ -203,12 +200,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       setState(() {
         _pendingCount = remaining;
         _syncMessage = message;
-
-        if (result.networkError) {
-          _networkUnavailable = true;
-        } else if (result.acked > 0) {
-          _networkUnavailable = false;
-        }
       });
 
       if (manual) {
@@ -217,7 +208,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } catch (_) {
       if (mounted && !_leaving) {
         setState(() {
-          _syncMessage = 'Sinxronlash bajarilmadi. Sotuvlar o‘chirilmagan.';
+          _syncMessage = tr('m460');
         });
 
         if (manual) {
@@ -243,7 +234,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (_leaving) return;
 
     if (_syncing) {
-      _showMessage('Sinxronlash tugashini kuting.');
+      _showMessage(tr('m465'));
       return;
     }
 
@@ -253,24 +244,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Akkauntdan chiqish'),
+        title: Text(tr('m20')),
         content: Text(
-          _pendingCount > 0
-              ? '$_pendingCount ta tasdiqlanmagan sotuv bor. '
-                  'Ular shu akkaunt uchun qurilmada qoladi. '
-                  'Qayta kirish uchun internet kerak bo‘ladi. '
-                  'Chiqasizmi?'
-              : 'Akkauntdan chiqasizmi? '
-                  'Qayta kirish uchun internet kerak bo‘ladi.',
+          _pendingCount > 0 ? tr('m648', [_pendingCount]) : tr('m19'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Ortga'),
+            child: Text(tr('m348')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Chiqish'),
+            child: Text(tr('m97')),
           ),
         ],
       ),
@@ -291,7 +276,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
-        builder: (_) => const Login(),
+        builder: (_) => Login(),
       ),
       (_) => false,
     );
@@ -300,7 +285,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Future<void> _openAccount() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const AccountSettings(),
+        builder: (_) => AccountSettings(),
       ),
     );
 
@@ -312,7 +297,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _openPassword() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const ChangePassword(),
+        builder: (_) => ChangePassword(),
       ),
     );
   }
@@ -334,59 +319,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget _buildBody() {
     switch (_selectedIndex) {
       case 1:
-        return const POSScreen();
+        return POSScreen();
       case 2:
-        return const ReportsScreen();
+        return ReportsScreen();
       case 3:
-        return const DebtsScreen();
+        return DebtsScreen();
       default:
-        return const ProductsScreen();
+        return ProductsScreen();
     }
-  }
-
-  Widget _buildStatusBar() {
-    final message = _networkUnavailable
-        ? 'Serverga ulanish yo‘q'
-        : _syncMessage ?? 'Sotuvlarni sinxronlash';
-
-    return Material(
-      color: _networkUnavailable ? Colors.orange.shade50 : Colors.blue.shade50,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              _networkUnavailable ? Icons.cloud_off : Icons.cloud_sync_outlined,
-              size: 22,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                '$message\nNavbatda: $_pendingCount ta',
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Sinxronlash',
-              onPressed:
-                  _syncing || _leaving ? null : () => _syncNow(manual: true),
-              icon: _syncing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.sync),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildDrawer() {
@@ -395,26 +335,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         child: Column(
           children: [
             ListTile(
-              leading: const CircleAvatar(
+              leading: CircleAvatar(
                 child: Icon(Icons.person),
               ),
-              title: Text(_username ?? 'Akkaunt'),
+              title: Text(_username ?? tr('m14')),
               subtitle: Text(
-                _isAdmin ? 'Administrator' : 'Foydalanuvchi',
+                _isAdmin ? tr('m13') : tr('m142'),
               ),
             ),
-            const Divider(),
+            Divider(),
             ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profil'),
+              leading: Icon(Icons.person_outline),
+              title: Text(tr('m369')),
               onTap: () {
                 Navigator.of(context).pop();
                 unawaited(_openAccount());
               },
             ),
             ListTile(
-              leading: const Icon(Icons.lock_outline),
-              title: const Text('Parolni o‘zgartirish'),
+              leading: Icon(Icons.lock_outline),
+              title: Text(tr('m365')),
               onTap: () {
                 Navigator.of(context).pop();
                 _openPassword();
@@ -422,36 +362,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             if (_isAdmin)
               ListTile(
-                leading: const Icon(Icons.admin_panel_settings),
-                title: const Text('Admin panel'),
+                leading: Icon(Icons.admin_panel_settings),
+                title: Text(tr('m10')),
                 onTap: () {
                   Navigator.of(context).pop();
 
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => const AdminPanel(),
+                      builder: (_) => AdminPanel(),
                     ),
                   );
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.sync),
-              title: const Text('Sinxronlash'),
+              leading: Icon(Icons.sync),
+              title: Text(tr('m459')),
               onTap: () {
                 Navigator.of(context).pop();
                 unawaited(_syncNow(manual: true));
               },
             ),
-            const Spacer(),
-            const Divider(),
+            Spacer(),
+            Divider(),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.logout,
-                color: Colors.red,
+                color: adaptiveColor(context, Colors.red, foreground: true),
               ),
-              title: const Text(
-                'Chiqish',
-                style: TextStyle(color: Colors.red),
+              title: Text(
+                tr('m97'),
+                style: TextStyle(
+                    color:
+                        adaptiveColor(context, Colors.red, foreground: true)),
               ),
               onTap: () {
                 Navigator.of(context).pop();
@@ -466,6 +408,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final mobile = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
@@ -473,29 +416,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Dokon Boshqaruv'),
+            Text(tr('m113')),
             if (_username != null)
               Text(
                 _username!,
-                style: const TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: 12),
               ),
           ],
         ),
         actions: [
           PopupMenuButton<String>(
             onSelected: _handleMenu,
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'profile',
-                child: Text('Profil'),
+                child: Text(tr('m369')),
               ),
               PopupMenuItem(
                 value: 'password',
-                child: Text('Parolni o‘zgartirish'),
+                child: Text(tr('m365')),
               ),
               PopupMenuItem(
                 value: 'logout',
-                child: Text('Chiqish'),
+                child: Text(tr('m97')),
               ),
             ],
           ),
@@ -504,7 +447,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       drawer: mobile ? _buildDrawer() : null,
       body: Column(
         children: [
-          _buildStatusBar(),
           Expanded(
             child: mobile
                 ? _buildBody()
@@ -526,7 +468,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ),
                         ),
                       ),
-                      const VerticalDivider(width: 1),
+                      VerticalDivider(width: 1),
                       Expanded(child: _buildBody()),
                     ],
                   ),

@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -66,8 +68,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _fadeCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 500));
+    _fadeCtrl =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
     _fadeCtrl.forward();
   }
 
@@ -91,19 +93,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         e = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 1:
-        final yesterday = now.subtract(const Duration(days: 1));
+        final yesterday = now.subtract(Duration(days: 1));
         s = DateTime(yesterday.year, yesterday.month, yesterday.day);
         e = DateTime(
             yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
         break;
       case 2:
-        s = DateTime(now.year, now.month, now.day)
-            .subtract(const Duration(days: 6));
+        s = DateTime(now.year, now.month, now.day).subtract(Duration(days: 6));
         e = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 3:
-        s = DateTime(now.year, now.month, now.day)
-            .subtract(const Duration(days: 29));
+        s = DateTime(now.year, now.month, now.day).subtract(Duration(days: 29));
         e = DateTime(now.year, now.month, now.day, 23, 59, 59);
         break;
       case 4:
@@ -140,12 +140,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final summaryAsync = ref.watch(reportSummaryProvider);
     final salesAsync = ref.watch(reportSalesProvider);
     final range = ref.watch(reportRangeProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: adaptiveColor(context, Color(0xFFF5F7FA)),
       appBar: _buildAppBar(range),
       body: Column(
         children: [
@@ -154,7 +155,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
             child: FadeTransition(
               opacity: _fadeCtrl,
               child: summaryAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => Center(child: CircularProgressIndicator()),
                 error: (e, _) => _ErrorView(
                     msg: e.toString(),
                     onRetry: () => ref.invalidate(reportSummaryProvider)),
@@ -170,27 +171,26 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
                       ref.invalidate(reportSalesProvider);
                     },
                     child: ListView(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       children: [
                         _RevenueCard(
                             revenue: revenue,
                             count: count,
                             cash: cash,
                             card: card),
-                        const SizedBox(height: 14),
+                        SizedBox(height: 14),
                         _OperationalSummary(
                           average:
                               double.tryParse('${s['average_check']}') ?? 0,
                           itemsSold: double.tryParse('${s['items_sold']}') ?? 0,
-                          lowStock:
-                              (s['low_stock'] as List? ?? const []).cast<Map>(),
-                          outOfStock: (s['out_of_stock'] as List? ?? const [])
-                              .cast<Map>(),
+                          lowStock: (s['low_stock'] as List? ?? []).cast<Map>(),
+                          outOfStock:
+                              (s['out_of_stock'] as List? ?? []).cast<Map>(),
                         ),
-                        const SizedBox(height: 14),
+                        SizedBox(height: 14),
                         if (revenue > 0) ...[
                           _PaymentBar(cash: cash, card: card, total: revenue),
-                          const SizedBox(height: 14),
+                          SizedBox(height: 14),
                         ],
                         salesAsync.when(
                           data: (allSales) {
@@ -200,20 +200,20 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
                             }
                             return Column(children: [
                               _BarChartCard(sales: filtered),
-                              const SizedBox(height: 14),
+                              SizedBox(height: 14),
                               _TopProductsCard(sales: filtered),
-                              const SizedBox(height: 14),
+                              SizedBox(height: 14),
                               _RecentSalesCard(
                                   sales: filtered.take(15).toList()),
                             ]);
                           },
-                          loading: () => const Padding(
+                          loading: () => Padding(
                             padding: EdgeInsets.all(32),
                             child: Center(child: CircularProgressIndicator()),
                           ),
-                          error: (_, __) => const SizedBox(),
+                          error: (_, __) => SizedBox(),
                         ),
-                        const SizedBox(height: 80),
+                        SizedBox(height: 80),
                       ],
                     ),
                   );
@@ -229,20 +229,22 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
   PreferredSizeWidget _buildAppBar(_DateRange dateRange) {
     final dFmt = DateFormat('dd.MM.yyyy');
     return AppBar(
-      backgroundColor: const Color(0xFF0D47A1),
-      foregroundColor: Colors.white,
+      backgroundColor: adaptiveColor(context, Color(0xFF0D47A1)),
+      foregroundColor: adaptiveColor(context, Colors.white, foreground: true),
       elevation: 0,
       title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Hisobot',
+        Text(tr('m162'),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         Text(
           '${dFmt.format(dateRange.start)} – ${dFmt.format(dateRange.end)}',
-          style: const TextStyle(fontSize: 11, color: Colors.white60),
+          style: TextStyle(
+              fontSize: 11,
+              color: adaptiveColor(context, Colors.white60, foreground: true)),
         ),
       ]),
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh_rounded),
+          icon: Icon(Icons.refresh_rounded),
           onPressed: () {
             ref.invalidate(reportSummaryProvider);
             ref.invalidate(reportSalesProvider);
@@ -263,23 +265,30 @@ class _PeriodBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['Bugun', 'Kecha', '7 kun', '30 kun', 'Bu oy', 'Sana'];
+    AppLocaleScope.of(context);
+    final labels = [
+      tr('m85'),
+      tr('m214'),
+      tr('m6'),
+      tr('m5'),
+      tr('m82'),
+      tr('m421')
+    ];
     return Container(
-      color: const Color(0xFF0D47A1),
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      color: adaptiveColor(context, Color(0xFF0D47A1)),
+      padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: List.generate(labels.length, (i) {
             final sel = current == i;
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(right: 8),
               child: GestureDetector(
                 onTap: () => onSelect(i),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  duration: Duration(milliseconds: 200),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: sel
                         ? Colors.white
@@ -292,14 +301,13 @@ class _PeriodBar extends StatelessWidget {
                       if (i == 5)
                         Icon(Icons.calendar_month_rounded,
                             size: 12,
-                            color:
-                                sel ? const Color(0xFF0D47A1) : Colors.white),
-                      if (i == 5) const SizedBox(width: 4),
+                            color: sel ? Color(0xFF0D47A1) : Colors.white),
+                      if (i == 5) SizedBox(width: 4),
                       Text(labels[i],
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: sel ? const Color(0xFF0D47A1) : Colors.white,
+                            color: sel ? Color(0xFF0D47A1) : Colors.white,
                           )),
                     ],
                   ),
@@ -326,15 +334,16 @@ class _RevenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat('#,##0', 'uz_UZ');
+    AppLocaleScope.of(context);
+    final fmt = NumberFormat('#,##0', activeLanguage);
     final avg = count > 0 ? revenue / count : 0.0;
     return Column(children: [
       // Main revenue gradient card
       Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             colors: [Color(0xFF0D47A1), Color(0xFF1976D2)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -342,60 +351,67 @@ class _RevenueCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0D47A1).withValues(alpha: 0.3),
+              color: Color(0xFF0D47A1).withValues(alpha: 0.3),
               blurRadius: 14,
-              offset: const Offset(0, 4),
+              offset: Offset(0, 4),
             )
           ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color:
+                    adaptiveColor(context, Colors.white.withValues(alpha: 0.2)),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.trending_up_rounded,
-                  color: Colors.white, size: 20),
+              child: Icon(Icons.trending_up_rounded,
+                  color: adaptiveColor(context, Colors.white, foreground: true),
+                  size: 20),
             ),
-            const SizedBox(width: 10),
-            const Text('Umumiy daromad',
-                style: TextStyle(color: Colors.white70, fontSize: 13)),
+            SizedBox(width: 10),
+            Text(tr('m560'),
+                style: TextStyle(
+                    color: adaptiveColor(context, Colors.white70,
+                        foreground: true),
+                    fontSize: 13)),
           ]),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           Text(
-            '${fmt.format(revenue)} so\'m',
-            style: const TextStyle(
-                color: Colors.white,
+            tr('m641', [fmt.format(revenue)]),
+            style: TextStyle(
+                color: adaptiveColor(context, Colors.white, foreground: true),
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.5),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
-            '$count ta sotuv  •  o\'rtacha ${fmt.format(avg)} so\'m',
-            style: const TextStyle(color: Colors.white60, fontSize: 12),
+            tr('m644', [count, fmt.format(avg)]),
+            style: TextStyle(
+                color: adaptiveColor(context, Colors.white60, foreground: true),
+                fontSize: 12),
           ),
         ]),
       ),
-      const SizedBox(height: 12),
+      SizedBox(height: 12),
       Row(children: [
         Expanded(
             child: _MiniCard(
                 icon: Icons.payments_rounded,
-                label: 'Naqd pul',
-                value: '${fmt.format(cash)} so\'m',
-                iconColor: const Color(0xFF2E7D32),
-                bgColor: const Color(0xFFE8F5E9))),
-        const SizedBox(width: 12),
+                label: tr('m300'),
+                value: tr('m641', [fmt.format(cash)]),
+                iconColor: Color(0xFF2E7D32),
+                bgColor: Color(0xFFE8F5E9))),
+        SizedBox(width: 12),
         Expanded(
             child: _MiniCard(
                 icon: Icons.credit_card_rounded,
-                label: 'Plastik karta',
-                value: '${fmt.format(card)} so\'m',
-                iconColor: const Color(0xFF1565C0),
-                bgColor: const Color(0xFFE3F2FD))),
+                label: tr('m368'),
+                value: tr('m641', [fmt.format(card)]),
+                iconColor: Color(0xFF1565C0),
+                bgColor: Color(0xFFE3F2FD))),
       ]),
     ]);
   }
@@ -414,32 +430,38 @@ class _MiniCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: adaptiveColor(context, Colors.white),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color:
+                  adaptiveColor(context, Colors.black.withValues(alpha: 0.04)),
               blurRadius: 8,
-              offset: const Offset(0, 2))
+              offset: Offset(0, 2))
         ],
       ),
       child: Row(children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
               color: bgColor, borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: iconColor, size: 18),
         ),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-          const SizedBox(height: 2),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  color: adaptiveColor(context, Colors.grey[600]!,
+                      foreground: true))),
+          SizedBox(height: 2),
           Text(value,
               style: TextStyle(
                   fontSize: 13, fontWeight: FontWeight.bold, color: iconColor),
@@ -460,11 +482,12 @@ class _PaymentBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final cashPct = total > 0 ? cash / total : 0.0;
     final cardPct = total > 0 ? card / total : 0.0;
     final fmt = NumberFormat('0.0');
     return _Card(
-      title: 'To\'lov usullari',
+      title: tr('m529'),
       icon: Icons.donut_small_rounded,
       child: Column(children: [
         ClipRRect(
@@ -474,28 +497,28 @@ class _PaymentBar extends StatelessWidget {
             child: Row(children: [
               Flexible(
                 flex: (cashPct * 1000).round(),
-                child: Container(color: const Color(0xFF2E7D32)),
+                child:
+                    Container(color: adaptiveColor(context, Color(0xFF2E7D32))),
               ),
               Flexible(
                 flex: (cardPct * 1000).round(),
-                child: Container(color: const Color(0xFF1565C0)),
+                child:
+                    Container(color: adaptiveColor(context, Color(0xFF1565C0))),
               ),
             ]),
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         Row(children: [
-          _Dot(color: const Color(0xFF2E7D32)),
-          const SizedBox(width: 6),
-          Text('Naqd: ${fmt.format(cashPct * 100)}%',
-              style:
-                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          const SizedBox(width: 20),
-          _Dot(color: const Color(0xFF1565C0)),
-          const SizedBox(width: 6),
-          Text('Karta: ${fmt.format(cardPct * 100)}%',
-              style:
-                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          _Dot(color: adaptiveColor(context, Color(0xFF2E7D32))),
+          SizedBox(width: 6),
+          Text(tr('m304', [fmt.format(cashPct * 100)]),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          SizedBox(width: 20),
+          _Dot(color: adaptiveColor(context, Color(0xFF1565C0))),
+          SizedBox(width: 6),
+          Text(tr('m209', [fmt.format(cardPct * 100)]),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         ]),
       ]),
     );
@@ -506,10 +529,13 @@ class _Dot extends StatelessWidget {
   final Color color;
   const _Dot({required this.color});
   @override
-  Widget build(BuildContext context) => Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle));
+  Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
+    return Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle));
+  }
 }
 
 // ─── Bar chart ───────────────────────────────────────────────────────────────
@@ -520,6 +546,7 @@ class _BarChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final Map<String, double> byDay = {};
     for (final s in sales) {
       final k = DateFormat('yyyy-MM-dd').format(s.createdAt);
@@ -527,10 +554,10 @@ class _BarChartCard extends StatelessWidget {
     }
     final sorted = byDay.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    if (sorted.isEmpty) return const SizedBox();
+    if (sorted.isEmpty) return SizedBox();
 
     return _Card(
-      title: 'Kunlik sotuvlar',
+      title: tr('m229'),
       icon: Icons.bar_chart_rounded,
       child: SizedBox(
         height: 180,
@@ -538,33 +565,40 @@ class _BarChartCard extends StatelessWidget {
           Expanded(
             child: CustomPaint(
               painter: _BarPainter(sorted),
-              child: const SizedBox.expand(),
+              child: SizedBox.expand(),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _labels(sorted),
+            children: _labels(context, sorted),
           ),
         ]),
       ),
     );
   }
 
-  List<Widget> _labels(List<MapEntry<String, double>> sorted) {
+  List<Widget> _labels(
+      BuildContext context, List<MapEntry<String, double>> sorted) {
     if (sorted.length <= 7) {
       return sorted
           .map((e) => Text(DateFormat('dd.MM').format(DateTime.parse(e.key)),
-              style: const TextStyle(fontSize: 9, color: Color(0xFF90A4AE))))
+              style: TextStyle(
+                  fontSize: 9,
+                  color: adaptiveColor(context, Color(0xFF90A4AE),
+                      foreground: true))))
           .toList();
     }
     final idxs = {0, sorted.length ~/ 2, sorted.length - 1};
     return List.generate(sorted.length, (i) {
       if (idxs.contains(i)) {
         return Text(DateFormat('dd.MM').format(DateTime.parse(sorted[i].key)),
-            style: const TextStyle(fontSize: 9, color: Color(0xFF90A4AE)));
+            style: TextStyle(
+                fontSize: 9,
+                color: adaptiveColor(context, Color(0xFF90A4AE),
+                    foreground: true)));
       }
-      return const SizedBox();
+      return SizedBox();
     });
   }
 }
@@ -580,7 +614,7 @@ class _BarPainter extends CustomPainter {
     if (maxV == 0) return;
 
     final guide = Paint()
-      ..color = const Color(0xFFECEFF1)
+      ..color = Color(0xFFECEFF1)
       ..strokeWidth = 1;
     for (int i = 1; i <= 4; i++) {
       final y = size.height * (1 - i / 4);
@@ -594,7 +628,7 @@ class _BarPainter extends CustomPainter {
       final x = gap * i + gap / 2 - barW / 2;
       final h = (data[i].value / maxV) * size.height;
       final paint = Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -602,8 +636,8 @@ class _BarPainter extends CustomPainter {
       canvas.drawRRect(
         RRect.fromRectAndCorners(
           Rect.fromLTWH(x, size.height - h, barW, h),
-          topLeft: const Radius.circular(4),
-          topRight: const Radius.circular(4),
+          topLeft: Radius.circular(4),
+          topRight: Radius.circular(4),
         ),
         paint,
       );
@@ -622,6 +656,7 @@ class _TopProductsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final Map<String, double> totals = {};
     final Map<String, double> counts = {};
     final Map<String, String> names = {};
@@ -652,21 +687,21 @@ class _TopProductsCard extends StatelessWidget {
     final sorted = totals.entries.toList()
       ..sort((a, b) => (counts[b.key] ?? 0).compareTo(counts[a.key] ?? 0));
     final top = sorted.take(5).toList();
-    if (top.isEmpty) return const SizedBox();
+    if (top.isEmpty) return SizedBox();
 
     final maxV = counts[top.first.key] ?? 0;
-    final fmt = NumberFormat('#,##0', 'uz_UZ');
-    final qtyFmt = NumberFormat('#,##0.###', 'uz_UZ');
+    final fmt = NumberFormat('#,##0', activeLanguage);
+    final qtyFmt = NumberFormat('#,##0.###', activeLanguage);
     final colors = [
-      const Color(0xFFFFB300),
-      const Color(0xFF78909C),
-      const Color(0xFFBF6900),
-      const Color(0xFF1E88E5),
-      const Color(0xFF43A047),
+      Color(0xFFFFB300),
+      Color(0xFF78909C),
+      Color(0xFFBF6900),
+      Color(0xFF1E88E5),
+      Color(0xFF43A047),
     ];
 
     return _Card(
-      title: 'Top mahsulotlar',
+      title: tr('m532'),
       icon: Icons.leaderboard_rounded,
       child: Column(
         children: top.asMap().entries.map((en) {
@@ -676,7 +711,7 @@ class _TopProductsCard extends StatelessWidget {
           final pct = maxV > 0 ? soldQuantity / maxV : 0.0;
           final c = colors[i % colors.length];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: 12),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
@@ -693,22 +728,23 @@ class _TopProductsCard extends StatelessWidget {
                             color: c)),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
-                    child: Text(names[e.key] ?? 'Mahsulot',
-                        style: const TextStyle(
+                    child: Text(names[e.key] ?? tr('m237'),
+                        style: TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis)),
-                Text('${fmt.format(e.value)} so\'m',
+                Text(tr('m641', [fmt.format(e.value)]),
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[700])),
+                        color: adaptiveColor(context, Colors.grey[700]!,
+                            foreground: true))),
               ]),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Row(children: [
-                const SizedBox(width: 30),
+                SizedBox(width: 30),
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
@@ -720,9 +756,12 @@ class _TopProductsCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text('${qtyFmt.format(soldQuantity)} dona',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                SizedBox(width: 8),
+                Text(tr('m632', [qtyFmt.format(soldQuantity)]),
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: adaptiveColor(context, Colors.grey[500]!,
+                            foreground: true))),
               ]),
             ]),
           );
@@ -740,49 +779,55 @@ class _RecentSalesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat('#,##0', 'uz_UZ');
+    AppLocaleScope.of(context);
+    final fmt = NumberFormat('#,##0', activeLanguage);
     final dFmt = DateFormat('dd.MM  HH:mm');
 
     return _Card(
-      title: 'So\'nggi sotuvlar',
+      title: tr('m467'),
       icon: Icons.receipt_long_rounded,
       child: Column(
         children: sales
             .map((s) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.only(bottom: 8),
                   child: Row(children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 3),
+                      padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE3F2FD),
+                        color: adaptiveColor(context, Color(0xFFE3F2FD)),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text('#${s.receiptNumber}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1565C0))),
+                              color: adaptiveColor(context, Color(0xFF1565C0),
+                                  foreground: true))),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(dFmt.format(s.createdAt),
-                        style:
-                            TextStyle(fontSize: 12, color: Colors.grey[500])),
-                    const Spacer(),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: adaptiveColor(context, Colors.grey[500]!,
+                                foreground: true))),
+                    Spacer(),
                     if (s.cash > 0)
-                      const Icon(Icons.payments_rounded,
-                          size: 12, color: Color(0xFF2E7D32)),
+                      Icon(Icons.payments_rounded,
+                          size: 12,
+                          color: adaptiveColor(context, Color(0xFF2E7D32))),
                     if (s.card > 0) ...[
-                      const SizedBox(width: 2),
-                      const Icon(Icons.credit_card_rounded,
-                          size: 12, color: Color(0xFF1565C0)),
+                      SizedBox(width: 2),
+                      Icon(Icons.credit_card_rounded,
+                          size: 12,
+                          color: adaptiveColor(context, Color(0xFF1565C0))),
                     ],
-                    const SizedBox(width: 6),
-                    Text('${fmt.format(s.total)} so\'m',
-                        style: const TextStyle(
+                    SizedBox(width: 6),
+                    Text(tr('m641', [fmt.format(s.total)]),
+                        style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1565C0))),
+                            color: adaptiveColor(context, Color(0xFF1565C0),
+                                foreground: true))),
                   ]),
                 ))
             .toList(),
@@ -795,15 +840,22 @@ class _RecentSalesCard extends StatelessWidget {
 
 class _EmptyPeriod extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 40),
-        child: Column(children: [
-          Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey[300]),
-          const SizedBox(height: 12),
-          Text('Bu davrda sotuvlar yo\'q',
-              style: TextStyle(fontSize: 16, color: Colors.grey[500])),
-        ]),
-      );
+  Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 40),
+      child: Column(children: [
+        Icon(Icons.receipt_long_outlined,
+            size: 64, color: adaptiveColor(context, Colors.grey[300]!)),
+        SizedBox(height: 12),
+        Text(tr('m81'),
+            style: TextStyle(
+                fontSize: 16,
+                color: adaptiveColor(context, Colors.grey[500]!,
+                    foreground: true))),
+      ]),
+    );
+  }
 }
 
 class _OperationalSummary extends StatelessWidget {
@@ -821,35 +873,35 @@ class _OperationalSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final money = NumberFormat('#,##0', 'uz_UZ');
-    final quantity = NumberFormat('#,##0.###', 'uz_UZ');
+    AppLocaleScope.of(context);
+    final money = NumberFormat('#,##0', activeLanguage);
+    final quantity = NumberFormat('#,##0.###', activeLanguage);
     return _Card(
-      title: 'Savdo va ombor holati',
+      title: tr('m439'),
       icon: Icons.inventory_2_outlined,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('O‘rtacha chek: ${money.format(average)} so‘m'),
-        const SizedBox(height: 4),
-        Text('Sotilgan miqdor: ${quantity.format(itemsSold)}'),
+        Text(tr('m350', [money.format(average)])),
+        SizedBox(height: 4),
+        Text(tr('m469', [quantity.format(itemsSold)])),
         if (lowStock.isEmpty && outOfStock.isEmpty) ...[
-          const SizedBox(height: 8),
-          const Text('Kam qolgan mahsulotlar yo‘q.'),
+          SizedBox(height: 8),
+          Text(tr('m196')),
         ],
         for (final product in outOfStock) ...[
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _StockWarning(
-            title: '${product['name'] ?? 'Mahsulot'} tugagan!',
-            detail:
-                'Omborda mahsulot qolmagan. Chegara: ${product['min_stock'] ?? 0}',
-            color: const Color(0xFFC62828),
+            title: tr('m649', [product['name'] ?? tr('m237')]),
+            detail: tr('m341', [product['min_stock'] ?? 0]),
+            color: adaptiveColor(context, Color(0xFFC62828)),
           ),
         ],
         for (final product in lowStock) ...[
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           _StockWarning(
-            title: 'Diqqat! ${product['name'] ?? 'Mahsulot'} kam qoldi.',
+            title: tr('m108', [product['name'] ?? tr('m237')]),
             detail:
-                'Omborda ${product['stock'] ?? 0} dona. Ogohlantirish chegarasi: ${product['min_stock'] ?? 0} dona.',
-            color: const Color(0xFFEF6C00),
+                tr('m344', [product['stock'] ?? 0, product['min_stock'] ?? 0]),
+            color: adaptiveColor(context, Color(0xFFEF6C00)),
           ),
         ],
       ]),
@@ -865,21 +917,24 @@ class _StockWarning extends StatelessWidget {
       {required this.title, required this.detail, required this.color});
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title,
-              style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 3),
-          Text(detail, style: TextStyle(color: color, fontSize: 12)),
-        ]),
-      );
+  Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        SizedBox(height: 3),
+        Text(detail, style: TextStyle(color: color, fontSize: 12)),
+      ]),
+    );
+  }
 }
 
 // ─── Error view ───────────────────────────────────────────────────────────────
@@ -890,37 +945,42 @@ class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.msg, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                  color: Colors.red.shade50, shape: BoxShape.circle),
-              child: Icon(Icons.wifi_off_rounded,
-                  size: 40, color: Colors.red.shade400),
-            ),
-            const SizedBox(height: 16),
-            const Text('Ma\'lumot yuklanmadi',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              msg.contains('SocketException') || msg.contains('Connection')
-                  ? 'Internet aloqasini tekshiring'
-                  : 'Server bilan aloqa yo\'q',
-              style: TextStyle(color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Qayta urinish'),
-            ),
-          ]),
-        ),
-      );
+  Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(32),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+                color: Colors.red.shade50, shape: BoxShape.circle),
+            child: Icon(Icons.wifi_off_rounded,
+                size: 40, color: Colors.red.shade400),
+          ),
+          SizedBox(height: 16),
+          Text(tr('m236'),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(
+            msg.contains('SocketException') || msg.contains('Connection')
+                ? tr('m172')
+                : tr('m441'),
+            style: TextStyle(
+                color: adaptiveColor(context, Colors.grey[600]!,
+                    foreground: true)),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: Icon(Icons.refresh_rounded),
+            label: Text(tr('m381')),
+          ),
+        ]),
+      ),
+    );
+  }
 }
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
@@ -933,30 +993,36 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: adaptiveColor(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color:
+                  adaptiveColor(context, Colors.black.withValues(alpha: 0.05)),
               blurRadius: 10,
-              offset: const Offset(0, 2))
+              offset: Offset(0, 2))
         ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(icon, size: 18, color: const Color(0xFF1565C0)),
-          const SizedBox(width: 8),
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A237E))),
+          Icon(icon,
+              size: 18, color: adaptiveColor(context, Color(0xFF1565C0))),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(title,
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: adaptiveColor(context, Color(0xFF1A237E),
+                        foreground: true))),
+          )
         ]),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         child,
       ]),
     );

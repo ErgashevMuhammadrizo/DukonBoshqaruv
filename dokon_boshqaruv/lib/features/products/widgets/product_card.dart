@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product.dart';
@@ -15,6 +17,7 @@ class ProductCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    AppLocaleScope.of(context);
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -35,21 +38,25 @@ class ProductCard extends ConsumerWidget {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.grey[100]!, Colors.grey[200]!],
+                      colors: [
+                        adaptiveColor(context, Colors.grey[100]!),
+                        adaptiveColor(context, Colors.grey[200]!)
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                   ),
                   child: product.image == null || product.image!.isEmpty
                       ? Icon(Icons.inventory_2_outlined,
-                          size: 56, color: Colors.grey[400])
+                          size: 56,
+                          color: adaptiveColor(context, Colors.grey[400]!))
                       : Image.network(
                           product.image!,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Icon(
                             Icons.inventory_2_outlined,
                             size: 56,
-                            color: Colors.grey[400],
+                            color: adaptiveColor(context, Colors.grey[400]!),
                           ),
                         ),
                 ),
@@ -62,35 +69,37 @@ class ProductCard extends ConsumerWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: EdgeInsets.all(12.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       product.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(Icons.qr_code_2,
-                            size: 12, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
+                            size: 12,
+                            color: adaptiveColor(context, Colors.grey[600]!)),
+                        SizedBox(width: 4),
                         Text(
                           product.sku,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey[600],
+                            color: adaptiveColor(context, Colors.grey[600]!,
+                                foreground: true),
                           ),
                         ),
                       ],
                     ),
-                    const Spacer(),
+                    Spacer(),
                     Row(
                       children: [
                         Expanded(
@@ -98,18 +107,21 @@ class ProductCard extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${product.salePrice} UZS',
-                                style: const TextStyle(
+                                tr('m631', [product.salePrice]),
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: Colors.blue,
+                                  color: adaptiveColor(context, Colors.blue,
+                                      foreground: true),
                                 ),
                               ),
                               Text(
                                 '${double.tryParse(product.stock)?.toStringAsFixed(1) ?? product.stock} ${product.unit}',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: adaptiveColor(
+                                      context, Colors.grey[600]!,
+                                      foreground: true),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -118,13 +130,15 @@ class ProductCard extends ConsumerWidget {
                         ),
                         IconButton(
                           icon: Container(
-                            padding: const EdgeInsets.all(6),
+                            padding: EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.blue[50],
+                              color: adaptiveColor(context, Colors.blue[50]!),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(Icons.add_rounded,
-                                size: 18, color: Colors.blue[700]),
+                                size: 18,
+                                color: adaptiveColor(context, Colors.blue[700]!,
+                                    foreground: true)),
                           ),
                           onPressed: () async {
                             await showDialog<bool>(
@@ -133,9 +147,9 @@ class ProductCard extends ConsumerWidget {
                                   QuickStockAdjustmentDialog(product: product),
                             );
                           },
-                          tooltip: 'Tez qo\'shish',
+                          tooltip: tr('m519'),
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+                          constraints: BoxConstraints(),
                         ),
                       ],
                     ),
@@ -162,79 +176,90 @@ class ProductListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    AppLocaleScope.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.grey[200]!),
       ),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         minVerticalPadding: 12,
         leading: Container(
           width: 60,
           height: 60,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.grey[100]!, Colors.grey[200]!],
+              colors: [
+                adaptiveColor(context, Colors.grey[100]!),
+                adaptiveColor(context, Colors.grey[200]!)
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(Icons.inventory_2_outlined,
-              color: Colors.grey[400], size: 28),
+              color:
+                  adaptiveColor(context, Colors.grey[400]!, foreground: true),
+              size: 28),
         ),
         title: Text(
           product.name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.qr_code_2, size: 12, color: Colors.grey[600]),
-                const SizedBox(width: 4),
+                Icon(Icons.qr_code_2,
+                    size: 12, color: adaptiveColor(context, Colors.grey[600]!)),
+                SizedBox(width: 4),
                 Expanded(
                     child: Text(product.sku,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            TextStyle(fontSize: 12, color: Colors.grey[600]))),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: adaptiveColor(context, Colors.grey[600]!,
+                                foreground: true)))),
               ],
             ),
             if (product.categoryName != null)
               Padding(
-                padding: const EdgeInsets.only(top: 2),
+                padding: EdgeInsets.only(top: 2),
                 child: Row(
                   children: [
                     Icon(Icons.category_outlined,
-                        size: 12, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
+                        size: 12,
+                        color: adaptiveColor(context, Colors.grey[600]!)),
+                    SizedBox(width: 4),
                     Text(
                       product.categoryName!,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: adaptiveColor(context, Colors.grey[600]!,
+                              foreground: true)),
                     ),
                   ],
                 ),
               ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Wrap(
               spacing: 6,
               runSpacing: 4,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: adaptiveColor(context, Colors.blue[50]!),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -242,7 +267,8 @@ class ProductListTile extends ConsumerWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
-                      color: Colors.blue[700],
+                      color: adaptiveColor(context, Colors.blue[700]!,
+                          foreground: true),
                     ),
                   ),
                 ),
@@ -259,16 +285,19 @@ class ProductListTile extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${double.tryParse(product.salePrice)?.toStringAsFixed(0) ?? product.salePrice} UZS',
+                tr('m631', [
+                  double.tryParse(product.salePrice)?.toStringAsFixed(0) ??
+                      product.salePrice
+                ]),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
-                  color: Colors.blue,
+                  color: adaptiveColor(context, Colors.blue, foreground: true),
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               GestureDetector(
                 onTap: () async {
                   await showDialog<bool>(
@@ -278,21 +307,23 @@ class ProductListTile extends ConsumerWidget {
                   );
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue[700],
+                    color: adaptiveColor(context, Colors.blue[700]!),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.add_rounded, size: 13, color: Colors.white),
+                      Icon(Icons.add_rounded,
+                          size: 13,
+                          color: adaptiveColor(context, Colors.white)),
                       SizedBox(width: 3),
                       Text(
-                        'Qo\'sh',
+                        tr('m393'),
                         style: TextStyle(
-                            color: Colors.white,
+                            color: adaptiveColor(context, Colors.white,
+                                foreground: true),
                             fontSize: 11,
                             fontWeight: FontWeight.w600),
                       ),
@@ -316,6 +347,7 @@ class _StockBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     Color color;
     IconData icon;
 
@@ -338,17 +370,17 @@ class _StockBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           Text(
             product.stockStatusLabel,
             style: TextStyle(

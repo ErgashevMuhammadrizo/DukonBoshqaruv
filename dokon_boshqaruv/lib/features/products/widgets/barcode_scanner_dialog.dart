@@ -1,4 +1,7 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -44,13 +47,13 @@ class _CameraPort implements CameraSessionPort {
 
 class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
     with WidgetsBindingObserver {
-  static const _native = MethodChannel('dokon_boshqaruv/camera_diagnostics');
+  static final _native = MethodChannel('dokon_boshqaruv/camera_diagnostics');
   final _diagnostics = AppDiagnostics.instance;
   final _controller = MobileScannerController(
     autoStart: false,
     facing: CameraFacing.back,
     detectionSpeed: DetectionSpeed.normal,
-    cameraResolution: const Size(1280, 720),
+    cameraResolution: Size(1280, 720),
     returnImage: false,
   );
   late final CameraSession _session;
@@ -148,7 +151,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
     try {
       final result = await _native
           .invokeMapMethod<String, dynamic>('probe')
-          .timeout(const Duration(seconds: 4));
+          .timeout(Duration(seconds: 4));
       _diagnostics.record('android.camera2.probe', details: result);
     } catch (error, stack) {
       _diagnostics.record(
@@ -185,7 +188,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
         details: {'requested_facing': _facing.name},
       );
       _watchdog?.cancel();
-      _watchdog = Timer(const Duration(seconds: 12), () {
+      _watchdog = Timer(Duration(seconds: 12), () {
         _diagnostics.record(
           'camera.start.pending',
           message:
@@ -248,7 +251,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
       'scanner.close.begin',
       message: code == null ? 'cancel' : 'barcode detected; value omitted',
     );
-    final timer = Timer(const Duration(seconds: 12), () {
+    final timer = Timer(Duration(seconds: 12), () {
       _diagnostics.record(
         'camera.close.pending',
         message: 'Waiting for the pending native operation.',
@@ -297,7 +300,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
         color: Theme.of(context).colorScheme.surface,
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -306,31 +309,32 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                       ? Icons.no_photography_outlined
                       : Icons.camera_alt_outlined,
                   size: 48,
-                  color: Colors.orange,
+                  color: adaptiveColor(context, Colors.orange),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
-                  _permissionDenied
-                      ? 'Kamera ruxsati berilmagan'
-                      : 'Kamera ochilishida xato',
+                  _permissionDenied ? tr('m201') : tr('m199'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 19, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 12),
-                SelectableText(message, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
+                Text(
+                    _permissionDenied
+                        ? tr('m202')
+                        : (_slow ? tr('cameraSlow') : tr('cameraUnavailable')),
+                    textAlign: TextAlign.center),
+                SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: _busy || _closing ? null : () => _session.retry(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Qayta urinish'),
+                  icon: Icon(Icons.refresh),
+                  label: Text(tr('m381')),
                 ),
                 if (_permissionDenied)
                   TextButton(
                     onPressed: () async {
                       await openAppSettings();
                     },
-                    child: const Text('Sozlamalarni ochish'),
+                    child: Text(tr('m485')),
                   ),
               ],
             ),
@@ -340,6 +344,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final stateError = _controller.value.error;
     return PopScope(
       canPop: false,
@@ -347,7 +352,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
         if (!didPop) unawaited(_finish());
       },
       child: Dialog(
-        insetPadding: const EdgeInsets.all(16),
+        insetPadding: EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
@@ -357,16 +362,17 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
             children: [
               AppBar(
                 automaticallyImplyLeading: false,
-                backgroundColor: const Color(0xFF10243D),
-                foregroundColor: Colors.white,
-                title: const Text('Shtrix-kodni skanerlash',
+                backgroundColor: adaptiveColor(context, Color(0xFF10243D)),
+                foregroundColor:
+                    adaptiveColor(context, Colors.white, foreground: true),
+                title: Text(tr('m458'),
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 actions: [
                   IconButton(
-                    tooltip: 'Yopish',
+                    tooltip: tr('m601'),
                     onPressed: _closing ? null : () => _finish(),
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close),
                   ),
                 ],
               ),
@@ -394,40 +400,44 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                         stateError == null &&
                         !_busy &&
                         !_closing)
-                      Center(
-                        child: IgnorePointer(
-                          child: Container(
-                            width: 260,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white, width: 3),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: const [
-                                BoxShadow(color: Colors.black26, blurRadius: 12)
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      LayoutBuilder(builder: (context, bounds) {
+                        final edge = math.max(
+                            0.0,
+                            math.min(
+                                240.0,
+                                math.min(bounds.maxWidth - 32,
+                                    bounds.maxHeight - 32)));
+                        return Center(
+                            child: IgnorePointer(
+                                child: SizedBox.square(
+                          dimension: edge,
+                          child: DecoratedBox(
+                              decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white, width: 3),
+                            borderRadius: BorderRadius.circular(20),
+                          )),
+                        )));
+                      }),
+                    if (_slow && _busy && !_closing) _failure(tr('cameraSlow')),
                     if (_lastError != null || stateError != null)
                       _failure(_lastError ?? stateError.toString()),
-                    if (_busy || _closing)
+                    if ((_busy && !_slow) || _closing)
                       ColoredBox(
-                        color: Colors.black87,
+                        color: adaptiveColor(context, Colors.black87),
                         child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const CircularProgressIndicator(),
-                              const SizedBox(height: 16),
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
                               Text(
                                 _slow
-                                    ? 'Kamera javobi kutilmoqda...'
-                                    : (_closing
-                                        ? 'Kamera yopilmoqda...'
-                                        : 'Kamera ochilmoqda...'),
+                                    ? tr('m198')
+                                    : (_closing ? tr('m203') : tr('m200')),
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                    color: adaptiveColor(context, Colors.white,
+                                        foreground: true)),
                               ),
                             ],
                           ),
@@ -436,10 +446,10 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                   ],
                 ),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(10),
                 child: Text(
-                  'Kodni kameraga ko‘rsating. Fokus uchun tasvirga teging.',
+                  tr('m225'),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -447,16 +457,16 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                 alignment: WrapAlignment.center,
                 children: [
                   IconButton(
-                    tooltip: 'Chiroq',
+                    tooltip: tr('m98'),
                     onPressed: _busy || _closing
                         ? null
                         : () => _session.action(_controller.toggleTorch),
-                    icon: const Icon(Icons.flash_on),
+                    icon: Icon(Icons.flash_on),
                   ),
                   TextButton.icon(
                     onPressed: _busy || _closing ? null : _switchCamera,
-                    icon: const Icon(Icons.cameraswitch),
-                    label: const Text('Boshqa kamera'),
+                    icon: Icon(Icons.cameraswitch),
+                    label: Text(tr('m75')),
                   ),
                 ],
               ),

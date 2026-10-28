@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 
 class UnitSelector extends StatelessWidget {
@@ -14,79 +16,80 @@ class UnitSelector extends StatelessWidget {
     this.enabled = true,
   });
 
-  static const Map<String, UnitInfo> units = {
-    'dona': UnitInfo(
-      icon: Icons.circle_outlined,
-      label: 'Dona',
-      description: 'Sanoqli mahsulotlar',
-      color: Colors.blue,
-    ),
-    'pachka': UnitInfo(
-        icon: Icons.inventory_2_outlined,
-        label: 'Pachka',
-        description: 'Pachkada sotiladi',
-        color: Colors.deepPurple),
-    'butilka': UnitInfo(
-        icon: Icons.local_drink_outlined,
-        label: 'Butilka',
-        description: 'Butilkadagi ichimlik',
-        color: Colors.cyan),
-    'gramm': UnitInfo(
-        icon: Icons.scale,
-        label: 'Gramm',
-        description: 'Og‘irlik',
-        color: Colors.green),
-    'ml': UnitInfo(
-        icon: Icons.water_drop,
-        label: 'Millilitr',
-        description: 'Hajm',
-        color: Colors.cyan),
-    'kg': UnitInfo(
-      icon: Icons.scale_rounded,
-      label: 'Kilogram (kg)',
-      description: 'Og\'irlik',
-      color: Colors.green,
-    ),
-    'litr': UnitInfo(
-      icon: Icons.water_drop_outlined,
-      label: 'Litr (l)',
-      description: 'Hajm',
-      color: Colors.cyan,
-    ),
-    'metr': UnitInfo(
-      icon: Icons.straighten_rounded,
-      label: 'Metr (m)',
-      description: 'Uzunlik',
-      color: Colors.orange,
-    ),
-    'quti': UnitInfo(
-      icon: Icons.inventory_2_outlined,
-      label: 'Quti',
-      description: 'Qadoqlangan',
-      color: Colors.purple,
-    ),
-    'paket': UnitInfo(
-      icon: Icons.shopping_bag_outlined,
-      label: 'Paket',
-      description: 'Paketlangan',
-      color: Colors.brown,
-    ),
-    'm²': UnitInfo(
-      icon: Icons.crop_square_rounded,
-      label: 'Kvadrat metr (m²)',
-      description: 'Yuza',
-      color: Colors.indigo,
-    ),
-    'm³': UnitInfo(
-      icon: Icons.view_in_ar_rounded,
-      label: 'Kub metr (m³)',
-      description: 'Hajm',
-      color: Colors.teal,
-    ),
-  };
+  static Map<String, UnitInfo> get units => {
+        'dona': UnitInfo(
+          icon: Icons.circle_outlined,
+          label: tr('unitPiece'),
+          description: tr('unitPieceDesc'),
+          color: Colors.blue,
+        ),
+        'pachka': UnitInfo(
+            icon: Icons.inventory_2_outlined,
+            label: tr('unitPack'),
+            description: tr('unitPackDesc'),
+            color: Colors.deepPurple),
+        'butilka': UnitInfo(
+            icon: Icons.local_drink_outlined,
+            label: tr('unitBottle'),
+            description: tr('unitBottleDesc'),
+            color: Colors.cyan),
+        'gramm': UnitInfo(
+            icon: Icons.scale,
+            label: tr('unitGram'),
+            description: tr('weight'),
+            color: Colors.green),
+        'ml': UnitInfo(
+            icon: Icons.water_drop,
+            label: tr('unitMl'),
+            description: tr('volume'),
+            color: Colors.cyan),
+        'kg': UnitInfo(
+          icon: Icons.scale_rounded,
+          label: tr('unitKg'),
+          description: tr('weight'),
+          color: Colors.green,
+        ),
+        'litr': UnitInfo(
+          icon: Icons.water_drop_outlined,
+          label: tr('unitLitre'),
+          description: tr('volume'),
+          color: Colors.cyan,
+        ),
+        'metr': UnitInfo(
+          icon: Icons.straighten_rounded,
+          label: tr('unitMetre'),
+          description: tr('length'),
+          color: Colors.orange,
+        ),
+        'quti': UnitInfo(
+          icon: Icons.inventory_2_outlined,
+          label: tr('unitBox'),
+          description: tr('boxed'),
+          color: Colors.purple,
+        ),
+        'paket': UnitInfo(
+          icon: Icons.shopping_bag_outlined,
+          label: tr('unitBag'),
+          description: tr('bagged'),
+          color: Colors.brown,
+        ),
+        'm²': UnitInfo(
+          icon: Icons.crop_square_rounded,
+          label: tr('unitSquare'),
+          description: tr('area'),
+          color: Colors.indigo,
+        ),
+        'm³': UnitInfo(
+          icon: Icons.view_in_ar_rounded,
+          label: tr('unitCubic'),
+          description: tr('volume'),
+          color: Colors.teal,
+        ),
+      };
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final selectedUnit = value != null ? units[value!] : null;
 
     return Column(
@@ -94,13 +97,14 @@ class UnitSelector extends StatelessWidget {
       children: [
         if (labelText != null)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(bottom: 8),
             child: Text(
               labelText!,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color:
+                    adaptiveColor(context, Colors.grey[700]!, foreground: true),
               ),
             ),
           ),
@@ -108,7 +112,7 @@ class UnitSelector extends StatelessWidget {
           onTap: enabled ? () => _showUnitPicker(context) : null,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: enabled ? Colors.white : Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
@@ -119,10 +123,10 @@ class UnitSelector extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color:
-                        (selectedUnit?.color ?? Colors.grey).withOpacity(0.1),
+                    color: (selectedUnit?.color ?? Colors.grey)
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -131,14 +135,14 @@ class UnitSelector extends StatelessWidget {
                     size: 24,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        selectedUnit?.label ?? 'O\'lchov birligi tanlang',
-                        style: const TextStyle(
+                        selectedUnit?.label ?? tr('m315'),
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
@@ -148,7 +152,8 @@ class UnitSelector extends StatelessWidget {
                           selectedUnit.description,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: adaptiveColor(context, Colors.grey[600]!,
+                                foreground: true),
                           ),
                         ),
                     ],
@@ -170,7 +175,7 @@ class UnitSelector extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -184,32 +189,33 @@ class UnitSelector extends StatelessWidget {
               children: [
                 // Handle bar
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  margin: EdgeInsets.symmetric(vertical: 12),
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: adaptiveColor(context, Colors.grey[300]!),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 // Title
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  padding: EdgeInsets.fromLTRB(20, 8, 20, 16),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: adaptiveColor(context, Colors.blue[50]!),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(Icons.straighten_rounded,
-                            color: Colors.blue[700]),
+                            color: adaptiveColor(context, Colors.blue[700]!,
+                                foreground: true)),
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
+                      SizedBox(width: 12),
+                      Expanded(
                         child: Text(
-                          'O\'lchov birligi tanlang',
+                          tr('m315'),
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -219,13 +225,12 @@ class UnitSelector extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Divider(height: 1),
+                Divider(height: 1),
                 // Units list
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     itemCount: units.length,
                     itemBuilder: (context, index) {
                       final entry = units.entries.elementAt(index);
@@ -234,10 +239,10 @@ class UnitSelector extends StatelessWidget {
                       final isSelected = value == unitKey;
 
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        padding: EdgeInsets.symmetric(vertical: 4),
                         child: Material(
                           color: isSelected
-                              ? unitInfo.color.withOpacity(0.1)
+                              ? unitInfo.color.withValues(alpha: 0.1)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           child: InkWell(
@@ -247,7 +252,7 @@ class UnitSelector extends StatelessWidget {
                             },
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 border: Border.all(
                                   color: isSelected
@@ -260,9 +265,10 @@ class UnitSelector extends StatelessWidget {
                               child: Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(12),
+                                    padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: unitInfo.color.withOpacity(0.1),
+                                      color:
+                                          unitInfo.color.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -271,7 +277,7 @@ class UnitSelector extends StatelessWidget {
                                       size: 28,
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -287,12 +293,14 @@ class UnitSelector extends StatelessWidget {
                                                 : Colors.black87,
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
+                                        SizedBox(height: 2),
                                         Text(
                                           unitInfo.description,
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: Colors.grey[600],
+                                            color: adaptiveColor(
+                                                context, Colors.grey[600]!,
+                                                foreground: true),
                                           ),
                                         ),
                                       ],

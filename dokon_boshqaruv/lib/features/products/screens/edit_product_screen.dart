@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,12 +97,13 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final categoriesAsync = ref.watch(categoriesProvider);
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return PopScope(
       canPop: !_hasChanges,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
         final shouldPop = await _confirmDiscard();
@@ -110,19 +113,19 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Mahsulotni tahrirlash'),
+          title: Text(tr('m266')),
         ),
         body: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             children: [
               // Product Image Section
               _SectionHeader(
-                title: 'Mahsulot rasmi',
+                title: tr('m249'),
                 icon: Icons.image,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ImagePickerWidget(
                 initialImagePath: _imagePath ?? widget.product.image,
                 onImageSelected: (path) {
@@ -132,23 +135,26 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                   });
                 },
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Info banner
               Card(
-                color: Colors.blue[50],
+                color: adaptiveColor(context, Colors.blue[50]!),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      Icon(Icons.info, color: Colors.blue[700], size: 20),
-                      const SizedBox(width: 12),
+                      Icon(Icons.info,
+                          color: adaptiveColor(context, Colors.blue[700]!),
+                          size: 20),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Qoldiqni bu yerdan o\'zgartirish mumkin emas. "Qoldiqni o\'zgartirish" tugmasidan foydalaning.',
+                          tr('m401'),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.blue[900],
+                            color: adaptiveColor(context, Colors.blue[900]!,
+                                foreground: true),
                           ),
                         ),
                       ),
@@ -157,55 +163,56 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Basic Information Section
               _SectionHeader(
-                title: 'Asosiy ma\'lumotlar',
+                title: tr('m35'),
                 icon: Icons.info_outline,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               if (isSmallScreen) ...[
                 _buildNameField(),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildSKUField(),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildBarcodeField(),
               ] else ...[
                 Row(
                   children: [
                     Expanded(child: _buildNameField()),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(child: _buildSKUField()),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildBarcodeField(),
               ],
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Category Section
               _SectionHeader(
-                title: 'Kategoriya',
+                title: tr('m212'),
                 icon: Icons.category_outlined,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               categoriesAsync.when(
                 data: (categories) {
                   return DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: 'Kategoriya',
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: tr('m212'),
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.category),
                     ),
-                    value: _selectedCategoryId,
+                    initialValue: _selectedCategoryId,
                     items: [
-                      const DropdownMenuItem<int>(
+                      DropdownMenuItem<int>(
                         value: null,
-                        child: Text('Kategoriasiz'),
+                        child: Text(tr('m211')),
                       ),
                       ...categories.map((category) {
                         return DropdownMenuItem<int>(
@@ -222,28 +229,28 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                     },
                   );
                 },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Kategoriyalar yuklanmadi'),
+                loading: () => LinearProgressIndicator(),
+                error: (_, __) => Text(tr('m213')),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Pricing Section
               _SectionHeader(
-                title: 'Narxlar',
+                title: tr('m307'),
                 icon: Icons.attach_money,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               if (isSmallScreen) ...[
                 _buildPurchasePriceField(),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildSalePriceField(),
               ] else ...[
                 Row(
                   children: [
                     Expanded(child: _buildPurchasePriceField()),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(child: _buildSalePriceField()),
                   ],
                 ),
@@ -261,19 +268,24 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
                     if (sale > 0 && sale < purchase) {
                       return Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: EdgeInsets.only(top: 8),
                         child: Card(
-                          color: Colors.orange[50],
+                          color: adaptiveColor(context, Colors.orange[50]!),
                           child: Padding(
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(12),
                             child: Row(
                               children: [
-                                Icon(Icons.warning, color: Colors.orange[700]),
-                                const SizedBox(width: 12),
+                                Icon(Icons.warning,
+                                    color: adaptiveColor(
+                                        context, Colors.orange[700]!)),
+                                SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    'Sotuv narxi xarid narxidan past',
-                                    style: TextStyle(color: Colors.orange[900]),
+                                    tr('m473'),
+                                    style: TextStyle(
+                                        color: adaptiveColor(
+                                            context, Colors.orange[900]!,
+                                            foreground: true)),
                                   ),
                                 ),
                               ],
@@ -282,67 +294,67 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                         ),
                       );
                     }
-                    return const SizedBox.shrink();
+                    return SizedBox.shrink();
                   },
                 ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Inventory Section
               _SectionHeader(
-                title: 'Ombor sozlamalari',
+                title: tr('m338'),
                 icon: Icons.storage,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Current stock (read-only)
               TextFormField(
                 initialValue: '${widget.product.stock} ${widget.product.unit}',
-                decoration: const InputDecoration(
-                  labelText: 'Joriy qoldiq',
+                decoration: InputDecoration(
+                  labelText: tr('m191'),
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.inventory),
                   enabled: false,
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               if (isSmallScreen) ...[
                 _buildMinStockField(),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildUnitField(),
               ] else ...[
                 Row(
                   children: [
                     Expanded(child: _buildMinStockField()),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(child: _buildUnitField()),
                   ],
                 ),
               ],
 
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Save Button
               FilledButton(
                 onPressed: _isSaving || !_hasChanges ? null : _saveProduct,
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isSaving
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: adaptiveColor(context, Colors.white),
                         ),
                       )
-                    : const Text('O\'zgarishlarni saqlash'),
+                    : Text(tr('m319')),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               OutlinedButton(
                 onPressed: _isSaving
@@ -358,12 +370,12 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                         }
                       },
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Bekor qilish'),
+                child: Text(tr('m57')),
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
             ],
           ),
         ),
@@ -374,14 +386,14 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   Widget _buildNameField() {
     return TextFormField(
       controller: _nameController,
-      decoration: const InputDecoration(
-        labelText: 'Mahsulot nomi *',
+      decoration: InputDecoration(
+        labelText: tr('m245'),
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.inventory_2),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Mahsulot nomini kiriting';
+          return tr('m246');
         }
         return null;
       },
@@ -392,14 +404,14 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   Widget _buildSKUField() {
     return TextFormField(
       controller: _skuController,
-      decoration: const InputDecoration(
-        labelText: 'Mahsulot kodi (SKU) *',
+      decoration: InputDecoration(
+        labelText: tr('m242'),
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.qr_code),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'SKU kiriting';
+          return tr('m415');
         }
         return null;
       },
@@ -411,23 +423,23 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     return TextFormField(
       controller: _barcodeController,
       decoration: InputDecoration(
-        labelText: 'Shtrix-kod',
-        border: const OutlineInputBorder(),
-        prefixIcon: const Icon(Icons.barcode_reader),
-        helperText: 'Ixtiyoriy',
+        labelText: tr('m455'),
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.barcode_reader),
+        helperText: tr('m181'),
         suffixIcon: IconButton(
-          icon: const Icon(Icons.qr_code_scanner),
+          icon: Icon(Icons.qr_code_scanner),
           onPressed: () async {
             final barcode = await showDialog<String>(
               context: context,
-              builder: (context) => const BarcodeScannerDialog(),
+              builder: (context) => BarcodeScannerDialog(),
             );
             if (barcode != null) {
               _barcodeController.text = barcode;
               _markChanged();
             }
           },
-          tooltip: 'Skanerlash',
+          tooltip: tr('m466'),
         ),
       ),
       keyboardType: TextInputType.number,
@@ -437,13 +449,13 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   Widget _buildPurchasePriceField() {
     return TextFormField(
       controller: _purchasePriceController,
-      decoration: const InputDecoration(
-        labelText: 'Xarid narxi',
+      decoration: InputDecoration(
+        labelText: tr('m574'),
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.shopping_cart),
         suffixText: 'UZS',
       ),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
       ],
@@ -451,7 +463,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
         if (value != null && value.isNotEmpty) {
           final price = double.tryParse(value);
           if (price == null || price < 0) {
-            return 'To\'g\'ri narx kiriting';
+            return tr('m528');
           }
         }
         return null;
@@ -462,23 +474,23 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   Widget _buildSalePriceField() {
     return TextFormField(
       controller: _salePriceController,
-      decoration: const InputDecoration(
-        labelText: 'Sotuv narxi *',
+      decoration: InputDecoration(
+        labelText: tr('m472'),
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.sell),
         suffixText: 'UZS',
       ),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
       ],
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Sotuv narxini kiriting';
+          return tr('m474');
         }
         final price = double.tryParse(value);
         if (price == null || price <= 0) {
-          return 'To\'g\'ri narx kiriting';
+          return tr('m528');
         }
         return null;
       },
@@ -488,13 +500,13 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   Widget _buildMinStockField() {
     return TextFormField(
       controller: _minStockController,
-      decoration: const InputDecoration(
-        labelText: 'Minimal qoldiq',
+      decoration: InputDecoration(
+        labelText: tr('m284'),
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.warning_amber),
-        helperText: 'Ogohlantirish uchun',
+        helperText: tr('m335'),
       ),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,3}')),
       ],
@@ -502,7 +514,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
         if (value != null && value.isNotEmpty) {
           final minStock = double.tryParse(value);
           if (minStock == null || minStock < 0) {
-            return 'To\'g\'ri miqdor kiriting';
+            return tr('m527');
           }
         }
         return null;
@@ -512,12 +524,13 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
   Widget _buildUnitField() {
     return DropdownButtonFormField<String>(
-      decoration: const InputDecoration(
-        labelText: 'O\'lchov birligi *',
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: tr('m314'),
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.straighten),
       ),
-      value: _selectedUnit,
+      initialValue: _selectedUnit,
       items: _units.map((unit) {
         return DropdownMenuItem(
           value: unit,
@@ -534,7 +547,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       },
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Birlikni tanlang';
+          return tr('m62');
         }
         return null;
       },
@@ -545,19 +558,20 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('O\'zgarishlarni bekor qilish?'),
-        content: const Text(
-          'Saqlashdan oldin chiqsangiz, barcha o\'zgarishlar yo\'qoladi.',
+        title: Text(tr('m318')),
+        content: Text(
+          tr('m427'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Qaytish'),
+            child: Text(tr('m386')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Bekor qilish'),
+            style: FilledButton.styleFrom(
+                backgroundColor: adaptiveColor(context, Colors.red)),
+            child: Text(tr('m57')),
           ),
         ],
       ),
@@ -603,9 +617,9 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('O\'zgarishlar saqlandi'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Text(tr('m317')),
+          backgroundColor: adaptiveColor(context, Colors.green),
         ),
       );
 
@@ -616,8 +630,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Xatolik: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: Text(tr('m576', [e.toString()])),
+          backgroundColor: adaptiveColor(context, Colors.red),
         ),
       );
     } finally {
@@ -641,17 +655,19 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     return Row(
       children: [
         Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 12),
-        Text(
+        SizedBox(width: 12),
+        Expanded(
+            child: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-        ),
+        )),
       ],
     );
   }

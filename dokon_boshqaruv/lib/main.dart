@@ -12,6 +12,8 @@ Future<void> main() async {
 
   // The POS screen formats the date with the Uzbek locale.
   await initializeDateFormatting('uz');
+  await initializeDateFormatting('ru');
+  await initializeDateFormatting('en');
 
   // Initialize sqflite for desktop platforms (Linux, Windows, macOS)
   if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {

@@ -1,3 +1,5 @@
+import '../../../src/adaptive_colors.dart';
+import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../products/providers/products_provider.dart';
@@ -12,6 +14,7 @@ class ProductGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    AppLocaleScope.of(context);
     final productsAsync = ref.watch(productsProvider);
 
     return productsAsync.when(
@@ -28,7 +31,7 @@ class ProductGrid extends ConsumerWidget {
               }).toList();
 
         if (filteredProducts.isEmpty) {
-          return _buildEmptyState(searchQuery);
+          return _buildEmptyState(context, searchQuery);
         }
 
         final width = MediaQuery.of(context).size.width;
@@ -45,7 +48,7 @@ class ProductGrid extends ConsumerWidget {
         }
 
         return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+          padding: EdgeInsets.fromLTRB(12, 12, 12, 100),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             childAspectRatio: isMobile ? 0.72 : 0.78,
@@ -59,20 +62,22 @@ class ProductGrid extends ConsumerWidget {
           },
         );
       },
-      loading: () => const Center(
+      loading: () => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(strokeWidth: 3),
             SizedBox(height: 12),
-            Text('Mahsulotlar yuklanmoqda...',
-                style: TextStyle(color: Colors.grey)),
+            Text(tr('m258'),
+                style: TextStyle(
+                    color:
+                        adaptiveColor(context, Colors.grey, foreground: true))),
           ],
         ),
       ),
       error: (error, stack) => Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -80,24 +85,29 @@ class ProductGrid extends ConsumerWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.red[50],
+                  color: adaptiveColor(context, Colors.red[50]!),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(Icons.error_outline_rounded,
-                    size: 40, color: Colors.red[400]),
+                    size: 40,
+                    color: adaptiveColor(context, Colors.red[400]!,
+                        foreground: true)),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Xatolik yuz berdi',
+              SizedBox(height: 16),
+              Text(
+                tr('m575'),
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF424242)),
+                    color: adaptiveColor(context, Color(0xFF424242),
+                        foreground: true)),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 error.toString(),
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(
+                    color:
+                        adaptiveColor(context, Colors.grey, foreground: true)),
                 textAlign: TextAlign.center,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
@@ -109,10 +119,10 @@ class ProductGrid extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(String query) {
+  Widget _buildEmptyState(BuildContext context, String query) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -120,7 +130,7 @@ class ProductGrid extends ConsumerWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: adaptiveColor(context, Colors.grey[100]!),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
@@ -128,23 +138,27 @@ class ProductGrid extends ConsumerWidget {
                     ? Icons.inventory_2_outlined
                     : Icons.search_off_rounded,
                 size: 48,
-                color: Colors.grey[400],
+                color:
+                    adaptiveColor(context, Colors.grey[400]!, foreground: true),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Text(
-              query.isEmpty ? 'Mahsulotlar yo\'q' : 'Hech narsa topilmadi',
-              style: const TextStyle(
+              query.isEmpty ? tr('m257') : tr('m158'),
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF616161),
+                color:
+                    adaptiveColor(context, Color(0xFF616161), foreground: true),
               ),
             ),
             if (query.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
-                '"$query" bo\'yicha natija yo\'q',
-                style: const TextStyle(color: Colors.grey),
+                tr('m1', [query]),
+                style: TextStyle(
+                    color:
+                        adaptiveColor(context, Colors.grey, foreground: true)),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -174,7 +188,7 @@ class _ProductCardState extends ConsumerState<_ProductCard>
     super.initState();
     _addCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 180),
+      duration: Duration(milliseconds: 180),
     );
     _addScale = Tween<double>(begin: 1.0, end: 0.82).animate(
       CurvedAnimation(parent: _addCtrl, curve: Curves.easeInOut),
@@ -202,59 +216,60 @@ class _ProductCardState extends ConsumerState<_ProductCard>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.add_shopping_cart_rounded,
-                color: Colors.white, size: 18),
-            const SizedBox(width: 8),
+            Icon(Icons.add_shopping_cart_rounded,
+                color: adaptiveColor(context, Colors.white), size: 18),
+            SizedBox(width: 8),
             Expanded(
               child: Text(
-                '${product.name} savatga qo\'shildi',
+                tr('m639', [product.name]),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF1565C0),
+        backgroundColor: adaptiveColor(context, Color(0xFF1565C0)),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        duration: const Duration(milliseconds: 1200),
+        margin: EdgeInsets.fromLTRB(12, 0, 12, 12),
+        duration: Duration(milliseconds: 1200),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    AppLocaleScope.of(context);
     final product = widget.product;
     final stock = double.tryParse(product.stock) ?? 0;
     final isAvailable = stock > 0;
     final isInCart =
         ref.watch(cartProvider).any((item) => item.productId == product.id);
-    final numberFormat = NumberFormat('#,##0', 'uz_UZ');
+    final numberFormat = NumberFormat('#,##0', activeLanguage);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: adaptiveColor(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isInCart
-              ? const Color(0xFF1565C0).withOpacity(0.6)
-              : const Color(0xFFEEEEEE),
+              ? Color(0xFF1565C0).withValues(alpha: 0.6)
+              : Color(0xFFEEEEEE),
           width: isInCart ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isInCart
-                ? const Color(0xFF1565C0).withOpacity(0.12)
-                : Colors.black.withOpacity(0.05),
+                ? Color(0xFF1565C0).withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: isInCart ? 12 : 6,
-            offset: const Offset(0, 3),
+            offset: Offset(0, 3),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: adaptiveColor(context, Colors.transparent),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: isAvailable ? _onAddToCart : null,
@@ -269,16 +284,15 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: isAvailable
-                            ? const Color(0xFFF3F8FF)
-                            : Colors.grey[100],
-                        borderRadius: const BorderRadius.vertical(
+                        color:
+                            isAvailable ? Color(0xFFF3F8FF) : Colors.grey[100],
+                        borderRadius: BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
                       ),
                       child: product.image != null
                           ? ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
+                              borderRadius: BorderRadius.vertical(
                                 top: Radius.circular(16),
                               ),
                               child: Image.network(
@@ -296,16 +310,18 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                     if (!isAvailable)
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
-                          borderRadius: const BorderRadius.vertical(
+                          color: adaptiveColor(
+                              context, Colors.black.withValues(alpha: 0.35)),
+                          borderRadius: BorderRadius.vertical(
                             top: Radius.circular(16),
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'TUGAGAN',
+                            tr('m492'),
                             style: TextStyle(
-                              color: Colors.white,
+                              color: adaptiveColor(context, Colors.white,
+                                  foreground: true),
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                               letterSpacing: 1,
@@ -319,22 +335,24 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                         top: 8,
                         left: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1565C0),
+                            color: adaptiveColor(context, Color(0xFF1565C0)),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.shopping_cart_rounded,
-                                  color: Colors.white, size: 11),
+                                  color: adaptiveColor(context, Colors.white),
+                                  size: 11),
                               SizedBox(width: 3),
                               Text(
-                                'Savatda',
+                                tr('m435'),
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: adaptiveColor(context, Colors.white,
+                                        foreground: true),
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600),
                               ),
@@ -356,7 +374,7 @@ class _ProductCardState extends ConsumerState<_ProductCard>
               Expanded(
                 flex: 4,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                  padding: EdgeInsets.fromLTRB(10, 8, 10, 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -369,11 +387,11 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                           fontSize: 13,
                           height: 1.3,
                           color: isAvailable
-                              ? const Color(0xFF212121)
+                              ? Color(0xFF212121)
                               : Colors.grey[500],
                         ),
                       ),
-                      const Spacer(),
+                      Spacer(),
                       // Price row + add button
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -383,10 +401,13 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${numberFormat.format(double.tryParse(product.salePrice) ?? 0)} so\'m',
+                                  tr('m641', [
+                                    numberFormat.format(
+                                        double.tryParse(product.salePrice) ?? 0)
+                                  ]),
                                   style: TextStyle(
                                     color: isAvailable
-                                        ? const Color(0xFF1565C0)
+                                        ? Color(0xFF1565C0)
                                         : Colors.grey[400],
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
@@ -404,23 +425,27 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                                   width: 30,
                                   height: 30,
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
+                                    gradient: LinearGradient(
                                       colors: [
                                         Color(0xFF1565C0),
                                         Color(0xFF1E88E5),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(9),
-                                    boxShadow: const [
+                                    boxShadow: [
                                       BoxShadow(
-                                        color: Color(0x441565C0),
+                                        color: adaptiveColor(
+                                            context, Color(0x441565C0)),
                                         blurRadius: 6,
                                         offset: Offset(0, 2),
                                       ),
                                     ],
                                   ),
-                                  child: const Icon(Icons.add_rounded,
-                                      color: Colors.white, size: 18),
+                                  child: Icon(Icons.add_rounded,
+                                      color: adaptiveColor(
+                                          context, Colors.white,
+                                          foreground: true),
+                                      size: 18),
                                 ),
                               ),
                             ),
@@ -442,24 +467,24 @@ class _ProductCardState extends ConsumerState<_ProductCard>
       child: Icon(
         Icons.inventory_2_outlined,
         size: 48,
-        color: isAvailable ? const Color(0xFF90CAF9) : Colors.grey[300],
+        color: isAvailable ? Color(0xFF90CAF9) : Colors.grey[300],
       ),
     );
   }
 
   Widget _buildStockBadge(double stock, String unit) {
-    if (stock <= 0) return const SizedBox.shrink();
+    if (stock <= 0) return SizedBox.shrink();
     final isLow = stock <= (double.tryParse(widget.product.minStock) ?? 0);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: isLow ? Colors.orange[700] : const Color(0xFF2E7D32),
+        color: isLow ? Colors.orange[700] : Color(0xFF2E7D32),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         '${stock % 1 == 0 ? stock.toInt() : stock.toStringAsFixed(1)} $unit',
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: adaptiveColor(context, Colors.white, foreground: true),
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
