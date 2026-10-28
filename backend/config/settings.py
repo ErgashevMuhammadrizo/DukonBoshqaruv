@@ -31,9 +31,9 @@ if not DEBUG and (SECRET_KEY == 'dev-only-insecure-replace-before-deploy' or SEC
     raise RuntimeError('Set a random DJANGO_SECRET_KEY of at least 50 characters for production or DEBUG=1 for development')
 
 ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1],0.0.0.0').split(',')
-    if host.strip()
+    "dukonboshqaruv-production.up.railway.app",
+    "localhost",
+    "127.0.0.1",
 ]
 if DEBUG and '10.0.2.2' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('10.0.2.2')  # Android emulator host bridge for local development.
