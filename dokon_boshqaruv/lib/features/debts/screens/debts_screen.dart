@@ -1,3 +1,4 @@
+import '../../../src/widgets/action_buttons.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
@@ -144,35 +145,33 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                       ],
                       onChanged: (v) => setState(() => _sort = v ?? 'newest'))),
             ]),
-            Row(children: [
-              Expanded(
-                  child: TextButton.icon(
-                      onPressed: () async {
-                        final d = await showDatePicker(
-                            context: context,
-                            initialDate: _start ?? DateTime.now(),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime.now());
-                        if (d != null) setState(() => _start = d);
-                      },
-                      icon: Icon(Icons.calendar_month),
-                      label: Text(_start == null
-                          ? tr('m74')
-                          : DateFormat('dd.MM.yyyy').format(_start!)))),
-              Expanded(
-                  child: TextButton.icon(
-                      onPressed: () async {
-                        final d = await showDatePicker(
-                            context: context,
-                            initialDate: _end ?? DateTime.now(),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime.now());
-                        if (d != null) setState(() => _end = d);
-                      },
-                      icon: Icon(Icons.calendar_month),
-                      label: Text(_end == null
-                          ? tr('m558')
-                          : DateFormat('dd.MM.yyyy').format(_end!)))),
+            ActionButtons(children: [
+              TextButton.icon(
+                  onPressed: () async {
+                    final d = await showDatePicker(
+                        context: context,
+                        initialDate: _start ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now());
+                    if (d != null) setState(() => _start = d);
+                  },
+                  icon: Icon(Icons.calendar_month),
+                  label: Text(_start == null
+                      ? tr('m74')
+                      : DateFormat('dd.MM.yyyy').format(_start!))),
+              TextButton.icon(
+                  onPressed: () async {
+                    final d = await showDatePicker(
+                        context: context,
+                        initialDate: _end ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now());
+                    if (d != null) setState(() => _end = d);
+                  },
+                  icon: Icon(Icons.calendar_month),
+                  label: Text(_end == null
+                      ? tr('m558')
+                      : DateFormat('dd.MM.yyyy').format(_end!))),
               if (_start != null || _end != null)
                 IconButton(
                     onPressed: () => setState(() {

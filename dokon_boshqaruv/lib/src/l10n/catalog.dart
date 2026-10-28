@@ -1,4 +1,14 @@
 const messages = <String, Map<String, String>>{
+  "quantity_increase": {
+    "uz": "Miqdorni oshirish",
+    "ru": "Увеличить количество",
+    "en": "Increase quantity"
+  },
+  "quantity_decrease": {
+    "uz": "Miqdorni kamaytirish",
+    "ru": "Уменьшить количество",
+    "en": "Decrease quantity"
+  },
   "m0": {
     "uz": " Mahsulotlarni keyinroq yangilang.",
     "ru": " Обновите товары позже.",
@@ -392,11 +402,7 @@ const messages = <String, Map<String, String>>{
   },
   "m111": {"uz": "Do'kon nomi", "ru": "Название магазина", "en": "Store name"},
   "m112": {"uz": "Do'konlar", "ru": "Магазины", "en": "Stores"},
-  "m113": {
-    "uz": "Dokon Boshqaruv",
-    "ru": "Dokon Boshqaruv",
-    "en": "Dokon Boshqaruv"
-  },
+  "m113": {"uz": "VEXO", "ru": "VEXO", "en": "VEXO"},
   "m114": {"uz": "Do‘kon", "ru": "Магазин", "en": "Store"},
   "m115": {
     "uz": "Do‘kon ID si topilmadi. Ro‘yxatni yangilang.",
@@ -842,8 +848,10 @@ const messages = <String, Map<String, String>>{
   "m240": {
     "uz":
         "Mahsulot butunlay o'chiriladi. Bu amalni qaytarib bo'lmaydi. Davom etasizmi?",
-    "ru": "Товар будет удалён безвозвратно. Продолжить?",
-    "en": "The product will be permanently deleted. Continue?"
+    "ru":
+        "Товар будет удалён из каталога. При наличии истории продаж или склада запись останется скрытой в базе для сохранения истории. Продолжить?",
+    "en":
+        "Remove this product from the catalogue? If sales or stock history exists, the database record is kept hidden to preserve that history."
   },
   "m241": {
     "uz": "Mahsulot kodi (SKU)",

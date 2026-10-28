@@ -1,0 +1,1 @@
+{"name":"dokon-boshqaruv-website","version":"1.0.0","private":true,"type":"module","scripts":{"check":"node --check static/site/site.js && node --check static/site/download.js","test":"node --test tests/download.test.mjs"}}

@@ -1,0 +1,6 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . /app/website
+CMD ["sh", "-c", "gunicorn website.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --access-logfile -"]

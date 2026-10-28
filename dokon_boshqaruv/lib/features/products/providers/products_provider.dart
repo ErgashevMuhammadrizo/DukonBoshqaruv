@@ -8,6 +8,7 @@ import '../../../src/api.dart';
 import '../../../src/offline.dart';
 import '../../../src/app.dart' show apiProvider, queueProvider;
 import '../models/product.dart';
+import '../../pos/providers/cart_provider.dart';
 
 final productsStaleProvider = StateProvider<bool>((ref) => false);
 
@@ -17,6 +18,7 @@ final productsProvider =
     ref.read(apiProvider),
     ref.read(queueProvider),
     (value) => ref.read(productsStaleProvider.notifier).state = value,
+    onRemoved: (id) => ref.read(cartProvider.notifier).removeProduct(id),
   );
 });
 
@@ -24,14 +26,16 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
   final Api _api;
   final OfflineQueue _queue;
   final void Function(bool) _setStale;
+  final void Function(int)? onRemoved;
   Future<void>? _loading;
 
-  ProductsNotifier(this._api, this._queue, this._setStale)
+  ProductsNotifier(this._api, this._queue, this._setStale, {this.onRemoved})
       : super(AsyncValue.loading()) {
     loadProducts();
   }
 
   Future<void> loadProducts({bool forceRefresh = false}) async {
+    if (_removing) return;
     final running = _loading;
     if (running != null) return running;
     if (!forceRefresh && state.hasValue) return;
@@ -55,7 +59,12 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
         return;
       }
 
-      final fresh = await _api.products();
+      final removed = await _queue.removedProductIds();
+      final fresh = (await _api.products())
+          .where((raw) =>
+              raw['active'] != false &&
+              !removed.contains(int.tryParse('${raw['id']}')))
+          .toList();
       final database = await _queue.db;
       final chosen = await database.transaction<List<dynamic>>((tx) async {
         final counts = await tx.rawQuery(
@@ -89,7 +98,11 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
         return fresh;
       });
 
+      final hidden = await _queue.removedProductIds();
       final parsed = chosen
+          .where((raw) =>
+              raw['active'] != false &&
+              !hidden.contains(int.tryParse('${raw['id']}')))
           .map((raw) => Product.fromJson(Map<String, dynamic>.from(raw as Map)))
           .toList();
       final stale = await _queue.pendingCount() > 0;
@@ -114,14 +127,7 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
   }
 
   Future<void> _showReservedCache() async {
-    final database = await _queue.db;
-    final rows = await database.query('cache',
-        where: 'key = ?', whereArgs: ['products'], limit: 1);
-    if (rows.isEmpty) {
-      throw StateError(tr('m424'));
-    }
-    final raw =
-        List<dynamic>.from(jsonDecode(rows.first['payload'] as String) as List);
+    final raw = await _queue.cachedProducts();
     final parsed = raw
         .map((item) => Product.fromJson(Map<String, dynamic>.from(item as Map)))
         .toList();
@@ -156,16 +162,30 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
     await refresh();
   }
 
-  Future<void> deleteProduct(int id) async {
-    await _requireSynced();
-    await _api.deleteProduct(id);
-    await refresh();
-  }
+  bool _removing = false;
+  Future<void> deleteProduct(int id) => _removeProduct(id, archive: false);
+  Future<void> archiveProduct(int id) => _removeProduct(id, archive: true);
 
-  Future<void> archiveProduct(int id) async {
-    await _requireSynced();
-    await _api.archiveProduct(id);
-    await refresh();
+  Future<void> _removeProduct(int id, {required bool archive}) async {
+    if (_removing) throw StateError('Amal bajarilmoqda. Biroz kuting.');
+    _removing = true;
+    try {
+      await _requireSynced();
+      // Finish an earlier GET before DELETE, so an old response cannot restore it.
+      if (_loading != null) await _loading;
+      if (archive) {
+        await _api.archiveProduct(id);
+      } else {
+        await _api.deleteProduct(id);
+      }
+      await _queue.removeConfirmedProduct(id, tombstone: !archive);
+      if (!mounted) return;
+      final products = state.asData?.value ?? [];
+      state = AsyncValue.data(products.where((p) => p.id != id).toList());
+      onRemoved?.call(id);
+    } finally {
+      _removing = false;
+    }
   }
 
   // Kassa bazaga yozishni o‘zi bajaradi. Bu metodlar faqat joriy UI uchun.
@@ -205,7 +225,7 @@ final filteredProductsProvider = Provider<List<Product>>((ref) {
   final filters = ref.watch(productFiltersProvider);
   if (source == null) return [];
   // Sort asl provider ro‘yxatining tartibini o‘zgartirmaydi.
-  var list = List<Product>.of(source);
+  var list = source.where((p) => p.active).toList();
   final query = filters.searchQuery?.trim().toLowerCase() ?? '';
   if (query.isNotEmpty) {
     list = list
@@ -295,6 +315,9 @@ final categoriesProvider = FutureProvider<List<Category>>((ref) async {
 });
 
 final productProvider = FutureProvider.family<Product?, int>((ref, id) async {
+  if ((await ref.read(queueProvider).removedProductIds()).contains(id)) {
+    return null;
+  }
   final current = ref.watch(productsProvider);
   final loaded = current.asData?.value;
   if (loaded != null) {

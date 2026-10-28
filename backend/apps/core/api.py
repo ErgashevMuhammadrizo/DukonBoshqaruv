@@ -272,15 +272,31 @@ class ProductView(TenantMixin,viewsets.ModelViewSet):
     parser_classes=[JSONParser,MultiPartParser,FormParser]
     http_method_names=['get','post','patch','delete','head','options']
     def destroy(self,request,*args,**kwargs):
-        product=self.get_object()
-        try:
-            with transaction.atomic():
-                product.delete()
-        except ProtectedError:
-            return Response({'error':{'code':'product_has_history','message':'Mahsulot savdo yoki ombor tarixida mavjud. Uni arxivlang.'}},status=409)
-        return Response(status=204)
+        # Same lock order as checkout: store, then product. History never cascades.
+        with transaction.atomic():
+            Store.objects.select_for_update().get(pk=self.get_store().pk)
+            product=self.get_object()
+            product=Product.objects.select_for_update().get(pk=product.pk)
+            mode='permanent'
+            try:
+                # Savepoint keeps the outer transaction usable after PROTECT.
+                with transaction.atomic():
+                    product.delete()
+            except ProtectedError:
+                product.active=False
+                product.deleted_at=timezone.now()
+                product.save(update_fields=['active','deleted_at','updated_at'])
+                mode='soft'
+            AuditLog.objects.create(actor=request.user,action='product_deleted',
+                target=str(kwargs.get('pk')),metadata={'mode':mode})
+        response=Response(status=204)
+        response['X-Product-Deletion']=mode
+        return response
     def get_queryset(self):
-        qs=super().get_queryset()
+        qs=super().get_queryset().filter(deleted_at__isnull=True)
+        # Archived products remain readable for existing history links, but are
+        # excluded from the active catalogue returned to every device.
+        if self.action == 'list': qs=qs.filter(active=True)
         q=self.request.query_params.get('q')
         if q: qs=qs.filter(Q(name__icontains=q)|Q(sku__icontains=q)|Q(barcode__icontains=q))
         return qs.order_by('id')
@@ -295,6 +311,8 @@ class ProductView(TenantMixin,viewsets.ModelViewSet):
         with transaction.atomic():
             Store.objects.select_for_update().get(pk=store.pk)
             product=serializer.instance
+            if not Product.objects.filter(pk=product.pk,deleted_at__isnull=True).exists():
+                raise serializers.ValidationError('Mahsulot o‘chirilgan')
             activate=serializer.validated_data.get('active',product.active) and not product.active
             if activate:
                 history=SubscriptionHistory.objects.filter(store=store,status='active',ends_at__gt=timezone.now()).select_related('plan').order_by('-ends_at').first()
@@ -318,7 +336,7 @@ class Adjustment(APIView):
         if not entitlement_active(request.user.store): return Response({"error":{"code":"subscription_expired","message":"Obuna muddati tugagan"}},status=403)
         try:
             with transaction.atomic():
-                p=Product.objects.select_for_update().get(pk=request.data['product_id'],store=request.user.store)
+                p=Product.objects.select_for_update().get(pk=request.data['product_id'],store=request.user.store,active=True,deleted_at__isnull=True)
                 delta=Decimal(str(request.data['delta']))
                 if delta==0 or delta.as_tuple().exponent < -3 or p.stock+delta<0: return err('Miqdor xato')
                 before=p.stock;p.stock+=delta;p.save(update_fields=['stock','updated_at'])
@@ -326,9 +344,15 @@ class Adjustment(APIView):
                 return Response({'id':m.id,'stock':p.stock},status=201)
         except (KeyError,ValueError,Product.DoesNotExist): return err('Mahsulot yoki miqdor xato')
 class Inventory(APIView):
-    def get(self,request):return Response(list(Product.objects.filter(store=request.user.store).values('id','name','sku','stock','min_stock')))
+    def get(self,request):return Response(list(Product.objects.filter(store=request.user.store,active=True,deleted_at__isnull=True).values('id','name','sku','stock','min_stock')))
 class Movements(APIView):
-    def get(self,request):return Response(list(InventoryMovement.objects.filter(store=request.user.store).order_by('-id')[:100].values('id','product_id','kind','delta','before','after','reference','created_at')))
+    def get(self,request):
+        rows=InventoryMovement.objects.filter(store=request.user.store)
+        product_id=request.query_params.get('product_id')
+        if product_id is not None:
+            if not product_id.isdecimal(): return err('Mahsulot ID noto‘g‘ri')
+            rows=rows.filter(product_id=product_id)
+        return Response(list(rows.order_by('-id')[:100].values('id','product_id','kind','delta','before','after','reference','created_at')))
 class SaleSerializer(serializers.ModelSerializer):
     items=serializers.SerializerMethodField()
     class Meta: model=Sale; fields=['id','operation_id','subtotal','discount','total','cash','card','created_at','items']
@@ -402,7 +426,7 @@ class SyncPush(APIView):
 class SyncPull(APIView):
     def get(self,request):
         s=request.user.store
-        return Response({'products':ProductSerializer(Product.objects.filter(store=s),many=True).data,'categories':CategorySerializer(Category.objects.filter(store=s),many=True).data,'server_time':timezone.now()})
+        return Response({'products':ProductSerializer(Product.objects.filter(store=s,active=True,deleted_at__isnull=True),many=True).data,'categories':CategorySerializer(Category.objects.filter(store=s),many=True).data,'server_time':timezone.now()})
 class Reports(APIView):
     def get(self,request):
         qs=Sale.objects.filter(store=request.user.store)
@@ -419,7 +443,7 @@ class Reports(APIView):
         daily_quantity=dict(sale_items.values('sale__created_at__date').annotate(quantity=Sum('quantity')).values_list('sale__created_at__date','quantity'))
         days=[{'sale__created_at__date':day,'revenue':revenue,'quantity':daily_quantity.get(day,Decimal('0'))} for day,revenue in daily_revenue.items()]
         top=top_product_totals(sale_items)
-        stock=Product.objects.filter(store=request.user.store,active=True)
+        stock=Product.objects.filter(store=request.user.store,active=True,deleted_at__isnull=True)
         low=list(stock.filter(stock__gt=0,stock__lte=F('min_stock')).values('id','name','stock','min_stock'))
         out=list(stock.filter(stock__lte=0).values('id','name','stock','min_stock'))
         quantity=sale_items.aggregate(total=Sum('quantity'))['total'] or Decimal('0')

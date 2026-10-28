@@ -245,6 +245,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       actions: [
         IconButton(
           icon: Icon(Icons.refresh_rounded),
+          tooltip: tr('m595'),
           onPressed: () {
             ref.invalidate(reportSummaryProvider);
             ref.invalidate(reportSalesProvider);
@@ -284,34 +285,20 @@ class _PeriodBar extends StatelessWidget {
             final sel = current == i;
             return Padding(
               padding: EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => onSelect(i),
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 200),
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: sel
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (i == 5)
-                        Icon(Icons.calendar_month_rounded,
-                            size: 12,
-                            color: sel ? Color(0xFF0D47A1) : Colors.white),
-                      if (i == 5) SizedBox(width: 4),
-                      Text(labels[i],
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: sel ? Color(0xFF0D47A1) : Colors.white,
-                          )),
-                    ],
-                  ),
-                ),
+              child: ChoiceChip(
+                selected: sel,
+                onSelected: (_) => onSelect(i),
+                showCheckmark: false,
+                backgroundColor: Colors.white.withValues(alpha: 0.15),
+                selectedColor: Colors.white,
+                avatar: i == 5
+                    ? Icon(Icons.calendar_month_rounded,
+                        color: sel ? const Color(0xFF0D47A1) : Colors.white)
+                    : null,
+                label: Text(labels[i],
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: sel ? const Color(0xFF0D47A1) : Colors.white)),
               ),
             );
           }),
@@ -371,11 +358,12 @@ class _RevenueCard extends StatelessWidget {
                   size: 20),
             ),
             SizedBox(width: 10),
-            Text(tr('m560'),
-                style: TextStyle(
-                    color: adaptiveColor(context, Colors.white70,
-                        foreground: true),
-                    fontSize: 13)),
+            Expanded(
+                child: Text(tr('m560'),
+                    style: TextStyle(
+                        color: adaptiveColor(context, Colors.white70,
+                            foreground: true),
+                        fontSize: 13))),
           ]),
           SizedBox(height: 14),
           Text(

@@ -111,7 +111,7 @@
   "m110": "Do'kon mavjud emas",
   "m111": "Do'kon nomi",
   "m112": "Do'konlar",
-  "m113": "Dokon Boshqaruv",
+  "m113": "VEXO",
   "m114": "Do‘kon",
   "m115": "Do‘kon ID si topilmadi. Ro‘yxatni yangilang.",
   "m116": "Do‘kon holatini o‘zgartirib bo‘lmadi: {0}",
@@ -237,7 +237,7 @@
   "m237": "Mahsulot",
   "m238": "Mahsulot arxivlanadi va sotuvda ko'rinmaydi. Davom etasizmi?",
   "m239": "Mahsulot arxivlandi",
-  "m240": "Mahsulot butunlay o'chiriladi. Bu amalni qaytarib bo'lmaydi. Davom etasizmi?",
+  "m240": "Mahsulot katalogdan olib tashlanadi. Savdo yoki ombor tarixi mavjud bo‘lsa, tarixni saqlash uchun bazada yashiriladi. Davom etasizmi?",
   "m241": "Mahsulot kodi (SKU)",
   "m242": "Mahsulot kodi (SKU) *",
   "m243": "Mahsulot ma'lumotlari",
@@ -672,5 +672,7 @@
   "rejected": "Rad etilgan",
   "approved": "Tasdiqlangan",
   "month": "oy",
-  "year": "yil"
+  "year": "yil",
+  "quantity_increase": "Miqdorni oshirish",
+  "quantity_decrease": "Miqdorni kamaytirish"
 }

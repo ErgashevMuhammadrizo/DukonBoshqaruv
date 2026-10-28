@@ -111,7 +111,7 @@
   "m110": "No store assigned",
   "m111": "Store name",
   "m112": "Stores",
-  "m113": "Dokon Boshqaruv",
+  "m113": "VEXO",
   "m114": "Store",
   "m115": "Store ID not found. Refresh the list.",
   "m116": "Could not update store status: {0}",
@@ -237,7 +237,7 @@
   "m237": "Product",
   "m238": "The product will be archived and hidden from sales. Continue?",
   "m239": "Product archived",
-  "m240": "The product will be permanently deleted. Continue?",
+  "m240": "Remove this product from the catalogue? If sales or stock history exists, the database record is kept hidden to preserve that history.",
   "m241": "Product code (SKU)",
   "m242": "Product code (SKU) *",
   "m243": "Product information",
@@ -672,5 +672,7 @@
   "rejected": "Rejected",
   "approved": "Approved",
   "month": "month",
-  "year": "year"
+  "year": "year",
+  "quantity_increase": "Increase quantity",
+  "quantity_decrease": "Decrease quantity"
 }

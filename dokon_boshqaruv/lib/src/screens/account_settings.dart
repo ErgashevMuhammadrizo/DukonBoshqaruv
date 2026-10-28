@@ -1,3 +1,4 @@
+import '../widgets/action_buttons.dart';
 import '../adaptive_colors.dart';
 import '../l10n/app_strings.dart';
 import 'package:dio/dio.dart';
@@ -201,7 +202,7 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
               tr('m413'), p['is_superadmin'] == true ? tr('m489') : tr('m142')),
           _row(tr('m15'), p['is_active'] == true ? tr('m132') : tr('m63')),
           _row(tr('m596'), _date(p['date_joined'])),
-          Wrap(spacing: 8, children: [
+          ActionButtons(children: [
             OutlinedButton.icon(
               onPressed: _editProfile,
               icon: Icon(Icons.person_outline),
@@ -241,25 +242,32 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
   Future<void> _purchase(Map<String, dynamic> plan) async {
     if (_purchasing) return;
     final controller = TextEditingController();
-    final reference = await showDialog<String>(
+    final formKey = GlobalKey<FormState>();
+    final route = DialogRoute<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('${plan['name']} · ${plan['price']} ${plan['currency']}'),
         content: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(tr('m84')),
-          SizedBox(height: 16),
-          TextField(
-              controller: controller,
-              maxLength: 160,
-              decoration: InputDecoration(labelText: tr('m541'))),
-        ])),
+            child: Form(
+                key: formKey,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(tr('m84')),
+                  SizedBox(height: 16),
+                  TextFormField(
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? tr('m541')
+                              : null,
+                      controller: controller,
+                      maxLength: 160,
+                      decoration: InputDecoration(labelText: tr('m541'))),
+                ]))),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx), child: Text(tr('m57'))),
           FilledButton(
               onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
+                if (formKey.currentState!.validate()) {
                   Navigator.pop(ctx, controller.text.trim());
                 }
               },
@@ -267,6 +275,11 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
         ],
       ),
     );
+    final reference =
+        await Navigator.of(context, rootNavigator: true).push(route);
+    // The field remains mounted during the closing animation.
+    await route.completed;
+    controller.dispose();
     if (!mounted || reference == null) return;
     setState(() => _purchasing = true);
     try {

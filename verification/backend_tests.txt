@@ -1,0 +1,49 @@
+{"time": "2026-10-28 20:20:05,316", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:05,478", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:05,800", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:06,007", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:06,211", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:06,384", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:06,730", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:06,894", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:07,046", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:07,217", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/token/refresh/"}
+{"time": "2026-10-28 20:20:07,514", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/products/1/"}
+{"time": "2026-10-28 20:20:07,516", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/products/1/"}
+{"time": "2026-10-28 20:20:07,874", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/products/1/"}
+{"time": "2026-10-28 20:20:07,876", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/products/1/"}
+{"time": "2026-10-28 20:20:08,064", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/products/1/"}
+{"time": "2026-10-28 20:20:08,439", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/inventory/movements/"}
+{"time": "2026-10-28 20:20:08,828", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/products/1/"}
+{"time": "2026-10-28 20:20:08,830", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/products/not-an-id/"}
+{"time": "2026-10-28 20:20:09,028", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/products/"}
+{"time": "2026-10-28 20:20:09,512", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/change-password/"}
+{"time": "2026-10-28 20:20:09,654", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/change-password/"}
+{"time": "2026-10-28 20:20:10,993", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/auth/change-username/"}
+{"time": "2026-10-28 20:20:11,981", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/auth/login/"}
+{"time": "2026-10-28 20:20:12,640", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/admin/payments/1/"}
+{"time": "2026-10-28 20:20:13,309", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/admin/stores/"}
+{"time": "2026-10-28 20:20:13,312", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/products/"}
+{"time": "2026-10-28 20:20:13,926", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/dashboard/"}
+{"time": "2026-10-28 20:20:13,927", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/users/"}
+{"time": "2026-10-28 20:20:13,927", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/stores/"}
+{"time": "2026-10-28 20:20:13,927", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/plans/"}
+{"time": "2026-10-28 20:20:13,928", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/subscriptions/"}
+{"time": "2026-10-28 20:20:13,928", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/payments/"}
+{"time": "2026-10-28 20:20:13,929", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/audit/"}
+{"time": "2026-10-28 20:20:13,929", "level": "WARNING", "logger": "django.request", "message": "Forbidden: /api/v1/admin/system-status/"}
+{"time": "2026-10-28 20:20:14,267", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/admin/users/3/"}
+{"time": "2026-10-28 20:20:14,606", "level": "WARNING", "logger": "django.request", "message": "Unauthorized: /api/v1/debts/"}
+{"time": "2026-10-28 20:20:15,249", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/debts/1/payments/"}
+{"time": "2026-10-28 20:20:15,252", "level": "WARNING", "logger": "django.request", "message": "Bad Request: /api/v1/debts/1/payments/"}
+{"time": "2026-10-28 20:20:15,253", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/debts/1/"}
+{"time": "2026-10-28 20:20:16,468", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/products/2/"}
+{"time": "2026-10-28 20:20:18,636", "level": "WARNING", "logger": "django.request", "message": "Not Found: /api/v1/products/1/"}
+{"time": "2026-10-28 20:20:19,088", "level": "INFO", "logger": "apps.core.management.commands.backup_database", "message": "Database backup completed: file=dokon-20261028T152019Z.sqlite3 size_bytes=389120"}
+----------------------------------------------------------------------
+Ran 58 tests in 13.952s
+
+OK
+System check identified no issues (0 silenced).
+Expired 1 subscriptions.
+Backup created: dokon-20261028T152019Z.sqlite3 (389120 bytes)

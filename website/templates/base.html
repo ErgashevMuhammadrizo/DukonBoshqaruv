@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#175cd3">
+<title>{% block title %}Dokon Boshqaruv — do‘koningiz boshqaruvi bir joyda{% endblock %}</title>
+<meta name="description" content="{% block description %}Savdo, mahsulot, ombor va qarz hisobini qulay Android ilovasida boshqaring. Dokon Boshqaruv imkoniyatlari bilan tanishing.{% endblock %}">
+<link rel="canonical" href="{{ canonical }}"><meta property="og:type" content="website"><meta property="og:locale" content="uz_UZ"><meta property="og:site_name" content="Dokon Boshqaruv"><meta property="og:title" content="Dokon Boshqaruv — do‘koningiz boshqaruvi bir joyda"><meta property="og:description" content="Savdo, ombor va kundalik hisob. Bitta qulay Android ilovasida."><meta property="og:url" content="{{ canonical }}"><meta property="og:image" content="{{ og_image }}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/static/site/logo.svg" type="image/svg+xml"><link rel="preload" href="/static/site/fonts/Inter.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/static/site/site.css"><script type="module" src="/static/site/site.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Asosiy mazmunga o‘tish</a>
+<header class="site-header" id="site-header"><div class="container nav-wrap">
+<a class="brand" href="/" aria-label="Dokon Boshqaruv — bosh sahifa"><img src="/static/site/logo.svg" width="36" height="36" alt=""><span>Dokon <strong>Boshqaruv</strong></span></a>
+<button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Menyuni ochish"><svg class="icon " aria-hidden="true"><use href="/static/site/icons.svg#menu"/></svg></button>
+<nav id="main-nav" class="main-nav" aria-label="Asosiy navigatsiya"><a href="/" {% if page == 'home' %}aria-current="page"{% endif %}>Bosh sahifa</a><a href="/#imkoniyatlar">Imkoniyatlar</a><a href="/#biz-haqimizda">Biz haqimizda</a><a href="/#boglanish">Bog‘lanish</a><a class="button button-small" href="/download/">Ilovani yuklab olish <svg class="icon " aria-hidden="true"><use href="/static/site/icons.svg#arrow"/></svg></a></nav>
+</div></header>
+<main id="main">{% block content %}{% endblock %}</main>
+<footer class="site-footer"><div class="container footer-top"><a class="brand" href="/"><img src="/static/site/logo.svg" width="34" height="34" alt=""><span>Dokon <strong>Boshqaruv</strong></span></a><p>Kundalik savdo. Tartibli hisob.<br>Do‘koningiz uchun qulay mobil yordamchi.</p><div class="footer-links"><a href="/#imkoniyatlar">Imkoniyatlar</a><a href="/#biz-haqimizda">Biz haqimizda</a><a href="/#boglanish">Bog‘lanish</a><a href="/download/">Ilovani yuklab olish</a></div></div><div class="container footer-bottom"><span>© <span data-year>{% now 'Y' %}</span> Dokon Boshqaruv.</span><span>Do‘kon ishlarini soddalashtirish uchun.</span></div></footer>
+{{ site|json_script:'site-config' }}
+</body></html>

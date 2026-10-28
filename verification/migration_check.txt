@@ -1,0 +1,4 @@
+makemigrations core --check --dry-run
+Database override: SQLite :memory:
+No changes detected in app 'core'
+Exit code: 0

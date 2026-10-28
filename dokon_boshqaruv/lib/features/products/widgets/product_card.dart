@@ -184,157 +184,55 @@ class ProductListTile extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.grey[200]!),
       ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        minVerticalPadding: 12,
-        leading: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                adaptiveColor(context, Colors.grey[100]!),
-                adaptiveColor(context, Colors.grey[200]!)
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(Icons.inventory_2_outlined,
-              color:
-                  adaptiveColor(context, Colors.grey[400]!, foreground: true),
-              size: 28),
-        ),
-        title: Text(
-          product.name,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.qr_code_2,
-                    size: 12, color: adaptiveColor(context, Colors.grey[600]!)),
-                SizedBox(width: 4),
-                Expanded(
-                    child: Text(product.sku,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: adaptiveColor(context, Colors.grey[600]!,
-                                foreground: true)))),
-              ],
-            ),
-            if (product.categoryName != null)
-              Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.category_outlined,
-                        size: 12,
-                        color: adaptiveColor(context, Colors.grey[600]!)),
-                    SizedBox(width: 4),
-                    Text(
-                      product.categoryName!,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: adaptiveColor(context, Colors.grey[600]!,
-                              foreground: true)),
-                    ),
-                  ],
-                ),
-              ),
-            SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: adaptiveColor(context, Colors.blue[50]!),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${double.tryParse(product.stock)?.toStringAsFixed(1) ?? product.stock} ${product.unit}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      color: adaptiveColor(context, Colors.blue[700]!,
-                          foreground: true),
-                    ),
-                  ),
-                ),
-                _StockBadge(product: product),
-              ],
-            ),
-          ],
-        ),
-        trailing: SizedBox(
-          width: 100,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                tr('m631', [
-                  double.tryParse(product.salePrice)?.toStringAsFixed(0) ??
-                      product.salePrice
-                ]),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: adaptiveColor(context, Colors.blue, foreground: true),
-                ),
-              ),
-              SizedBox(height: 4),
-              GestureDetector(
-                onTap: () async {
-                  await showDialog<bool>(
-                    context: context,
-                    builder: (context) =>
-                        QuickStockAdjustmentDialog(product: product),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: adaptiveColor(context, Colors.blue[700]!),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add_rounded,
-                          size: 13,
-                          color: adaptiveColor(context, Colors.white)),
-                      SizedBox(width: 3),
-                      Text(
-                        tr('m393'),
-                        style: TextStyle(
-                            color: adaptiveColor(context, Colors.white,
-                                foreground: true),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
+        child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Icon(Icons.inventory_2_outlined,
+                        color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          Text(product.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 4),
+                          Text(product.sku,
+                              style: Theme.of(context).textTheme.bodySmall),
+                          if (product.categoryName != null)
+                            Text(product.categoryName!),
+                        ])),
+                  ]),
+                  const SizedBox(height: 12),
+                  Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Chip(label: Text('${product.stock} ${product.unit}')),
+                        _StockBadge(product: product),
+                      ]),
+                  const SizedBox(height: 12),
+                  Text(tr('m631', [product.salePrice]),
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary)),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                      onPressed: () => showDialog<bool>(
+                          context: context,
+                          builder: (_) =>
+                              QuickStockAdjustmentDialog(product: product)),
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(tr('m393'))),
+                ])),
       ),
     );
   }

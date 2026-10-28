@@ -92,13 +92,23 @@ ThemeData buildAppTheme(Brightness brightness) {
     filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
             minimumSize: const Size(48, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            alignment: Alignment.center,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)))),
     outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
             minimumSize: const Size(48, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            alignment: Alignment.center,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)))),
+    textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12))),
+    iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(minimumSize: const Size(48, 48))),
     navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surface,
         indicatorColor: colors.primaryContainer,
