@@ -1,4 +1,4 @@
-
+cat > .gitignore <<'EOF'
 # Secrets and local environment
 .env
 .env.*
@@ -14,21 +14,44 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# Local databases, uploads and generated assets
-
+# Django generated files and local data
 backend/media/
 backend/staticfiles/
 var/backups/
 
-# Flutter generated files
-dokon_boshqaruv/.dart_tool/
-dokon_boshqaruv/.flutter-plugins
-dokon_boshqaruv/.flutter-plugins-dependencies
-dokon_boshqaruv/.packages
-dokon_boshqaruv/build/
-dokon_boshqaruv/coverage/
+# Flutter / Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/build/
+**/coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+**/app.*.symbols
+**/app.*.map.json
+
+# Android generated build outputs
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
 
 # IDE and OS
 .vscode/
 .idea/
+*.iml
+*.ipr
+*.iws
 .DS_Store
+*.swp
+*.log
+.atom/
+.history/
+.svn/
+.build/
+.buildlog/
+migrate_working_dir/
+.swiftpm/
+EOF
