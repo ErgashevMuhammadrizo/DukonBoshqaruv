@@ -1,9 +1,12 @@
+
 name: dokon_boshqaruv
 description: Dokon Boshqaruv — savdo va ombor boshqaruvi
 publish_to: none
 version: 0.1.0+1
+
 environment:
   sdk: '>=3.5.0 <4.0.0'
+
 dependencies:
   flutter:
     sdk: flutter
@@ -20,9 +23,19 @@ dependencies:
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
   intl: ^0.20.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/vexo_app_icon.png"
+  adaptive_icon_background: "#030A09"
+  adaptive_icon_foreground: "assets/branding/vexo_app_icon.png"
