@@ -140,7 +140,8 @@ class ProductDetailScreen extends ConsumerWidget {
                           Expanded(
                             child: _InfoCard(
                               title: tr('m396'),
-                              value: '${product.stock} ${product.unit}',
+                              value:
+                                  '${product.stock} ${unitLabel(product.unit)}',
                               icon: Icons.inventory,
                               color: adaptiveColor(context, Colors.purple),
                             ),
@@ -149,7 +150,8 @@ class ProductDetailScreen extends ConsumerWidget {
                           Expanded(
                             child: _InfoCard(
                               title: tr('m284'),
-                              value: '${product.minStock} ${product.unit}',
+                              value:
+                                  '${product.minStock} ${unitLabel(product.unit)}',
                               icon: Icons.warning_amber,
                               color: adaptiveColor(context, Colors.orange),
                             ),
@@ -527,8 +529,8 @@ class ProductDetailScreen extends ConsumerWidget {
                                 final row = rows[index] as Map;
                                 return ListTile(
                                     contentPadding: EdgeInsets.zero,
-                                    title:
-                                        Text('${row['delta']} ${product.unit}'),
+                                    title: Text(
+                                        '${row['delta']} ${unitLabel(product.unit)}'),
                                     subtitle: Text(
                                         '${row['reference'] ?? ''}\n${row['before']} → ${row['after']}\n${row['created_at'] ?? ''}'));
                               });

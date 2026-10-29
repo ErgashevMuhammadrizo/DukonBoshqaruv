@@ -674,5 +674,22 @@
   "month": "oy",
   "year": "yil",
   "quantity_increase": "Miqdorni oshirish",
-  "quantity_decrease": "Miqdorni kamaytirish"
+  "quantity_decrease": "Miqdorni kamaytirish",
+  "requestTimeout": "Server javobi belgilangan vaqtda kelmadi. Qayta urinib ko‘ring.",
+  "certificateError": "Serverning xavfsiz ulanish sertifikatini tekshirib bo‘lmadi.",
+  "requestCancelled": "So‘rov bekor qilindi.",
+  "requestFailed": "So‘rovni bajarib bo‘lmadi. Qayta urinib ko‘ring.",
+  "responseInvalid": "Serverdan kutilmagan javob olindi.",
+  "unit_dona": "dona",
+  "unit_kg": "kg",
+  "unit_gramm": "gramm",
+  "unit_litr": "litr",
+  "unit_ml": "ml",
+  "unit_metr": "metr",
+  "unit_m²": "m²",
+  "unit_m³": "m³",
+  "unit_quti": "quti",
+  "unit_paket": "paket",
+  "unit_pachka": "pachka",
+  "unit_butilka": "butilka"
 }

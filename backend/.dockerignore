@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+!.env.example
+__pycache__
+**/__pycache__
+*.sqlite3
+*.db
+media
+staticfiles
+.venv
+venv
+**/*.pyc
+**/*.p12
+**/*.jks
+**/*.keystore

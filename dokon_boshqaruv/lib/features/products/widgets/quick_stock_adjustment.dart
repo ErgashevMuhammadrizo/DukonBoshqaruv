@@ -276,7 +276,8 @@ class _QuickStockAdjustmentDialogState
                       runSpacing: 8,
                       children: _presets.map((preset) {
                         return ActionChip(
-                          label: Text('$preset ${widget.product.unit}'),
+                          label:
+                              Text('$preset ${unitLabel(widget.product.unit)}'),
                           avatar: Icon(
                             isAdding ? Icons.add_rounded : Icons.remove_rounded,
                             size: 18,
@@ -404,7 +405,7 @@ class _QuickStockAdjustmentDialogState
                                 ),
                               ),
                               Text(
-                                '${double.tryParse(widget.product.stock)?.toStringAsFixed(1) ?? widget.product.stock} ${widget.product.unit}',
+                                '${double.tryParse(widget.product.stock)?.toStringAsFixed(1) ?? widget.product.stock} ${unitLabel(widget.product.unit)}',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -515,13 +516,13 @@ class _QuickStockAdjustmentDialogState
     final currentStock = double.tryParse(widget.product.stock) ?? 0;
 
     if (quantity == null) {
-      return '${currentStock.toStringAsFixed(1)} ${widget.product.unit}';
+      return '${currentStock.toStringAsFixed(1)} ${unitLabel(widget.product.unit)}';
     }
 
     final isAdding = _tabController.index == 0;
     final delta = isAdding ? quantity : -quantity;
     final newStock = currentStock + delta;
 
-    return '${newStock.toStringAsFixed(1)} ${widget.product.unit}';
+    return '${newStock.toStringAsFixed(1)} ${unitLabel(widget.product.unit)}';
   }
 }

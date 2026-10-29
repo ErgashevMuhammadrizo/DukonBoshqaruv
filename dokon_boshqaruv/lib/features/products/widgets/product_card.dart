@@ -116,7 +116,7 @@ class ProductCard extends ConsumerWidget {
                                 ),
                               ),
                               Text(
-                                '${double.tryParse(product.stock)?.toStringAsFixed(1) ?? product.stock} ${product.unit}',
+                                '${double.tryParse(product.stock)?.toStringAsFixed(1) ?? product.stock} ${unitLabel(product.unit)}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: adaptiveColor(
@@ -216,7 +216,9 @@ class ProductListTile extends ConsumerWidget {
                       runSpacing: 8,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Chip(label: Text('${product.stock} ${product.unit}')),
+                        Chip(
+                            label: Text(
+                                '${product.stock} ${unitLabel(product.unit)}')),
                         _StockBadge(product: product),
                       ]),
                   const SizedBox(height: 12),

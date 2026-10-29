@@ -1,3 +1,5 @@
+> **2026-10-29 / VEXO 0.2.2+5:** joriy tuzatishlar, tekshiruv loglari va Railway/APK ko‘rsatmalari: [PRODUCTION_AUDIT_UZ.md](PRODUCTION_AUDIT_UZ.md). Avvalgi reliz hisobotlari tarixiy dalil sifatida saqlangan.
+
 # Dokon Boshqaruv
 
 Uzbek Latin retail management application. **Development source / incomplete MVP, NOT production-ready.** This repository contains a Django REST API, Flutter client, Django-template landing page, transaction tests, and a persistent offline sale queue. See `PROGRESS.md` before deployment.

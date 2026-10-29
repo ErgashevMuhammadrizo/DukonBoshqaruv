@@ -61,3 +61,8 @@ API, admin, auth va health yo‘llari namunada saqlangan. Productionga deploy bu
 ## Qamrov
 
 Ikki marketing sahifasidan tashqari faqat static assetlar, APK endpointi va 404 fallback bor. Tarif sotib olish yoki yangi mobil funksiyalar ushbu website paketining vazifasi emas. `static/css/site.css` eski loyihadan qolgan, yangi sahifalar `static/site/site.css` ni ishlatadi. `tools/export_preview.py` faqat lokal dizayn tekshiruvi uchun; `dist/` production uchun kerak emas.
+
+
+## 2026-10-29 audit yangilanishi
+
+Backend endi `SERVE_WEBSITE=0` bilan mustaqil API sifatida ishlaydi. Saytni backend bilan bir servisda chiqarish uchun `SERVE_WEBSITE=1` va `WEBSITE_ROOT=/website` kerak; `website/integration/Dockerfile` bu qiymatlarni belgilaydi va ikkala papkani imagega qo‘shadi. `integration/backend/config/urls.py` yangi `public_website.py` bilan birga ishlaydi — faqat URL faylini eski backendga ko‘chirmang. To‘liq ko‘rsatma repo ildizidagi `PRODUCTION_AUDIT_UZ.md` da.

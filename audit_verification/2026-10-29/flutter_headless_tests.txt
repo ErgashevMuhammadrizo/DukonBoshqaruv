@@ -1,0 +1,98 @@
+The Dart VM service is listening on http://127.0.0.1:35309/5mHz9yWRkzM=/
+PASS bir xil mahsulot qayta qo‘shilganda qator va miqdor birlashtiriladi
+PASS miqdor ombor chegarasidan oshmaydi va musbat bo‘lishi kerak
+PASS kasrli birlik uchun qator summasi sentga yaxlitlanadi
+PASS kasrli qoldiqda +1 ombor chegarasini buzmaydi
+PASS miqdor oshirish, kamaytirish va tozalash
+PASS decimal quantity is normalized to three places without binary drift
+PASS barcode and sku values are normalized for scanning
+PASS product lookup matches barcode or sku ignoring whitespace and separators
+PASS account settings displays backend profile and current plan
+PASS username form posts the new value and refreshes the profile
+PASS App boots and renders Dokon Boshqaruv
+PASS all catalog languages and placeholders match
+PASS preferences restore without changing account or cart
+PASS changing language and theme preserves typed login and cart
+PASS uz Brightness.dark compact login, product and cart layout
+PASS uz Brightness.dark reports, debts and product forms
+PASS uz Brightness.dark admin dashboard layout
+PASS uz Brightness.dark account and plan layout
+PASS uz Brightness.light compact login, product and cart layout
+PASS uz Brightness.light reports, debts and product forms
+PASS uz Brightness.light admin dashboard layout
+PASS uz Brightness.light account and plan layout
+PASS ru Brightness.dark compact login, product and cart layout
+PASS ru Brightness.dark reports, debts and product forms
+PASS ru Brightness.dark admin dashboard layout
+PASS ru Brightness.dark account and plan layout
+PASS ru Brightness.light compact login, product and cart layout
+PASS ru Brightness.light reports, debts and product forms
+PASS ru Brightness.light admin dashboard layout
+PASS ru Brightness.light account and plan layout
+PASS en Brightness.dark compact login, product and cart layout
+PASS en Brightness.dark reports, debts and product forms
+PASS en Brightness.dark admin dashboard layout
+PASS en Brightness.dark account and plan layout
+PASS en Brightness.light compact login, product and cart layout
+PASS en Brightness.light reports, debts and product forms
+PASS en Brightness.light admin dashboard layout
+PASS en Brightness.light account and plan layout
+PASS scanner denied permission shows a finite fallback
+PASS Api token refresh interceptor 401 refreshes token and retries the original request once
+PASS Api token refresh interceptor refresh failure clears tokens and invokes logout callback
+PASS OfflineQueue sync ack flow marks operations complete
+PASS OfflineQueue sync conflict flow keeps the failed op visible and retry requeues it
+*** sqflite warning ***
+
+You are changing sqflite default factory.
+Be aware of the potential side effects. Any library using sqflite
+will have this factory as the default for all operations.
+
+*** sqflite warning ***
+
+PASS Api sends DELETE to the correct product URL
+PASS acknowledged removal survives queue close and app restart
+PASS acknowledged delete removes correct ID from state and durable cache
+PASS stale refresh and cache writes cannot resurrect an acknowledged delete
+PASS archiving does not permanently block a later explicit reactivation
+PASS server failure retains product, cache and no tombstone
+PASS network failure does not enqueue or claim a completed deletion
+PASS pending offline sales block deletion before HTTP request
+PASS double press sends one DELETE and keeps the product until acknowledgement
+PASS narrow action buttons wrap text and both handlers work
+PASS delete menu uses live screen context; cancel and failure keep detail
+PASS delete shows progress, then closes detail only after server ack
+PASS uz important screens fit 320px with enlarged text
+PASS ru important screens fit 320px with enlarged text
+PASS en important screens fit 320px with enlarged text
+PASS plan action validates reference, cancels safely and posts the selected ID
+PASS uz ru uz preserves API URL identity queue owner tokens and cart
+PASS Russian 401 refresh uses canonical headers and retries once
+PASS 401 image upload replays a fresh multipart body without translating fields
+PASS parallel rejected refresh clears tokens and logs out once without deleting language
+PASS refresh HTTP 403 remains distinguishable and does not erase tokens
+PASS refresh HTTP 429 remains distinguishable and does not erase tokens
+PASS refresh HTTP 500 remains distinguishable and does not erase tokens
+PASS refresh HTTP 503 remains distinguishable and does not erase tokens
+PASS refresh timeout keeps account and is not mislabeled as invalid credentials
+PASS late old-token 401 reuses the current access token without a second rotation
+PASS a refresh response arriving after explicit logout cannot restore tokens
+PASS cold restore transient failure retains tokens and exposes actual error
+PASS API diagnostics contain status and kind but no bearer or refresh token
+PASS error categories remain localized and unit labels never replace protocol IDs
+PASS forced logout clears the in-memory cart across account boundaries
+PASS session invalidation discards a previously loaded debt result
+PASS debt search with a separator remains one JSON query value
+PASS expired session on active reports navigates once without refresh loop
+PASS authenticated MaterialApp locale switches preserve screen API cart and startup Future
+PASS startup 503 shows retry while retaining tokens instead of forcing Login
+PASS Brightness.dark uz report chips have readable enabled selected disabled and interaction states
+PASS Brightness.dark ru report chips have readable enabled selected disabled and interaction states
+PASS Brightness.dark en report chips have readable enabled selected disabled and interaction states
+PASS Brightness.light uz report chips have readable enabled selected disabled and interaction states
+PASS Brightness.light ru report chips have readable enabled selected disabled and interaction states
+PASS Brightness.light en report chips have readable enabled selected disabled and interaction states
+PASS selection changes label and fill together on the first animation frame
+PASS day week and remounted reports keep canonical query dates and selected range across locale and theme
+PASS report error view shows a localized 401 instead of a fake network failure
+HEADLESS RESULT: 88 passed, 0 failed

@@ -1,0 +1,4 @@
+YAML parsed. All four service build contexts contain COPY inputs and manage.py.
+PG* variable names match Django. No default database password.
+Local Compose defaults PGSSLMODE=prefer for the stock local PostgreSQL service; production settings reject modes weaker than require.
+Docker images, a real PostgreSQL server and pg_dump were NOT executed.

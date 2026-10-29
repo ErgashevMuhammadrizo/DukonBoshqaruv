@@ -167,7 +167,7 @@ class ProductsNotifier extends StateNotifier<AsyncValue<List<Product>>> {
   Future<void> archiveProduct(int id) => _removeProduct(id, archive: true);
 
   Future<void> _removeProduct(int id, {required bool archive}) async {
-    if (_removing) throw StateError('Amal bajarilmoqda. Biroz kuting.');
+    if (_removing) throw StateError(tr('m231'));
     _removing = true;
     try {
       await _requireSynced();

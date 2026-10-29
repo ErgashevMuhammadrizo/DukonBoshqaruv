@@ -674,5 +674,22 @@
   "month": "месяц",
   "year": "год",
   "quantity_increase": "Увеличить количество",
-  "quantity_decrease": "Уменьшить количество"
+  "quantity_decrease": "Уменьшить количество",
+  "requestTimeout": "Время ожидания ответа истекло. Повторите попытку.",
+  "certificateError": "Не удалось проверить сертификат безопасного соединения сервера.",
+  "requestCancelled": "Запрос отменён.",
+  "requestFailed": "Не удалось выполнить запрос. Повторите попытку.",
+  "responseInvalid": "Сервер вернул неожиданный ответ.",
+  "unit_dona": "шт.",
+  "unit_kg": "кг",
+  "unit_gramm": "г",
+  "unit_litr": "л",
+  "unit_ml": "мл",
+  "unit_metr": "м",
+  "unit_m²": "м²",
+  "unit_m³": "м³",
+  "unit_quti": "коробка",
+  "unit_paket": "пакет",
+  "unit_pachka": "пачка",
+  "unit_butilka": "бутылка"
 }

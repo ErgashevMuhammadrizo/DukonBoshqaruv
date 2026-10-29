@@ -309,7 +309,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
               // Current stock (read-only)
               TextFormField(
-                initialValue: '${widget.product.stock} ${widget.product.unit}',
+                initialValue:
+                    '${widget.product.stock} ${unitLabel(widget.product.unit)}',
                 decoration: InputDecoration(
                   labelText: tr('m191'),
                   border: OutlineInputBorder(),
@@ -534,7 +535,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       items: _units.map((unit) {
         return DropdownMenuItem(
           value: unit,
-          child: Text(unit),
+          child: Text(unitLabel(unit)),
         );
       }).toList(),
       onChanged: (value) {
@@ -630,7 +631,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(tr('m576', [e.toString()])),
+          content: Text(friendlyFailure(e)),
           backgroundColor: adaptiveColor(context, Colors.red),
         ),
       );

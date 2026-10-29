@@ -1,4 +1,41 @@
 const messages = <String, Map<String, String>>{
+  "unit_dona": {"uz": "dona", "ru": "шт.", "en": "pcs"},
+  "unit_kg": {"uz": "kg", "ru": "кг", "en": "kg"},
+  "unit_gramm": {"uz": "gramm", "ru": "г", "en": "g"},
+  "unit_litr": {"uz": "litr", "ru": "л", "en": "l"},
+  "unit_ml": {"uz": "ml", "ru": "мл", "en": "ml"},
+  "unit_metr": {"uz": "metr", "ru": "м", "en": "m"},
+  "unit_m²": {"uz": "m²", "ru": "м²", "en": "m²"},
+  "unit_m³": {"uz": "m³", "ru": "м³", "en": "m³"},
+  "unit_quti": {"uz": "quti", "ru": "коробка", "en": "box"},
+  "unit_paket": {"uz": "paket", "ru": "пакет", "en": "bag"},
+  "unit_pachka": {"uz": "pachka", "ru": "пачка", "en": "pack"},
+  "unit_butilka": {"uz": "butilka", "ru": "бутылка", "en": "bottle"},
+  "requestTimeout": {
+    "uz": "Server javobi belgilangan vaqtda kelmadi. Qayta urinib ko‘ring.",
+    "ru": "Время ожидания ответа истекло. Повторите попытку.",
+    "en": "The server did not respond in time. Please try again."
+  },
+  "certificateError": {
+    "uz": "Serverning xavfsiz ulanish sertifikatini tekshirib bo‘lmadi.",
+    "ru": "Не удалось проверить сертификат безопасного соединения сервера.",
+    "en": "The server connection certificate could not be verified."
+  },
+  "requestCancelled": {
+    "uz": "So‘rov bekor qilindi.",
+    "ru": "Запрос отменён.",
+    "en": "The request was cancelled."
+  },
+  "requestFailed": {
+    "uz": "So‘rovni bajarib bo‘lmadi. Qayta urinib ko‘ring.",
+    "ru": "Не удалось выполнить запрос. Повторите попытку.",
+    "en": "The request could not be completed. Please try again."
+  },
+  "responseInvalid": {
+    "uz": "Serverdan kutilmagan javob olindi.",
+    "ru": "Сервер вернул неожиданный ответ.",
+    "en": "The server returned an unexpected response."
+  },
   "quantity_increase": {
     "uz": "Miqdorni oshirish",
     "ru": "Увеличить количество",

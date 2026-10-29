@@ -1,0 +1,2 @@
+PASS: 650 literal UI translation keys exist and are nonempty in uz/ru/en.
+Dynamic unit labels are covered by Flutter tests.

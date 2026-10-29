@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../../src/widgets/action_buttons.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
@@ -6,8 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../src/app.dart';
 
-final debtsProvider = FutureProvider.family<List<dynamic>, String>((ref, key) {
-  final f = key.split('|');
+final debtsProvider =
+    FutureProvider.autoDispose.family<List<dynamic>, String>((ref, key) {
+  final f = List<String>.from(jsonDecode(key) as List);
   return ref.read(apiProvider).debts(
       direction: f[0].isEmpty ? null : f[0],
       search: f[1],
@@ -37,8 +39,15 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
         NumberFormat('#,##0.##', activeLanguage)
             .format(double.tryParse('$raw') ?? 0)
       ]);
-  String get _queryKey =>
-      '${_direction ?? ''}|${_search.text.trim()}|${_status ?? ''}|${_due ?? ''}|${_sort == 'newest' ? '' : _sort}|${_start == null ? '' : DateFormat('yyyy-MM-dd').format(_start!)}|${_end == null ? '' : DateFormat('yyyy-MM-dd').format(_end!)}';
+  String get _queryKey => jsonEncode([
+        _direction ?? '',
+        _search.text.trim(),
+        _status ?? '',
+        _due ?? '',
+        _sort == 'newest' ? '' : _sort,
+        _start == null ? '' : DateFormat('yyyy-MM-dd').format(_start!),
+        _end == null ? '' : DateFormat('yyyy-MM-dd').format(_end!),
+      ]);
   Future<void> _refresh() async => ref.invalidate(debtsProvider(_queryKey));
 
   @override
@@ -186,8 +195,8 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> {
                     padding: EdgeInsets.all(48),
                     child: Center(child: CircularProgressIndicator())),
                 error: (e, _) => Column(children: [
-                      Icon(Icons.wifi_off, size: 48),
-                      Text(tr('m104')),
+                      Icon(Icons.error_outline, size: 48),
+                      Text(friendlyFailure(e), textAlign: TextAlign.center),
                       TextButton(onPressed: _refresh, child: Text(tr('m381')))
                     ]),
                 data: (items) {

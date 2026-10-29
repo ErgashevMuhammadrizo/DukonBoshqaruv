@@ -69,7 +69,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
-WEBSITE_ROOT = Path('/website') if Path('/website').exists() else PROJECT_ROOT / 'website'
+# API-only is the normal backend/Dockerfile deployment. Explicit opt-in keeps
+# the sibling website optional instead of making all API URLs depend on it.
+SERVE_WEBSITE = os.getenv('SERVE_WEBSITE', '0').strip().lower() in {'1', 'true', 'yes', 'on'}
+_default_website = Path('/website') if Path('/website').exists() else PROJECT_ROOT / 'website'
+WEBSITE_ROOT = Path(os.getenv('WEBSITE_ROOT', str(_default_website))).expanduser().resolve()
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
     'DIRS': [str(WEBSITE_ROOT / 'templates')],
@@ -88,16 +92,25 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 import os
 
-DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
+DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
+if not DEBUG and not os.getenv('DB_ENGINE', '').strip():
+    raise ImproperlyConfigured(
+        'Set DB_ENGINE explicitly for production; preserve the existing database choice.'
+    )
 
 if DB_ENGINE == "sqlite":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": Path(os.getenv('SQLITE_PATH', str(BASE_DIR / 'db.sqlite3'))),
         }
     }
 elif DB_ENGINE == "postgres":
+    pg_sslmode = os.getenv('PGSSLMODE', 'require').strip().lower()
+    if pg_sslmode not in {'disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full'}:
+        raise ImproperlyConfigured('PGSSLMODE is invalid.')
+    if not DEBUG and pg_sslmode not in {'require', 'verify-ca', 'verify-full'}:
+        raise ImproperlyConfigured('Production PostgreSQL requires TLS: set PGSSLMODE=require or verify-full.')
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -106,7 +119,7 @@ elif DB_ENGINE == "postgres":
             "PASSWORD": os.environ["PGPASSWORD"],
             "HOST": os.environ["PGHOST"],
             "PORT": os.getenv("PGPORT", "5432"),
-            "OPTIONS": {"sslmode": "require"},
+            "OPTIONS": {"sslmode": pg_sslmode},
         }
     }
 else:

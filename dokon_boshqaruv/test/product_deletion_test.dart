@@ -138,12 +138,13 @@ void main() {
     expect(notifier.state.requireValue.map((p) => p.id), [2]);
     expect((await queue.cachedProducts()).map((p) => p['id']), [2]);
   });
-  test('archiving does not permanently block a later explicit reactivation', () async {
+  test('archiving does not permanently block a later explicit reactivation',
+      () async {
     await queue.removeConfirmedProduct(1, tombstone: false);
     expect((await queue.cachedProducts()).map((p) => p['id']), [2]);
     expect(await queue.removedProductIds(), isEmpty);
     await queue.cacheProducts([row(1), row(2)]);
-    expect((await queue.cachedProducts()).map((p) => p['id']), [1,2]);
+    expect((await queue.cachedProducts()).map((p) => p['id']), [1, 2]);
   });
   test('server failure retains product, cache and no tombstone', () async {
     api.failure = DioException(

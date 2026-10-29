@@ -473,7 +473,7 @@ class _ProductCardState extends ConsumerState<_ProductCard>
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        '${stock % 1 == 0 ? stock.toInt() : stock.toStringAsFixed(1)} $unit',
+        '${stock % 1 == 0 ? stock.toInt() : stock.toStringAsFixed(1)} ${unitLabel(unit)}',
         style: TextStyle(
           color: adaptiveColor(context, Colors.white, foreground: true),
           fontSize: 10,
