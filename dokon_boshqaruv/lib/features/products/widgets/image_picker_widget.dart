@@ -230,11 +230,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         onTap: _isProcessing ? null : _showImageSourceDialog,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: _imagePath != null || _isProcessing ? 220 : null,
-          constraints: const BoxConstraints(minHeight: 220),
-          padding: _imagePath == null && !_isProcessing
-              ? const EdgeInsets.all(16)
-              : EdgeInsets.zero,
+          height: 220,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: _imagePath == null

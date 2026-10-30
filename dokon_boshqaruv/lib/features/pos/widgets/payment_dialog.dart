@@ -1,4 +1,3 @@
-import '../../../src/widgets/action_buttons.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
 import 'dart:async';
@@ -693,14 +692,18 @@ class _PaymentDialogState extends ConsumerState<PaymentDialog> {
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 5),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label),
-        const SizedBox(height: 4),
-        Text(tr('m642', [_format(value)]),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          Text(
+            tr('m642', [_format(value)]),
             style: TextStyle(
-                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-                fontSize: bold ? 18 : 14)),
-      ]),
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              fontSize: bold ? 18 : 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -958,25 +961,41 @@ class _PaymentDialogState extends ConsumerState<PaymentDialog> {
               ),
               Padding(
                 padding: EdgeInsets.all(16),
-                child: ActionButtons(children: [
-                  OutlinedButton(
-                      onPressed: _processing ? null : _close,
-                      child: Text(tr('m348'), textAlign: TextAlign.center)),
-                  FilledButton(
-                      onPressed:
-                          _processing || cart.isEmpty ? null : _processSale,
-                      style: FilledButton.styleFrom(
-                          backgroundColor: adaptiveColor(context, _green)),
-                      child: _processing
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : Text(
-                              _frozenPayload == null ? tr('m511') : tr('m381'),
-                              textAlign: TextAlign.center)),
-                ]),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _processing ? null : _close,
+                        child: Text(tr('m348')),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton(
+                        onPressed:
+                            _processing || cart.isEmpty ? null : _processSale,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: adaptiveColor(context, _green),
+                        ),
+                        child: _processing
+                            ? SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: adaptiveColor(context, Colors.white),
+                                ),
+                              )
+                            : Text(
+                                _frozenPayload == null
+                                    ? tr('m511')
+                                    : tr('m381'),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

@@ -1,15 +1,3 @@
-# Compose uses the database service; Railway uses its injected PG* variables.
-x-backend-environment: &backend-environment
-  DB_ENGINE: postgres
-  PGHOST: db
-  PGPORT: "5432"
-  # Local postgres:17 has no TLS certificate; production must explicitly use require.
-  PGSSLMODE: ${PGSSLMODE:-prefer}
-  PGDATABASE: ${POSTGRES_DB:-dokon}
-  PGUSER: ${POSTGRES_USER:-dokon}
-  PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your private environment}
-  SERVE_WEBSITE: "0"
-
 services:
   db:
     image: postgres:17-alpine
@@ -17,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dokon}
       POSTGRES_USER: ${POSTGRES_USER:-dokon}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your private environment}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dokon123}
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
@@ -31,10 +19,9 @@ services:
         limits: {cpus: "2.0", memory: 2G}
         reservations: {memory: 512M}
   api:
-    environment: *backend-environment
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
       - path: .env
         required: false
@@ -66,10 +53,9 @@ services:
         limits: {cpus: "2.0", memory: 1G}
         reservations: {memory: 256M}
   migrate:
-    environment: *backend-environment
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
       - path: .env
         required: false
@@ -89,10 +75,9 @@ services:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
   collectstatic:
-    environment: *backend-environment
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
       - path: .env
         required: false
@@ -105,10 +90,9 @@ services:
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
   backup:
-    environment: *backend-environment
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
       - path: .env
         required: false

@@ -378,39 +378,38 @@ class _POSScreenState extends ConsumerState<POSScreen>
                   ],
                 ),
               ),
-              // Keep history and clear actions visible on compact phones.
-              if (MediaQuery.sizeOf(context).width >= 480)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: adaptiveColor(
-                        context, Colors.white.withValues(alpha: 0.12)),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: adaptiveColor(
-                            context, Colors.white.withValues(alpha: 0.2))),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.access_time_rounded,
-                          size: 13,
-                          color: adaptiveColor(
-                              context, Colors.white.withValues(alpha: 0.8))),
-                      SizedBox(width: 5),
-                      Text(
-                        _currentTime,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: adaptiveColor(context, Colors.white,
-                              foreground: true),
-                        ),
-                      ),
-                    ],
-                  ),
+              // Clock
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: adaptiveColor(
+                      context, Colors.white.withValues(alpha: 0.12)),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: adaptiveColor(
+                          context, Colors.white.withValues(alpha: 0.2))),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.access_time_rounded,
+                        size: 13,
+                        color: adaptiveColor(
+                            context, Colors.white.withValues(alpha: 0.8))),
+                    SizedBox(width: 5),
+                    Text(
+                      _currentTime,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: adaptiveColor(context, Colors.white,
+                            foreground: true),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               SizedBox(width: 8),
               // History button
               _AppBarIconBtn(

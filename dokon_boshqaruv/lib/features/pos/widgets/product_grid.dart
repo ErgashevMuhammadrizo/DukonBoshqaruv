@@ -34,24 +34,33 @@ class ProductGrid extends ConsumerWidget {
           return _buildEmptyState(context, searchQuery);
         }
 
-        return LayoutBuilder(builder: (context, box) {
-          final crossAxisCount = (box.maxWidth / 190).floor().clamp(1, 4);
-          final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
-          return GridView.builder(
-            padding: EdgeInsets.fromLTRB(12, 12, 12, 100),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              mainAxisExtent: 320 * scale.clamp(1.0, 1.8),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: filteredProducts.length,
-            itemBuilder: (context, index) {
-              final product = filteredProducts[index];
-              return _ProductCard(product: product);
-            },
-          );
-        });
+        final width = MediaQuery.of(context).size.width;
+        final isMobile = width < 600;
+        int crossAxisCount;
+        if (isMobile) {
+          crossAxisCount = 2;
+        } else if (width < 900) {
+          crossAxisCount = 3;
+        } else if (width < 1200) {
+          crossAxisCount = 3;
+        } else {
+          crossAxisCount = 4;
+        }
+
+        return GridView.builder(
+          padding: EdgeInsets.fromLTRB(12, 12, 12, 100),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: isMobile ? 0.72 : 0.78,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
+          itemCount: filteredProducts.length,
+          itemBuilder: (context, index) {
+            final product = filteredProducts[index];
+            return _ProductCard(product: product);
+          },
+        );
       },
       loading: () => Center(
         child: Column(
@@ -413,8 +422,8 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                               child: GestureDetector(
                                 onTap: _onAddToCart,
                                 child: Container(
-                                  width: 48,
-                                  height: 48,
+                                  width: 30,
+                                  height: 30,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
@@ -473,7 +482,7 @@ class _ProductCardState extends ConsumerState<_ProductCard>
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        '${stock % 1 == 0 ? stock.toInt() : stock.toStringAsFixed(1)} ${unitLabel(unit)}',
+        '${stock % 1 == 0 ? stock.toInt() : stock.toStringAsFixed(1)} $unit',
         style: TextStyle(
           color: adaptiveColor(context, Colors.white, foreground: true),
           fontSize: 10,

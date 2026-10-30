@@ -1,12 +1,3 @@
-import '../features/debts/screens/debts_screen.dart' show debtsProvider;
-import '../features/reports/screens/reports_screen.dart'
-    show
-        reportRangeProvider,
-        reportPeriodProvider,
-        reportSummaryProvider,
-        reportSalesProvider;
-import '../features/pos/screens/sales_history_screen.dart'
-    show salesHistoryProvider;
 import 'l10n/app_strings.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api.dart';
 import 'preferences.dart';
-import '../features/pos/providers/cart_provider.dart';
 import 'offline.dart';
 import 'screens/activate_account.dart';
 import 'screens/admin_panel.dart';
@@ -26,39 +16,16 @@ import '../features/products/providers/products_provider.dart' as products;
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
-final authLogoutEpochProvider = StateProvider<int>((ref) => 0);
+final apiProvider = Provider<Api>((ref) {
+  final api = Api();
 
-// A separate coordinator invalidates dependants of apiProvider. Doing this
-// from apiProvider's own Ref would create a Riverpod circular dependency.
-final sessionGuardProvider = Provider<void>((ref) {
-  ref.listen<int>(authLogoutEpochProvider, (previous, next) {
-    ref.invalidate(cartProvider);
-    ref.invalidate(debtsProvider);
-    ref.invalidate(reportRangeProvider);
-    ref.invalidate(reportPeriodProvider);
-    ref.invalidate(reportSummaryProvider);
-    ref.invalidate(reportSalesProvider);
-    ref.invalidate(salesHistoryProvider);
-    ref.invalidate(products.productsProvider);
-    ref.invalidate(products.categoriesProvider);
-    ref.invalidate(products.productProvider);
-    ref.invalidate(products.productsStaleProvider);
-    ref.invalidate(products.productFiltersProvider);
-    ref.invalidate(queueProvider);
+  api.onLogout = () {
     appNavigatorKey.currentState?.pushAndRemoveUntil(
       MaterialPageRoute<void>(
         builder: (_) => Login(),
       ),
       (_) => false,
     );
-  });
-});
-
-final Provider<Api> apiProvider = Provider<Api>((ref) {
-  final api = Api();
-
-  api.onLogout = () {
-    ref.read(authLogoutEpochProvider.notifier).state++;
   };
 
   ref.onDispose(() {
@@ -68,7 +35,7 @@ final Provider<Api> apiProvider = Provider<Api>((ref) {
   return api;
 });
 
-final Provider<OfflineQueue> queueProvider = Provider<OfflineQueue>((ref) {
+final queueProvider = Provider<OfflineQueue>((ref) {
   final api = ref.watch(apiProvider);
   final owner = api.sessionKey;
 
@@ -86,13 +53,6 @@ final Provider<OfflineQueue> queueProvider = Provider<OfflineQueue>((ref) {
 });
 
 void _resetAccountProviders(WidgetRef ref) {
-  ref.invalidate(cartProvider);
-  ref.invalidate(debtsProvider);
-  ref.invalidate(reportRangeProvider);
-  ref.invalidate(reportPeriodProvider);
-  ref.invalidate(reportSummaryProvider);
-  ref.invalidate(reportSalesProvider);
-  ref.invalidate(salesHistoryProvider);
   ref.invalidate(products.productsProvider);
   ref.invalidate(products.categoriesProvider);
   ref.invalidate(products.productProvider);
@@ -121,7 +81,6 @@ class DokonApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     AppLocaleScope.of(context);
-    ref.watch(sessionGuardProvider);
     final language = ref.watch(languageProvider);
     return MaterialApp(
       locale: Locale(language),
@@ -148,7 +107,7 @@ class Startup extends ConsumerStatefulWidget {
 }
 
 class _StartupState extends ConsumerState<Startup> {
-  late Future<Map<String, dynamic>?> _startup;
+  late final Future<Map<String, dynamic>?> _startup;
 
   @override
   void initState() {
@@ -157,12 +116,20 @@ class _StartupState extends ConsumerState<Startup> {
   }
 
   Future<Map<String, dynamic>?> _restore() async {
-    final api = ref.read(apiProvider);
-    if (!await api.restore()) return null;
-    final profile = api.sessionProfile ?? await api.me();
-    if (!mounted) return null;
-    _resetAccountProviders(ref);
-    return profile;
+    try {
+      final api = ref.read(apiProvider);
+
+      if (!await api.restore()) return null;
+
+      final profile = await api.me();
+
+      if (!mounted) return null;
+
+      _resetAccountProviders(ref);
+      return profile;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -184,38 +151,6 @@ class _StartupState extends ConsumerState<Startup> {
               ),
             ),
           );
-        }
-
-        if (snapshot.hasError) {
-          return Scaffold(
-              body: SafeArea(
-                  child: Center(
-                      child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.error_outline, size: 48),
-              const SizedBox(height: 16),
-              Text(friendlyFailure(snapshot.error),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: Text(tr('m381')),
-                  onPressed: () => setState(() {
-                        _startup = _restore();
-                      })),
-              TextButton(
-                  onPressed: () async {
-                    await ref.read(apiProvider).logout();
-                    if (!mounted) return;
-                    _resetAccountProviders(ref);
-                    setState(() {
-                      _startup = Future.value(null);
-                    });
-                  },
-                  child: Text(tr('m217'))),
-            ]),
-          ))));
         }
 
         final profile = snapshot.data;
@@ -285,7 +220,18 @@ class _LoginState extends ConsumerState<Login> {
     } on DioException catch (e) {
       if (!mounted) return;
 
-      setState(() => error = friendlyFailure(e));
+      final status = e.response?.statusCode;
+
+      setState(() {
+        error = switch (status) {
+          400 => tr('m222'),
+          401 => tr('m234'),
+          403 => tr('m21'),
+          429 => tr('m228'),
+          null => tr('m450'),
+          _ => tr('m446', [status]),
+        };
+      });
     } catch (_) {
       if (!mounted) return;
 

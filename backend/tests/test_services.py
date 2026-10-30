@@ -88,18 +88,14 @@ class ProductAndReportTests(TestCase):
   self.assertEqual(Decimal(str(summary.data['items_sold'])),Decimal('2'))
   self.assertEqual(summary.data['top_products'][0]['name'],'Non')
 
- def test_delete_unused_product_and_soft_delete_history(self):
+ def test_delete_unused_product_and_protect_history(self):
   unused=Product.objects.create(store=self.store,name='Yangi',sku='NEW-DELETE',sale_price='10')
   response=self.client.delete(f'/api/v1/products/{unused.pk}/')
   self.assertEqual(response.status_code,204)
   self.assertFalse(Product.objects.filter(pk=unused.pk).exists())
   create_sale(self.store,{'operation_id':'f5e913f6-d901-4601-9589-d9c104745116','items':[{'product_id':self.product.pk,'quantity':'1'}],'cash':'2500','card':'0'})
   response=self.client.delete(f'/api/v1/products/{self.product.pk}/')
-  self.assertEqual(response.status_code,204)
-  self.assertEqual(response['X-Product-Deletion'],'soft')
-  self.product.refresh_from_db()
-  self.assertFalse(self.product.active)
-  self.assertIsNotNone(self.product.deleted_at)
+  self.assertEqual(response.status_code,409)
   self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
 
  def test_delete_other_store_product_forbidden(self):

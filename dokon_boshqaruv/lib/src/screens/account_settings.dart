@@ -1,4 +1,4 @@
-import '../widgets/action_buttons.dart';
+import 'package:flutter/services.dart';
 import '../adaptive_colors.dart';
 import '../l10n/app_strings.dart';
 import 'package:dio/dio.dart';
@@ -202,7 +202,7 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
               tr('m413'), p['is_superadmin'] == true ? tr('m489') : tr('m142')),
           _row(tr('m15'), p['is_active'] == true ? tr('m132') : tr('m63')),
           _row(tr('m596'), _date(p['date_joined'])),
-          ActionButtons(children: [
+          Wrap(spacing: 8, children: [
             OutlinedButton.icon(
               onPressed: _editProfile,
               icon: Icon(Icons.person_outline),
@@ -242,32 +242,25 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
   Future<void> _purchase(Map<String, dynamic> plan) async {
     if (_purchasing) return;
     final controller = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    final route = DialogRoute<String>(
+    final reference = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('${plan['name']} · ${plan['price']} ${plan['currency']}'),
         content: SingleChildScrollView(
-            child: Form(
-                key: formKey,
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(tr('m84')),
-                  SizedBox(height: 16),
-                  TextFormField(
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                              ? tr('m541')
-                              : null,
-                      controller: controller,
-                      maxLength: 160,
-                      decoration: InputDecoration(labelText: tr('m541'))),
-                ]))),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(tr('m84')),
+          SizedBox(height: 16),
+          TextField(
+              controller: controller,
+              maxLength: 160,
+              decoration: InputDecoration(labelText: tr('m541'))),
+        ])),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx), child: Text(tr('m57'))),
           FilledButton(
               onPressed: () {
-                if (formKey.currentState!.validate()) {
+                if (controller.text.trim().isNotEmpty) {
                   Navigator.pop(ctx, controller.text.trim());
                 }
               },
@@ -275,11 +268,6 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
         ],
       ),
     );
-    final reference =
-        await Navigator.of(context, rootNavigator: true).push(route);
-    // The field remains mounted during the closing animation.
-    await route.completed;
-    controller.dispose();
     if (!mounted || reference == null) return;
     setState(() => _purchasing = true);
     try {
@@ -294,6 +282,47 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(tr('m32'))));
       }
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
+    }
+  }
+
+  Future<void> _inpay(Map<String, dynamic> plan) async {
+    setState(() => _purchasing = true);
+    try {
+      final result = await ref.read(apiProvider).dio.post('payments/inpay/',
+          data: {'plan_id': plan['id'], 'billing_period': 'month'});
+      final data = Map<String, dynamic>.from(result.data as Map);
+      if (!mounted) return;
+      await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+        title: const Text('inPAY orqali to‘lash'),
+        content: SelectableText(data['pay_url']?.toString() ?? 'Hisob yaratilgan. To‘lovni tekshiring.'),
+        actions: [
+          TextButton(onPressed: () async {
+            final url = data['pay_url']?.toString();
+            if (url != null) await Clipboard.setData(ClipboardData(text: url));
+          }, child: const Text('Havolani nusxalash')),
+          TextButton(onPressed: () async {
+            try {
+              final checked = await ref.read(apiProvider).dio.post('payments/inpay/${data['id']}/check/');
+              if (!ctx.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+                checked.data['status'] == 'approved' ? 'To‘lov tasdiqlandi' : 'To‘lov hali kutilmoqda')));
+              Navigator.pop(ctx);
+            } catch (_) {
+              if (ctx.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Tekshirish amalga oshmadi. Qayta urinib ko‘ring.')));
+            }
+          }, child: const Text('To‘lovni tekshirish')),
+          FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Yopish')),
+        ],
+      ));
+      await _load();
+    } on DioException catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error.response?.data is Map
+          ? error.response!.data['detail']?.toString() ?? 'To‘lov xatosi'
+          : 'Internet aloqasini tekshiring')));
     } finally {
       if (mounted) setState(() => _purchasing = false);
     }
@@ -349,11 +378,19 @@ class _AccountSettingsState extends ConsumerState<AccountSettings> {
                       Divider(height: 28),
                       Text(tr(
                           'm635', [plan['user_limit'], plan['product_limit']])),
+                      if ((plan['description'] ?? '').toString().isNotEmpty)
+                        Padding(padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(plan['description'].toString())),
                       if (features.isNotEmpty)
                         Padding(
                             padding: EdgeInsets.symmetric(vertical: 12),
                             child: Text(features)),
                       SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: _purchasing ? null : () => _inpay(plan),
+                        icon: const Icon(Icons.payment),
+                        label: const Text('inPAY orqali to‘lash'),
+                      ),
                       FilledButton.icon(
                         onPressed: _purchasing ? null : () => _purchase(plan),
                         icon: Icon(Icons.arrow_forward_rounded),

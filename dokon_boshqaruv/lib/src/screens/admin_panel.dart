@@ -1,4 +1,3 @@
-import '../widgets/action_buttons.dart';
 import '../adaptive_colors.dart';
 import '../l10n/app_strings.dart';
 import 'package:flutter/material.dart';
@@ -429,35 +428,38 @@ class _AdminPanelState extends ConsumerState<AdminPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ActionButtons(children: [
-            OutlinedButton.icon(
-                onPressed: () async {
-                  final d = await showDatePicker(
-                      context: context,
-                      initialDate: dashboardStart ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime.now());
-                  if (d != null) setState(() => dashboardStart = d);
-                  loadDashboard();
-                },
-                icon: Icon(Icons.calendar_month),
-                label: Text(dashboardStart == null
-                    ? tr('m74')
-                    : DateFormat('dd.MM.yyyy').format(dashboardStart!))),
-            OutlinedButton.icon(
-                onPressed: () async {
-                  final d = await showDatePicker(
-                      context: context,
-                      initialDate: dashboardEnd ?? DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime.now());
-                  if (d != null) setState(() => dashboardEnd = d);
-                  loadDashboard();
-                },
-                icon: Icon(Icons.event),
-                label: Text(dashboardEnd == null
-                    ? tr('m558')
-                    : DateFormat('dd.MM.yyyy').format(dashboardEnd!))),
+          Row(children: [
+            Expanded(
+                child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final d = await showDatePicker(
+                          context: context,
+                          initialDate: dashboardStart ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now());
+                      if (d != null) setState(() => dashboardStart = d);
+                      loadDashboard();
+                    },
+                    icon: Icon(Icons.calendar_month),
+                    label: Text(dashboardStart == null
+                        ? tr('m74')
+                        : DateFormat('dd.MM.yyyy').format(dashboardStart!)))),
+            SizedBox(width: 8),
+            Expanded(
+                child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final d = await showDatePicker(
+                          context: context,
+                          initialDate: dashboardEnd ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now());
+                      if (d != null) setState(() => dashboardEnd = d);
+                      loadDashboard();
+                    },
+                    icon: Icon(Icons.event),
+                    label: Text(dashboardEnd == null
+                        ? tr('m558')
+                        : DateFormat('dd.MM.yyyy').format(dashboardEnd!)))),
             IconButton(
                 onPressed: () {
                   setState(() {
@@ -835,52 +837,39 @@ class _AdminPanelState extends ConsumerState<AdminPanel>
         ...sectionRows.map((raw) {
           final row = Map<String, dynamic>.from(raw as Map);
           return Card(
-              child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('${row['name']}',
-                            style: Theme.of(context).textTheme.titleLarge),
-                        const SizedBox(height: 8),
-                        Text(tr('m650', [
-                          row['price'],
-                          row['currency'] ?? 'UZS',
-                          row['annual_price'] ?? '—',
-                          row['currency'] ?? 'UZS',
-                          row['user_limit'],
-                          row['product_limit'],
-                          row['trial_days'] ?? 0
-                        ])),
-                        const SizedBox(height: 12),
-                        Wrap(
-                            spacing: 12,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Switch(
-                                  value: row['active'] == true,
-                                  onChanged: (v) async {
-                                    try {
-                                      await ref.read(apiProvider).saveAdminPlan(
-                                          {...row, 'active': v},
-                                          id: row['id']);
-                                      await loadSection(3);
-                                    } catch (e) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content:
-                                                    Text(friendlyFailure(e))));
-                                      }
-                                    }
-                                  }),
-                              OutlinedButton.icon(
-                                  icon: const Icon(Icons.edit),
-                                  label: Text(tr('m495')),
-                                  onPressed: () => _showPlanDialog(plan: row))
-                            ]),
-                      ])));
+              child: ListTile(
+                  leading: Icon(Icons.sell),
+                  title: Text('${row['name']}'),
+                  subtitle: Text(tr('m650', [
+                    row['price'],
+                    row['currency'] ?? 'UZS',
+                    row['annual_price'] ?? '—',
+                    row['currency'] ?? 'UZS',
+                    row['user_limit'],
+                    row['product_limit'],
+                    row['trial_days'] ?? 0
+                  ])),
+                  isThreeLine: true,
+                  trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Switch(
+                        value: row['active'] == true,
+                        onChanged: (v) async {
+                          try {
+                            await ref.read(apiProvider).saveAdminPlan(
+                                {...row, 'active': v},
+                                id: row['id']);
+                            await loadSection(3);
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(friendlyFailure(e))));
+                            }
+                          }
+                        }),
+                    IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () => _showPlanDialog(plan: row))
+                  ])));
         })
       ]);
 

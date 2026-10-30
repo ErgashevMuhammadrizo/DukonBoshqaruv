@@ -89,7 +89,7 @@ class SalesHistoryScreen extends ConsumerWidget {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32),
                 child: Text(
-                  friendlyFailure(error),
+                  error.toString(),
                   style: TextStyle(
                       color: adaptiveColor(context, Colors.grey[600]!,
                           foreground: true)),

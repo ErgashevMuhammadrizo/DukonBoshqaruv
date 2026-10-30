@@ -456,7 +456,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       items: _units.map((unit) {
         return DropdownMenuItem(
           value: unit,
-          child: Text(unitLabel(unit)),
+          child: Text(unit),
         );
       }).toList(),
       onChanged: (value) {
@@ -531,7 +531,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(friendlyFailure(e)),
+          content: Text(tr('m576', [e.toString()])),
           backgroundColor: adaptiveColor(context, Colors.red),
         ),
       );

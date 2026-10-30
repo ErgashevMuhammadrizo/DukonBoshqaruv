@@ -1,4 +1,3 @@
-import '../widgets/report_period_chip.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
 import 'dart:math' as math;
@@ -17,8 +16,6 @@ class _DateRange {
   final DateTime end;
   const _DateRange({required this.start, required this.end});
 }
-
-final reportPeriodProvider = StateProvider<int>((ref) => 4);
 
 final reportRangeProvider = StateProvider<_DateRange>((ref) {
   final now = DateTime.now();
@@ -66,7 +63,7 @@ class ReportsScreen extends ConsumerStatefulWidget {
 class _ReportsScreenState extends ConsumerState<ReportsScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _fadeCtrl;
-  int get _period => ref.read(reportPeriodProvider);
+  int _period = 4; // Bugun, kecha, 7 kun, 30 kun, oy, sana oralig‘i
 
   @override
   void initState() {
@@ -87,7 +84,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       _pickRange();
       return;
     }
-    ref.read(reportPeriodProvider.notifier).state = idx;
+    setState(() => _period = idx);
     final now = DateTime.now();
     late DateTime s, e;
     switch (idx) {
@@ -117,6 +114,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         return;
     }
     ref.read(reportRangeProvider.notifier).state = _DateRange(start: s, end: e);
+    ref.invalidate(reportSummaryProvider);
+    ref.invalidate(reportSalesProvider);
     _fadeCtrl.forward(from: 0);
   }
 
@@ -128,11 +127,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       lastDate: now,
     );
     if (r != null && mounted) {
-      ref.read(reportPeriodProvider.notifier).state = 5;
+      setState(() => _period = 5);
       ref.read(reportRangeProvider.notifier).state = _DateRange(
         start: r.start,
         end: DateTime(r.end.year, r.end.month, r.end.day, 23, 59, 59),
       );
+      ref.invalidate(reportSummaryProvider);
+      ref.invalidate(reportSalesProvider);
       _fadeCtrl.forward(from: 0);
     }
   }
@@ -140,7 +141,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
   @override
   Widget build(BuildContext context) {
     AppLocaleScope.of(context);
-    ref.watch(reportPeriodProvider);
     final summaryAsync = ref.watch(reportSummaryProvider);
     final salesAsync = ref.watch(reportSalesProvider);
     final range = ref.watch(reportRangeProvider);
@@ -157,7 +157,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
               child: summaryAsync.when(
                 loading: () => Center(child: CircularProgressIndicator()),
                 error: (e, _) => _ErrorView(
-                    msg: friendlyFailure(e),
+                    msg: e.toString(),
                     onRetry: () => ref.invalidate(reportSummaryProvider)),
                 data: (s) {
                   final revenue = double.tryParse(s['revenue'].toString()) ?? 0;
@@ -245,7 +245,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       actions: [
         IconButton(
           icon: Icon(Icons.refresh_rounded),
-          tooltip: tr('m595'),
           onPressed: () {
             ref.invalidate(reportSummaryProvider);
             ref.invalidate(reportSalesProvider);
@@ -276,8 +275,8 @@ class _PeriodBar extends StatelessWidget {
       tr('m421')
     ];
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      padding: EdgeInsets.fromLTRB(12, 4, 12, 10),
+      color: adaptiveColor(context, Color(0xFF0D47A1)),
+      padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -285,11 +284,34 @@ class _PeriodBar extends StatelessWidget {
             final sel = current == i;
             return Padding(
               padding: EdgeInsets.only(right: 8),
-              child: ReportPeriodChip(
-                selected: sel,
-                onPressed: () => onSelect(i),
-                label: labels[i],
-                icon: i == 5 ? Icons.calendar_month_rounded : null,
+              child: GestureDetector(
+                onTap: () => onSelect(i),
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: sel
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (i == 5)
+                        Icon(Icons.calendar_month_rounded,
+                            size: 12,
+                            color: sel ? Color(0xFF0D47A1) : Colors.white),
+                      if (i == 5) SizedBox(width: 4),
+                      Text(labels[i],
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: sel ? Color(0xFF0D47A1) : Colors.white,
+                          )),
+                    ],
+                  ),
+                ),
               ),
             );
           }),
@@ -349,12 +371,11 @@ class _RevenueCard extends StatelessWidget {
                   size: 20),
             ),
             SizedBox(width: 10),
-            Expanded(
-                child: Text(tr('m560'),
-                    style: TextStyle(
-                        color: adaptiveColor(context, Colors.white70,
-                            foreground: true),
-                        fontSize: 13))),
+            Text(tr('m560'),
+                style: TextStyle(
+                    color: adaptiveColor(context, Colors.white70,
+                        foreground: true),
+                    fontSize: 13)),
           ]),
           SizedBox(height: 14),
           Text(
@@ -934,7 +955,7 @@ class _ErrorView extends StatelessWidget {
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
                 color: Colors.red.shade50, shape: BoxShape.circle),
-            child: Icon(Icons.error_outline_rounded,
+            child: Icon(Icons.wifi_off_rounded,
                 size: 40, color: Colors.red.shade400),
           ),
           SizedBox(height: 16),
@@ -942,7 +963,9 @@ class _ErrorView extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
           Text(
-            msg,
+            msg.contains('SocketException') || msg.contains('Connection')
+                ? tr('m172')
+                : tr('m441'),
             style: TextStyle(
                 color: adaptiveColor(context, Colors.grey[600]!,
                     foreground: true)),

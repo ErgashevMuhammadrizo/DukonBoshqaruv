@@ -15,10 +15,6 @@ import '../test/account_settings_test.dart' as account;
 import '../test/widget_test.dart' as startup;
 import '../test/redesign_test.dart' as redesign;
 import '../test/api_and_queue_regression_test.dart' as offline;
-import '../test/product_deletion_test.dart' as deletion;
-import '../test/action_layout_test.dart' as actions;
-import '../test/localization_auth_regression_test.dart' as authLocale;
-import '../test/report_period_regression_test.dart' as reportPeriod;
 
 Future<void> main() async {
   late Suite currentSuite;
@@ -52,11 +48,7 @@ Future<void> main() async {
     account.main,
     startup.main,
     redesign.main,
-    offline.main,
-    deletion.main,
-    actions.main,
-    authLocale.main,
-    reportPeriod.main
+    offline.main
   ]) {
     final declarer = Declarer();
     declarer.declare(register);

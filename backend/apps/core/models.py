@@ -33,7 +33,6 @@ class Product(models.Model):
     unit=models.CharField(max_length=16,default='dona')
     min_stock=D(max_digits=16,decimal_places=3,default=0)
     active=models.BooleanField(default=True)
-    deleted_at=models.DateTimeField(null=True,blank=True,db_index=True)
     updated_at=models.DateTimeField(auto_now=True)
     class Meta:
         constraints=[models.UniqueConstraint(fields=['store','sku'],name='unique_store_sku'),models.UniqueConstraint(fields=['store','barcode'],name='unique_store_barcode'),models.CheckConstraint(condition=models.Q(stock__gte=0),name='nonnegative_stock')]
@@ -87,6 +86,8 @@ class Subscription(models.Model):
     trial_end=models.DateTimeField(null=True,blank=True)
     paid_until=models.DateTimeField(null=True,blank=True)
 class PaymentRecord(models.Model):
+    checkout_url=models.URLField(max_length=500,blank=True)
+    purchased_months=models.PositiveSmallIntegerField(default=1)
     store=models.ForeignKey(Store,on_delete=models.PROTECT)
     plan=models.ForeignKey(SubscriptionPlan,on_delete=models.PROTECT)
     amount=D(max_digits=16,decimal_places=2)

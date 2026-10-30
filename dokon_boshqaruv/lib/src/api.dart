@@ -1,5 +1,4 @@
 import 'l10n/translations.dart';
-import 'diagnostics/app_diagnostics.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -33,12 +32,6 @@ class Api {
 
   void Function()? onLogout;
 
-  static const authorizationHeader = 'Authorization';
-  int _authGeneration = 0;
-  bool _logoutNotified = false;
-  Map<String, dynamic>? _sessionProfile;
-  Map<String, dynamic>? get sessionProfile =>
-      _sessionProfile == null ? null : Map.unmodifiable(_sessionProfile!);
   String? _sessionKey;
   String? get sessionKey => _sessionKey;
 
@@ -64,27 +57,15 @@ class Api {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           try {
-            final path = _endpointPath(options);
-            options.extra.putIfAbsent('auth_generation', () => _authGeneration);
-            if (options.extra['auth_generation'] != _authGeneration) {
-              throw StateError('Request belongs to a previous session');
-            }
+            final path = options.path.replaceAll(RegExp(r'^/+'), '');
 
             if (_exemptPaths.contains(path)) {
-              options.headers.remove(authorizationHeader);
+              options.headers.remove(tr('m40'));
             } else {
               final token = await secure.read(key: 'access');
 
               if (token != null && token.isNotEmpty) {
-                options.headers[authorizationHeader] = 'Bearer $token';
-              } else if (_logoutNotified) {
-                options.extra['auth_retried'] = true;
-                handler.reject(DioException(
-                    requestOptions: options,
-                    response:
-                        Response(requestOptions: options, statusCode: 401),
-                    type: DioExceptionType.badResponse));
-                return;
+                options.headers[tr('m40')] = 'Bearer $token';
               }
             }
 
@@ -99,61 +80,24 @@ class Api {
           }
         },
         onError: (error, handler) async {
-          final path = _endpointPath(error.requestOptions);
-          AppDiagnostics.instance.record('api.failure', details: {
-            'method': error.requestOptions.method,
-            'status': error.response?.statusCode,
-            'kind': error.type.name,
-          });
+          final path = error.requestOptions.path.replaceAll(RegExp(r'^/+'), '');
 
           final alreadyRetried =
               error.requestOptions.extra['auth_retried'] == true;
 
           if (error.response?.statusCode != 401 ||
               _exemptPaths.contains(path) ||
-              alreadyRetried ||
-              error.requestOptions.extra['auth_generation'] !=
-                  _authGeneration) {
+              alreadyRetried) {
             handler.next(error);
             return;
           }
 
-          // A late 401 may belong to the access token another request replaced.
-          String? latest;
-          try {
-            latest = await secure.read(key: 'access');
-          } catch (storageError) {
-            handler.next(DioException(
-                requestOptions: error.requestOptions,
-                error: storageError,
-                message: tr('requestFailed')));
-            return;
-          }
-          final sent = error.requestOptions.headers[authorizationHeader];
-          final refreshed =
-              latest != null && latest.isNotEmpty && sent != 'Bearer $latest'
-                  ? true
-                  : await _refreshTokens();
-          if (error.requestOptions.extra['auth_generation'] !=
-              _authGeneration) {
-            handler.next(error);
-            return;
-          }
+          final refreshed = await _refreshTokens();
 
           if (!refreshed) {
             if (_refreshRejected) {
-              try {
-                await _clearSession();
-              } catch (storageError) {
-                // Identity is already invalidated; retain a sanitized diagnostic
-                // and finish this 401 instead of leaving its Future unresolved.
-                AppDiagnostics.instance.record('auth.storage.clear.failed',
-                    details: {'kind': storageError.runtimeType.toString()});
-              }
-              if (!_logoutNotified) {
-                _logoutNotified = true;
-                onLogout?.call();
-              }
+              await _clearSession();
+              onLogout?.call();
             }
 
             // Refresh vaqtida internet uzilgan bo‘lsa,
@@ -171,19 +115,6 @@ class Api {
                   message: tr('m453'),
                 ),
               );
-            } else if (refreshError is DioException) {
-              // Preserve refresh 429/5xx instead of presenting the initial 401.
-              handler.next(DioException(
-                  requestOptions: error.requestOptions,
-                  response: refreshError.response,
-                  type: refreshError.type,
-                  error: refreshError.error,
-                  message: refreshError.message));
-            } else if (refreshError != null) {
-              handler.next(DioException(
-                  requestOptions: error.requestOptions,
-                  error: refreshError,
-                  message: tr('responseInvalid')));
             } else {
               handler.next(error);
             }
@@ -196,14 +127,9 @@ class Api {
             final request = error.requestOptions;
 
             request.extra['auth_retried'] = true;
-            if (request.data is FormData) {
-              // The first attempt finalizes multipart streams. Clone the body
-              // before retrying an image upload with the refreshed access token.
-              request.data = (request.data as FormData).clone();
-            }
 
             if (token != null) {
-              request.headers[authorizationHeader] = 'Bearer $token';
+              request.headers[tr('m40')] = 'Bearer $token';
             }
 
             final response = await dio.fetch<dynamic>(request);
@@ -216,15 +142,6 @@ class Api {
         },
       ),
     );
-  }
-
-  static String _endpointPath(RequestOptions options) {
-    var path = options.uri.path;
-    final prefix = Uri.parse(options.baseUrl).path;
-    if (prefix.isNotEmpty && path.startsWith(prefix)) {
-      path = path.substring(prefix.length);
-    }
-    return path.replaceAll(RegExp(r'^/+'), '');
   }
 
   static bool isNetworkError(Object? error) {
@@ -248,8 +165,6 @@ class Api {
       );
     }
 
-    _logoutNotified = false;
-    _sessionProfile = Map<String, dynamic>.from(profile);
     _sessionKey = base64Url
         .encode(utf8.encode('${dio.options.baseUrl}|$id'))
         .replaceAll('=', '');
@@ -263,9 +178,6 @@ class Api {
   }
 
   Future<void> _clearSession() async {
-    _authGeneration++;
-    _refreshFuture = null;
-    _sessionProfile = null;
     _sessionKey = null;
 
     await secure.delete(key: 'access');
@@ -288,7 +200,6 @@ class Api {
   }
 
   Future<bool> _performRefresh() async {
-    final generation = _authGeneration;
     _refreshRejected = false;
     _lastRefreshError = null;
 
@@ -305,7 +216,6 @@ class Api {
         data: {'refresh': refresh},
       );
 
-      if (generation != _authGeneration) return false;
       final data = Map<String, dynamic>.from(response.data as Map);
 
       final access = data['access'];
@@ -317,7 +227,6 @@ class Api {
       }
 
       await secure.write(key: 'access', value: access);
-      if (generation != _authGeneration) return false;
 
       final nextRefresh = data['refresh'];
 
@@ -328,19 +237,13 @@ class Api {
         );
       }
 
-      return generation == _authGeneration;
+      return true;
     } catch (error) {
-      if (generation != _authGeneration) return false;
       _lastRefreshError = error;
-      AppDiagnostics.instance.record('auth.refresh.failed', details: {
-        'status': error is DioException ? error.response?.statusCode : null,
-        'kind': error is DioException
-            ? error.type.name
-            : error.runtimeType.toString(),
-      });
 
       if (error is DioException) {
-        _refreshRejected = error.response?.statusCode == 401;
+        _refreshRejected = error.response?.statusCode == 401 ||
+            error.response?.statusCode == 403;
       }
 
       return false;
@@ -400,7 +303,6 @@ class Api {
     String password,
   ) async {
     await _clearSession();
-    _logoutNotified = false;
 
     final response = await dio.post(
       'auth/login/',
@@ -438,19 +340,22 @@ class Api {
         return false;
       }
 
-      if (isNetworkError(_lastRefreshError) && await offlineProfile() != null) {
-        return true;
+      if (isNetworkError(_lastRefreshError)) {
+        return await offlineProfile() != null;
       }
-      // Transient backend errors are not invalid credentials. Keep tokens and
-      // let Startup display an error/retry instead of silently showing Login.
-      throw _lastRefreshError ?? FormatException(tr('responseInvalid'));
+
+      return false;
     }
-    await me();
-    return true;
+
+    try {
+      await me();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> logout() async {
-    _logoutNotified = true;
     try {
       final refresh = await secure.read(key: 'refresh');
 
