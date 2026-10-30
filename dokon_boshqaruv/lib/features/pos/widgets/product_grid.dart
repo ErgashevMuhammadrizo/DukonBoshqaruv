@@ -1,3 +1,4 @@
+import '../../../src/widgets/product_photo.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
 import 'package:flutter/material.dart';
@@ -34,33 +35,24 @@ class ProductGrid extends ConsumerWidget {
           return _buildEmptyState(context, searchQuery);
         }
 
-        final width = MediaQuery.of(context).size.width;
-        final isMobile = width < 600;
-        int crossAxisCount;
-        if (isMobile) {
-          crossAxisCount = 2;
-        } else if (width < 900) {
-          crossAxisCount = 3;
-        } else if (width < 1200) {
-          crossAxisCount = 3;
-        } else {
-          crossAxisCount = 4;
-        }
-
-        return GridView.builder(
-          padding: EdgeInsets.fromLTRB(12, 12, 12, 100),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: isMobile ? 0.72 : 0.78,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: filteredProducts.length,
-          itemBuilder: (context, index) {
-            final product = filteredProducts[index];
-            return _ProductCard(product: product);
-          },
-        );
+        return LayoutBuilder(builder: (context, box) {
+          final crossAxisCount = (box.maxWidth / 190).floor().clamp(1, 4);
+          final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
+          return GridView.builder(
+            padding: EdgeInsets.fromLTRB(12, 12, 12, 100),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              mainAxisExtent: 320 * scale.clamp(1.0, 1.8),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: filteredProducts.length,
+            itemBuilder: (context, index) {
+              final product = filteredProducts[index];
+              return _ProductCard(product: product);
+            },
+          );
+        });
       },
       loading: () => Center(
         child: Column(
@@ -282,29 +274,9 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                 flex: 5,
                 child: Stack(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color:
-                            isAvailable ? Color(0xFFF3F8FF) : Colors.grey[100],
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                      ),
-                      child: product.image != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(16),
-                              ),
-                              child: Image.network(
-                                product.image!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildIconPlaceholder(isAvailable),
-                              ),
-                            )
-                          : _buildIconPlaceholder(isAvailable),
+                    Positioned.fill(
+                      child: ProductPhoto(image: product.image, name: product.name,
+                        radius: 16),
                     ),
                     // Out of stock overlay
                     if (!isAvailable)
@@ -422,8 +394,8 @@ class _ProductCardState extends ConsumerState<_ProductCard>
                               child: GestureDetector(
                                 onTap: _onAddToCart,
                                 child: Container(
-                                  width: 30,
-                                  height: 30,
+                                  width: 48,
+                                  height: 48,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
@@ -462,16 +434,6 @@ class _ProductCardState extends ConsumerState<_ProductCard>
     );
   }
 
-  Widget _buildIconPlaceholder(bool isAvailable) {
-    return Center(
-      child: Icon(
-        Icons.inventory_2_outlined,
-        size: 48,
-        color: isAvailable ? Color(0xFF90CAF9) : Colors.grey[300],
-      ),
-    );
-  }
-
   Widget _buildStockBadge(double stock, String unit) {
     if (stock <= 0) return SizedBox.shrink();
     final isLow = stock <= (double.tryParse(widget.product.minStock) ?? 0);
@@ -482,7 +444,7 @@ class _ProductCardState extends ConsumerState<_ProductCard>
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        '${stock % 1 == 0 ? stock.toInt() : stock.toStringAsFixed(1)} $unit',
+        '${stock % 1 == 0 ? stock.toInt() : stock.toStringAsFixed(1)} ${unitLabel(unit)}',
         style: TextStyle(
           color: adaptiveColor(context, Colors.white, foreground: true),
           fontSize: 10,

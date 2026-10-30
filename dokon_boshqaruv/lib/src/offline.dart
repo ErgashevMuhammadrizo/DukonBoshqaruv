@@ -401,15 +401,60 @@ class OfflineQueue {
     );
   }
 
+  /// Only call after the server acknowledged DELETE/archive. Per-account DB.
+  Future<void> removeConfirmedProduct(int id, {bool tombstone = true}) async {
+    final database = await db;
+    _checkOwner();
+    await database.transaction((tx) async {
+      if (tombstone) {
+        final rows = await tx.query('cache',
+            where: 'key = ?', whereArgs: ['removed_product_ids']);
+        final ids = rows.isEmpty
+            ? <dynamic>[]
+            : List<dynamic>.from(jsonDecode(rows.first['payload'] as String));
+        if (!ids.contains(id)) ids.add(id);
+        await tx.insert(
+            'cache', {'key': 'removed_product_ids', 'payload': jsonEncode(ids)},
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      final cached =
+          await tx.query('cache', where: 'key = ?', whereArgs: ['products']);
+      if (cached.isNotEmpty) {
+        final products =
+            List<dynamic>.from(jsonDecode(cached.first['payload'] as String));
+        products.removeWhere((raw) => '${raw['id']}' == '$id');
+        await tx.update('cache', {'payload': jsonEncode(products)},
+            where: 'key = ?', whereArgs: ['products']);
+      }
+      _checkOwner();
+    });
+  }
+
+  Future<Set<int>> removedProductIds() async {
+    final rows = await (await db)
+        .query('cache', where: 'key = ?', whereArgs: ['removed_product_ids']);
+    _checkOwner();
+    if (rows.isEmpty) return {};
+    return (jsonDecode(rows.first['payload'] as String) as List)
+        .map((id) => int.parse('$id'))
+        .toSet();
+  }
+
   Future<void> cacheProducts(List<dynamic> products) async {
     final database = await db;
     _checkOwner();
 
+    final removed = await removedProductIds();
+    final visible = products
+        .where((raw) =>
+            raw['active'] != false &&
+            !removed.contains(int.tryParse('${raw['id']}')))
+        .toList();
     await database.insert(
       'cache',
       {
         'key': 'products',
-        'payload': jsonEncode(products),
+        'payload': jsonEncode(visible),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -429,9 +474,14 @@ class OfflineQueue {
 
     if (rows.isEmpty) return [];
 
+    final removed = await removedProductIds();
     return List<dynamic>.from(
       jsonDecode(rows.first['payload'] as String) as List,
-    );
+    )
+        .where((raw) =>
+            raw['active'] != false &&
+            !removed.contains(int.tryParse('${raw['id']}')))
+        .toList();
   }
 
   Future<void> close() async {

@@ -20,32 +20,16 @@ class ReceiptScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(tr('m95')),
         actions: [
+          // Printer/PDF integrations are not implemented in this project.
+          // Keep their availability explicit instead of pretending an export succeeded.
           IconButton(
-            onPressed: () {
-              // TODO: Implement print
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(tr('m100')),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            icon: Icon(Icons.print),
-            tooltip: tr('m99'),
-          ),
+              onPressed: null,
+              icon: const Icon(Icons.print),
+              tooltip: tr('m100')),
           IconButton(
-            onPressed: () {
-              // TODO: Implement PDF export
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(tr('m354')),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            icon: Icon(Icons.picture_as_pdf),
-            tooltip: tr('m353'),
-          ),
+              onPressed: null,
+              icon: const Icon(Icons.picture_as_pdf),
+              tooltip: tr('m354')),
         ],
       ),
       body: Center(

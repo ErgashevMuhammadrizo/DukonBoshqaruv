@@ -1,7 +1,7 @@
 name: dokon_boshqaruv
-description: Dokon Boshqaruv — savdo va ombor boshqaruvi
+description: VEXO — savdo va ombor boshqaruvi
 publish_to: none
-version: 0.2.0+3
+version: 0.2.2+5
 environment:
   sdk: '>=3.5.0 <4.0.0'
 dependencies:

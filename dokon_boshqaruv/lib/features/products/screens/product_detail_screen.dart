@@ -140,7 +140,8 @@ class ProductDetailScreen extends ConsumerWidget {
                           Expanded(
                             child: _InfoCard(
                               title: tr('m396'),
-                              value: '${product.stock} ${product.unit}',
+                              value:
+                                  '${product.stock} ${unitLabel(product.unit)}',
                               icon: Icons.inventory,
                               color: adaptiveColor(context, Colors.purple),
                             ),
@@ -149,7 +150,8 @@ class ProductDetailScreen extends ConsumerWidget {
                           Expanded(
                             child: _InfoCard(
                               title: tr('m284'),
-                              value: '${product.minStock} ${product.unit}',
+                              value:
+                                  '${product.minStock} ${unitLabel(product.unit)}',
                               icon: Icons.warning_amber,
                               color: adaptiveColor(context, Colors.orange),
                             ),
@@ -214,7 +216,7 @@ class ProductDetailScreen extends ConsumerWidget {
 
                       OutlinedButton.icon(
                         onPressed: () =>
-                            _viewInventoryHistory(context, product),
+                            _viewInventoryHistory(context, ref, product),
                         icon: Icon(Icons.history),
                         label: Text(tr('m340')),
                         style: OutlinedButton.styleFrom(
@@ -253,6 +255,7 @@ class ProductDetailScreen extends ConsumerWidget {
   }
 
   String _readableError(Object error) {
+    if (error is StateError) return error.message.toString();
     if (error is DioException) {
       final data = error.response?.data;
       final code = error.response?.statusCode;
@@ -327,7 +330,7 @@ class ProductDetailScreen extends ConsumerWidget {
   void _showOptionsMenu(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -336,7 +339,7 @@ class ProductDetailScreen extends ConsumerWidget {
                 leading: Icon(Icons.archive),
                 title: Text(tr('m34')),
                 onTap: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   await _archiveProduct(context, ref);
                 },
               ),
@@ -349,7 +352,7 @@ class ProductDetailScreen extends ConsumerWidget {
                         color: adaptiveColor(context, Colors.red,
                             foreground: true))),
                 onTap: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   await _deleteProduct(context, ref);
                 },
               ),
@@ -358,6 +361,31 @@ class ProductDetailScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<void> _runRemoval(
+      BuildContext context, Future<void> Function() action) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+                content: Row(children: [
+              const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 16),
+              Expanded(child: Text(tr('m231')))
+            ]))));
+    navigator.push(route);
+    try {
+      await action();
+    } finally {
+      if (route.isActive) navigator.removeRoute(route);
+    }
   }
 
   Future<void> _archiveProduct(BuildContext context, WidgetRef ref) async {
@@ -383,7 +411,10 @@ class ProductDetailScreen extends ConsumerWidget {
 
     if (confirm == true && context.mounted) {
       try {
-        await ref.read(productsProvider.notifier).archiveProduct(productId);
+        await _runRemoval(
+            context,
+            () =>
+                ref.read(productsProvider.notifier).archiveProduct(productId));
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -432,7 +463,8 @@ class ProductDetailScreen extends ConsumerWidget {
 
     if (confirm == true && context.mounted) {
       try {
-        await ref.read(productsProvider.notifier).deleteProduct(productId);
+        await _runRemoval(context,
+            () => ref.read(productsProvider.notifier).deleteProduct(productId));
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -464,12 +496,50 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _viewInventoryHistory(BuildContext context, Product product) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(tr('m339')),
-      ),
-    );
+  void _viewInventoryHistory(
+      BuildContext context, WidgetRef ref, Product product) {
+    final history =
+        ref.read(apiProvider).getInventoryMovements(productId: product.id);
+    showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+                title: Text(tr('m340')),
+                content: SizedBox(
+                    width: 480,
+                    height: 360,
+                    child: FutureBuilder<List<dynamic>>(
+                        future: history,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Center(
+                                child: Text(_readableError(snapshot.error!)));
+                          }
+                          if (!snapshot.hasData) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                          final rows = snapshot.data!;
+                          if (rows.isEmpty) {
+                            return Center(child: Text(tr('m168')));
+                          }
+                          return ListView.separated(
+                              itemCount: rows.length,
+                              separatorBuilder: (_, index) => const Divider(),
+                              itemBuilder: (_, index) {
+                                final row = rows[index] as Map;
+                                return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(
+                                        '${row['delta']} ${unitLabel(product.unit)}'),
+                                    subtitle: Text(
+                                        '${row['reference'] ?? ''}\n${row['before']} → ${row['after']}\n${row['created_at'] ?? ''}'));
+                              });
+                        })),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      child: Text(tr('m601')))
+                ]));
   }
 
   String _formatDate(DateTime date) {

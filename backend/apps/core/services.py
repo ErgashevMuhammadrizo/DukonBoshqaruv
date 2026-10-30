@@ -49,7 +49,7 @@ def create_sale(store,payload):
     if not lines: raise ValidationError('Savat bo‘sh')
     ids=[i['product_id'] for i in lines]
     if len(set(ids))!=len(ids): raise ValidationError('Takror mahsulot')
-    products={str(p.pk):p for p in Product.objects.select_for_update().filter(store=store,id__in=ids,active=True).order_by('id')}
+    products={str(p.pk):p for p in Product.objects.select_for_update().filter(store=store,id__in=ids,active=True,deleted_at__isnull=True).order_by('id')}
     if len(products)!=len(lines): raise ValidationError('Mahsulot topilmadi')
     detail=[]; subtotal=Decimal('0')
     for line in lines:

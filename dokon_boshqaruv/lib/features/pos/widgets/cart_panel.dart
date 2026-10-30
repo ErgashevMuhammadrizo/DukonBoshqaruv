@@ -56,17 +56,19 @@ class CartPanel extends ConsumerWidget {
                     size: 20),
               ),
               SizedBox(width: 10),
-              Text(
+              Expanded(
+                  child: Text(
                 tr('m429'),
                 style: TextStyle(
                   color: adaptiveColor(context, Colors.white, foreground: true),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
-              ),
-              Spacer(),
+              )),
+              const SizedBox(width: 8),
               if (cart.isNotEmpty)
-                Container(
+                Flexible(
+                    child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: adaptiveColor(
@@ -82,7 +84,7 @@ class CartPanel extends ConsumerWidget {
                       fontSize: 12,
                     ),
                   ),
-                ),
+                )),
               if (isBottomSheet)
                 IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -187,8 +189,8 @@ class CartPanel extends ConsumerWidget {
               border:
                   Border.all(color: Color(0xFF1976D2).withValues(alpha: 0.15)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   tr('m188'),
@@ -212,52 +214,15 @@ class CartPanel extends ConsumerWidget {
             ),
           ),
           SizedBox(height: 12),
-          // Checkout Button
+          // Standard button supplies focus, semantics and a flexible text label.
           SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: Material(
-              color: adaptiveColor(context, Colors.transparent),
-              child: InkWell(
-                onTap: onCheckout,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: adaptiveColor(context, Color(0x552E7D32)),
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.payment_rounded,
-                          color: adaptiveColor(context, Colors.white),
-                          size: 22),
-                      SizedBox(width: 10),
-                      Text(
-                        tr('m530'),
-                        style: TextStyle(
-                          color: adaptiveColor(context, Colors.white,
-                              foreground: true),
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+              width: double.infinity,
+              child: FilledButton.icon(
+                  onPressed: onCheckout,
+                  style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32)),
+                  icon: const Icon(Icons.payment_rounded),
+                  label: Text(tr('m530'), textAlign: TextAlign.center))),
         ],
       ),
     );
@@ -488,11 +453,14 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
               SizedBox(height: 10),
 
               // ── Bottom Row: qty controls + line total ──
-              Row(
+              Wrap(
+                spacing: 12,
+                runSpacing: 10,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   // Quantity control
                   Container(
-                    height: 36,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: adaptiveColor(context, Color(0xFFF5F5F5)),
                       borderRadius: BorderRadius.circular(10),
@@ -542,8 +510,6 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                     ),
                   ),
 
-                  SizedBox(width: 8),
-
                   // Unit price
                   Text(
                     tr('m658', [numberFormat.format(widget.item.salePrice)]),
@@ -553,8 +519,6 @@ class _CartItemTileState extends ConsumerState<_CartItemTile>
                           foreground: true),
                     ),
                   ),
-
-                  Spacer(),
 
                   // Line total
                   Container(
@@ -622,23 +586,15 @@ class _QtyButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppLocaleScope.of(context);
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 32,
-        height: 36,
-        decoration: BoxDecoration(
-          color: disabled
-              ? Colors.grey[200]
-              : Color(0xFF1976D2).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(9),
-        ),
-        child: Icon(
-          icon,
-          size: 16,
-          color: disabled ? Colors.grey[400] : Color(0xFF1976D2),
-        ),
-      ),
+    return IconButton(
+      onPressed: disabled ? null : onPressed,
+      tooltip: icon == Icons.add_rounded
+          ? tr('quantity_increase')
+          : tr('quantity_decrease'),
+      style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer),
+      icon: Icon(icon, size: 20),
     );
   }
 }
