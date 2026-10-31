@@ -68,3 +68,4 @@ This is NOT a completed production application. Important features such as serve
 
 
 bu yangilanish mvp ni sungi yangilanishi
+loyha mvp ha tayyor
