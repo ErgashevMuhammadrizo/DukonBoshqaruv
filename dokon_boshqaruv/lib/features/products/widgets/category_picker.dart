@@ -1,5 +1,3 @@
-```bash
-cat > lib/features/products/widgets/category_picker.dart <<'DART'
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -311,6 +309,3 @@ class CategoryToolbar extends ConsumerWidget {
     );
   }
 }
-DART
-```
-
