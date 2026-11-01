@@ -1,4 +1,5 @@
-```dart
+```bash
+cat > lib/features/products/widgets/category_picker.dart <<'DART'
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,17 +62,27 @@ class _CreateCategoryDialogState
 
       if (!mounted) return;
 
-      Navigator.pop(context, category);
+      Navigator.of(context).pop(category);
     } on DioException catch (e) {
       if (!mounted) return;
 
-      final data = e.response?.data;
+      final responseData = e.response?.data;
+      String message =
+          'Kategoriya saqlanmadi. Internetni tekshiring va qayta urinib ko‘ring.';
+
+      if (responseData is Map) {
+        final nameError = responseData['name'];
+        final detail = responseData['detail'];
+
+        if (nameError != null) {
+          message = nameError.toString();
+        } else if (detail != null) {
+          message = detail.toString();
+        }
+      }
 
       setState(() {
-        error = data is Map && data['name'] != null
-            ? data['name'].toString()
-            : 'Kategoriya saqlanmadi. Internetni tekshiring va qayta urinib ko‘ring.';
-
+        error = message;
         saving = false;
       });
     } catch (_) {
@@ -109,7 +120,7 @@ class _CreateCategoryDialogState
         ),
         actions: [
           TextButton(
-            onPressed: saving ? null : () => Navigator.pop(context),
+            onPressed: saving ? null : () => Navigator.of(context).pop(),
             child: const Text('Bekor qilish'),
           ),
           FilledButton.icon(
@@ -118,7 +129,9 @@ class _CreateCategoryDialogState
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
                   )
                 : const Icon(Icons.add),
             label: Text(saving ? 'Saqlanmoqda…' : 'Qo‘shish'),
@@ -148,13 +161,15 @@ class CategoryPicker extends ConsumerWidget {
       children: [
         categoriesAsync.when(
           data: (categories) {
-            final selected = categories.any((c) => c.id == value)
+            final selectedValue = categories.any(
+              (category) => category.id == value,
+            )
                 ? value
                 : null;
 
             return DropdownButtonFormField<int>(
-              key: ValueKey(selected),
-              initialValue: selected,
+              key: ValueKey(selectedValue),
+              initialValue: selectedValue,
               isExpanded: true,
               decoration: const InputDecoration(
                 labelText: 'Kategoriya',
@@ -180,11 +195,15 @@ class CategoryPicker extends ConsumerWidget {
             );
           },
           loading: () => const LinearProgressIndicator(),
-          error: (_, __) => TextButton.icon(
-            onPressed: () => ref.invalidate(categoriesProvider),
-            icon: const Icon(Icons.refresh),
-            label: const Text('Kategoriyalarni qayta yuklash'),
-          ),
+          error: (error, stackTrace) {
+            return TextButton.icon(
+              onPressed: () {
+                ref.invalidate(categoriesProvider);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Kategoriyalarni qayta yuklash'),
+            );
+          },
         ),
         Align(
           alignment: Alignment.centerLeft,
@@ -194,9 +213,9 @@ class CategoryPicker extends ConsumerWidget {
             onPressed: () async {
               final category = await showCreateCategory(context);
 
-              if (context.mounted && category != null) {
-                onChanged(category.id);
-              }
+              if (!context.mounted || category == null) return;
+
+              onChanged(category.id);
             },
           ),
         ),
@@ -230,13 +249,13 @@ class CategoryToolbar extends ConsumerWidget {
                 icon: const Icon(Icons.add),
                 label: const Text('Yangi kategoriya'),
                 onPressed: () async {
-                  final created = await showCreateCategory(context);
+                  final category = await showCreateCategory(context);
 
-                  if (context.mounted && created != null) {
-                    ref.read(productFiltersProvider.notifier).state = ref
-                        .read(productFiltersProvider)
-                        .copyWith(categoryId: created.id);
-                  }
+                  if (!context.mounted || category == null) return;
+
+                  ref.read(productFiltersProvider.notifier).state = ref
+                      .read(productFiltersProvider)
+                      .copyWith(categoryId: category.id);
                 },
               ),
             ],
@@ -275,17 +294,23 @@ class CategoryToolbar extends ConsumerWidget {
               );
             },
             loading: () => const LinearProgressIndicator(),
-            error: (_, __) => TextButton.icon(
-              onPressed: () => ref.invalidate(categoriesProvider),
-              icon: const Icon(Icons.refresh),
-              label: const Text(
-                'Kategoriyalar yuklanmadi. Qayta urinish',
-              ),
-            ),
+            error: (error, stackTrace) {
+              return TextButton.icon(
+                onPressed: () {
+                  ref.invalidate(categoriesProvider);
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text(
+                  'Kategoriyalar yuklanmadi. Qayta urinish',
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 }
+DART
 ```
+
