@@ -1,6 +1,14 @@
-> **2026-10-29 / VEXO 0.2.2+5:** joriy tuzatishlar, tekshiruv loglari va Railway/APK ko‘rsatmalari: [PRODUCTION_AUDIT_UZ.md](PRODUCTION_AUDIT_UZ.md). Avvalgi reliz hisobotlari tarixiy dalil sifatida saqlangan.
+# e-dukon 0.3.1
 
-# Dokon Boshqaruv
+Yangi kategoriya va Ombor → Bo‘lim → Polka funksiyalari: [KATEGORIYA_MANZIL_UZ.md](KATEGORIYA_MANZIL_UZ.md). Ishga tushirish va inPAY: [MVP_ISHGA_TUSHIRISH_UZ.md](MVP_ISHGA_TUSHIRISH_UZ.md).
+
+# e-dukon 0.3.0 — inPAY v2 va Windows
+
+Boshlash: [MVP_ISHGA_TUSHIRISH_UZ.md](MVP_ISHGA_TUSHIRISH_UZ.md). Ushbu yangi yo‘riqnoma eski inPAY v1 ko‘rsatmalarining o‘rnini bosadi.
+
+> **2026-10-29 / e-dukon 0.2.2+5:** joriy tuzatishlar, tekshiruv loglari va Railway/APK ko‘rsatmalari: [PRODUCTION_AUDIT_UZ.md](PRODUCTION_AUDIT_UZ.md). Avvalgi reliz hisobotlari tarixiy dalil sifatida saqlangan.
+
+# e-dukon
 
 Uzbek Latin retail management application. **Development source / incomplete MVP, NOT production-ready.** This repository contains a Django REST API, Flutter client, Django-template landing page, transaction tests, and a persistent offline sale queue. See `PROGRESS.md` before deployment.
 
@@ -68,4 +76,3 @@ This is NOT a completed production application. Important features such as serve
 
 
 bu yangilanish mvp ni sungi yangilanishi
-loyha mvp ha tayyor

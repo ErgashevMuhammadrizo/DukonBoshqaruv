@@ -1,6 +1,6 @@
-# VEXO — o‘zgarishlar hisoboti
+# e-dukon — o‘zgarishlar hisoboti
 
-Ilovaning ko‘rinadigan nomi VEXO, versiyasi 0.2.1+4. Flutter/Django tuzilishi saqlandi; package/application ID, API domeni, token kalitlari va offline bazalar nomlari o‘zgartirilmadi.
+Ilovaning ko‘rinadigan nomi e-dukon, versiyasi 0.2.1+4. Flutter/Django tuzilishi saqlandi; package/application ID, API domeni, token kalitlari va offline bazalar nomlari o‘zgartirilmadi.
 
 ## Mahsulot o‘chirishning aniqlangan sabablari
 
@@ -82,7 +82,7 @@ flutter test
 flutter build apk --release --dart-define=API_BASE_URL=https://dukonboshqaruvi-production.up.railway.app/api/v1/
 ```
 
-APK: `build/app/outputs/flutter-apk/app-release.apk`. Ilova nomi VEXO ko‘rinadi. Mavjud ilova ustiga yangilash uchun avvalgi applicationId va signing keydan foydalaning; ular bu patchda almashtirilmadi. Saqlanmagan offline sotuvlarni yo‘qotmaslik uchun ilovani o‘chirib tashlash talab qilinmaydi.
+APK: `build/app/outputs/flutter-apk/app-release.apk`. Ilova nomi e-dukon ko‘rinadi. Mavjud ilova ustiga yangilash uchun avvalgi applicationId va signing keydan foydalaning; ular bu patchda almashtirilmadi. Saqlanmagan offline sotuvlarni yo‘qotmaslik uchun ilovani o‘chirib tashlash talab qilinmaydi.
 
 Serverga deploy bu ish davomida bajarilmadi. `website/` oldingi website paketi sifatida saqlangan; ushbu ishda marketing sayti qayta brendlanmadi.
 

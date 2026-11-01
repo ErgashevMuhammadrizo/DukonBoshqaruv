@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dokon_boshqaruv/src/app.dart';
 
 void main() {
-  testWidgets('App boots and renders Dokon Boshqaruv',
+  testWidgets('App boots and renders e-dukon',
       (WidgetTester tester) async {
     activeLanguage = 'uz';
     FlutterSecureStorage.setMockInitialValues({});

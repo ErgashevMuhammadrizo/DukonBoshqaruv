@@ -1,4 +1,4 @@
-# Dokon Boshqaruv 0.2.0+3
+# e-dukon 0.2.0+3
 
 Yangi nusxada oq/ko‘k/qora dizayn, Inter shrifti (OFL litsenziya bilan), saqlanadigan mavzu va til sozlamalari, o‘zbek/rus/ingliz matnlari bor. Ichki papkalar va API manzillari saqlangan.
 

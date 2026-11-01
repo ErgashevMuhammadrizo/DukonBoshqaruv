@@ -13,7 +13,7 @@ APK_PATH = ROOT / 'public/downloads/dokon-boshqaruv.apk'
 MISSING_APK = 'Ilova fayli hozircha joylanmagan. Iltimos, keyinroq qayta urinib ko‘ring.'
 
 def configuration():
-    defaults = {'product_name': 'Dokon Boshqaruv', 'download_url': '/downloads/dokon-boshqaruv.apk', 'apk_version': '', 'telegram_url': '', 'phone': '', 'email': ''}
+    defaults = {'product_name': 'e-dukon', 'download_url': '/downloads/dokon-boshqaruv.apk', 'apk_version': '', 'telegram_url': '', 'phone': '', 'email': ''}
     try:
         values = json.loads((ROOT / 'site_config.json').read_text())
     except (FileNotFoundError, ValueError):

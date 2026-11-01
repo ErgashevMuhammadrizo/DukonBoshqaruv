@@ -1,6 +1,6 @@
-# VEXO — localization va production audit, 2026-10-29
+# e-dukon — localization va production audit, 2026-10-29
 
-Versiya: **0.2.2+5**. Bu audit oxirgi `VEXO_updated_project.zip` asosida bajarildi. Oldingi mahsulot o‘chirish, savdo tarixi, offline navbat, tenant isolation, kamera kodi va papka tuzilishi saqlandi. Avvalgi `VEXO_HISOBOT.md` va `verification/` eski reliz dalillari; joriy natijalar `audit_verification/2026-10-29/` da.
+Versiya: **0.2.2+5**. Bu audit oxirgi `e-dukon_updated_project.zip` asosida bajarildi. Oldingi mahsulot o‘chirish, savdo tarixi, offline navbat, tenant isolation, kamera kodi va papka tuzilishi saqlandi. Avvalgi `e-dukon_HISOBOT.md` va `verification/` eski reliz dalillari; joriy natijalar `audit_verification/2026-10-29/` da.
 
 ## 1. Asl sabablar va tuzatishlar
 
@@ -37,7 +37,7 @@ Website — backendning yonidagi alohida Django package. Oldingi URL fayli uni m
 
 Endi ikki aniq rejim bor:
 
-- **API-only — default:** `SERVE_WEBSITE=0`. Backend website’siz ham ishga tushadi. `/` VEXO API haqida kichik JSON beradi; barcha API/admin/auth/sync/schema/docs va health yo‘llari saqlangan.
+- **API-only — default:** `SERVE_WEBSITE=0`. Backend website’siz ham ishga tushadi. `/` e-dukon API haqida kichik JSON beradi; barcha API/admin/auth/sync/schema/docs va health yo‘llari saqlangan.
 - **Integrated:** `SERVE_WEBSITE=1`, `WEBSITE_ROOT=/website`; repository-root build context bilan `website/integration/Dockerfile` ishlatiladi. Bu Dockerfile website’ni ham imagega oladi va rejimni yoqadi. `/` hamda `/download/` saqlanadi.
 
 Agar integrated rejim ongli yoqilgan, lekin website image ichida yo‘q bo‘lsa, aniq konfiguratsiya xatosi chiqadi. Bor package ichidagi boshqa import buglari yashirilmaydi. Routing nusxalari bir xil ekanligi testda tekshirildi. Website mustaqil servis sifatida o‘z `website/Dockerfile`i bilan ham ishlaydi.

@@ -1,6 +1,7 @@
 // Yagona API va queue provider'lari `lib/src/app.dart` da e'lon qilinadi.
 // Bu fayl faqat POS uchun extension va products provider'ini ta'minlaydi.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../src/app.dart' show apiProvider;
 import '../../../src/api.dart';
 import '../models/product.dart';

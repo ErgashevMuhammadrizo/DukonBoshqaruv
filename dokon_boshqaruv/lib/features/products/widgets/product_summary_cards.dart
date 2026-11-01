@@ -1,6 +1,8 @@
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
+
 import '../models/product.dart';
 
 class ProductSummaryCards extends StatelessWidget {
@@ -161,8 +163,11 @@ class _SummaryCard extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: isLarge ? 14 : 12,
-                color:
-                    adaptiveColor(context, Colors.grey[600]!, foreground: true),
+                color: adaptiveColor(
+                  context,
+                  Colors.grey[600]!,
+                  foreground: true,
+                ),
               ),
             ),
             if (!isLarge)

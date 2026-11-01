@@ -9,7 +9,7 @@ from django.views.decorators.http import require_safe
 
 @require_safe
 def api_home(request):
-    return JsonResponse({'service': 'VEXO API', 'api': '/api/v1/',
+    return JsonResponse({'service': 'e-dukon API', 'api': '/api/v1/',
                          'docs': '/api/v1/docs/'})
 
 

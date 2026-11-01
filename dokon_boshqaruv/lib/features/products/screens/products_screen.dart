@@ -1,7 +1,10 @@
+import '../widgets/category_picker.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../providers/products_provider.dart';
 import '../models/product.dart';
 import '../widgets/product_card.dart';
@@ -45,8 +48,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           // View mode toggle (only on larger screens)
           if (MediaQuery.of(context).size.width > 600)
             IconButton(
-              icon:
-                  Icon(_viewMode == 'list' ? Icons.grid_view : Icons.view_list),
+              icon: Icon(
+                _viewMode == 'list' ? Icons.grid_view : Icons.view_list,
+              ),
               onPressed: () {
                 setState(() {
                   _viewMode = _viewMode == 'list' ? 'grid' : 'list';
@@ -87,216 +91,258 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           ),
         ],
       ),
-      body: productsAsync.when(
-        data: (products) {
-          if (products.isEmpty) {
-            return EmptyProductsState(
-              onAddProduct: () => _navigateToAddProduct(context),
-            );
-          }
+      body: Column(
+        children: [
+          const CategoryToolbar(),
+          Expanded(
+            child: productsAsync.when(
+              data: (products) {
+                if (products.isEmpty) {
+                  return EmptyProductsState(
+                    onAddProduct: () => _navigateToAddProduct(context),
+                  );
+                }
 
-          return RefreshIndicator(
-            onRefresh: () => ref.read(productsProvider.notifier).refresh(),
-            child: CustomScrollView(
-              slivers: [
-                // Summary cards
-                SliverToBoxAdapter(
-                  child: ProductSummaryCards(summary: summary),
-                ),
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      ref.read(productsProvider.notifier).refresh(),
+                  child: CustomScrollView(
+                    slivers: [
+                      // Summary cards
+                      SliverToBoxAdapter(
+                        child: ProductSummaryCards(summary: summary),
+                      ),
 
-                if (productsStale)
-                  SliverToBoxAdapter(child: _StaleInventoryNotice()),
+                      if (productsStale)
+                        SliverToBoxAdapter(child: _StaleInventoryNotice()),
 
-                SliverToBoxAdapter(
-                  child: _StockWarnings(
-                    products: products
-                        .where((p) => p.active && p.stockStatus != 'mavjud')
-                        .toList(),
-                  ),
-                ),
-
-                // Search bar
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: tr('m388'),
-                        prefixIcon: Icon(Icons.search),
-                        suffixIcon: filters.searchQuery != null &&
-                                filters.searchQuery!.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear),
-                                onPressed: () {
-                                  ref
-                                          .read(productFiltersProvider.notifier)
-                                          .state =
-                                      filters.copyWith(searchQuery: '');
-                                },
+                      SliverToBoxAdapter(
+                        child: _StockWarnings(
+                          products: products
+                              .where(
+                                (p) => p.active && p.stockStatus != 'mavjud',
                               )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                              .toList(),
                         ),
                       ),
-                      onChanged: (value) {
-                        // Debouncing handled by provider
-                        ref.read(productFiltersProvider.notifier).state =
-                            filters.copyWith(searchQuery: value);
-                      },
-                    ),
-                  ),
-                ),
 
-                // Active filters chip
-                if (filters.hasActiveFilters)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Wrap(
-                        spacing: 8,
-                        children: [
-                          if (filters.categoryId != null)
-                            Chip(
-                              label: Text(tr('m212')),
-                              onDeleted: () {
-                                ref
-                                    .read(productFiltersProvider.notifier)
-                                    .state = filters.copyWith(categoryId: null);
-                              },
+                      // Search bar
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: tr('m388'),
+                              prefixIcon: Icon(Icons.search),
+                              suffixIcon:
+                                  filters.searchQuery != null &&
+                                      filters.searchQuery!.isNotEmpty
+                                  ? IconButton(
+                                      icon: Icon(Icons.clear),
+                                      onPressed: () {
+                                        ref
+                                            .read(
+                                              productFiltersProvider.notifier,
+                                            )
+                                            .state = filters.copyWith(
+                                          searchQuery: '',
+                                        );
+                                      },
+                                    )
+                                  : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                          if (filters.stockStatus != null &&
-                              filters.stockStatus != 'all')
-                            Chip(
-                              label: Text(tr('m164', [filters.stockStatus])),
-                              onDeleted: () {
-                                ref
-                                        .read(productFiltersProvider.notifier)
-                                        .state =
-                                    filters.copyWith(stockStatus: 'all');
-                              },
-                            ),
-                          if (filters.minPrice != null ||
-                              filters.maxPrice != null)
-                            Chip(
-                              label: Text(tr('m306')),
-                              onDeleted: () {
-                                ref
-                                    .read(productFiltersProvider.notifier)
-                                    .state = filters.copyWith(
-                                  minPrice: null,
-                                  maxPrice: null,
-                                );
-                              },
-                            ),
-                          TextButton.icon(
-                            onPressed: () {
+                            onChanged: (value) {
+                              // Debouncing handled by provider
                               ref.read(productFiltersProvider.notifier).state =
-                                  filters.clearFilters();
+                                  filters.copyWith(searchQuery: value);
                             },
-                            icon: Icon(Icons.clear_all, size: 16),
-                            label: Text(tr('m54')),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
 
-                // Products list/grid
-                if (filteredProducts.isEmpty)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search_off,
-                              size: 64,
-                              color: adaptiveColor(context, Colors.grey)),
-                          SizedBox(height: 16),
-                          Text(
-                            tr('m158'),
-                            style: TextStyle(
-                                fontSize: 18,
-                                color: adaptiveColor(context, Colors.grey,
-                                    foreground: true)),
+                      // Active filters chip
+                      if (filters.hasActiveFilters)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Wrap(
+                              spacing: 8,
+                              children: [
+                                if (filters.categoryId != null)
+                                  Chip(
+                                    label: Text(tr('m212')),
+                                    onDeleted: () {
+                                      ref
+                                          .read(productFiltersProvider.notifier)
+                                          .state = filters.copyWith(
+                                        categoryId: null,
+                                      );
+                                    },
+                                  ),
+                                if (filters.stockStatus != null &&
+                                    filters.stockStatus != 'all')
+                                  Chip(
+                                    label: Text(
+                                      tr('m164', [filters.stockStatus]),
+                                    ),
+                                    onDeleted: () {
+                                      ref
+                                          .read(productFiltersProvider.notifier)
+                                          .state = filters.copyWith(
+                                        stockStatus: 'all',
+                                      );
+                                    },
+                                  ),
+                                if (filters.minPrice != null ||
+                                    filters.maxPrice != null)
+                                  Chip(
+                                    label: Text(tr('m306')),
+                                    onDeleted: () {
+                                      ref
+                                          .read(productFiltersProvider.notifier)
+                                          .state = filters.copyWith(
+                                        minPrice: null,
+                                        maxPrice: null,
+                                      );
+                                    },
+                                  ),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    ref
+                                        .read(productFiltersProvider.notifier)
+                                        .state = filters
+                                        .clearFilters();
+                                  },
+                                  icon: Icon(Icons.clear_all, size: 16),
+                                  label: Text(tr('m54')),
+                                ),
+                              ],
+                            ),
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            tr('m141'),
-                            style: TextStyle(
-                                color: adaptiveColor(context, Colors.grey,
-                                    foreground: true)),
+                        ),
+
+                      // Products list/grid
+                      if (filteredProducts.isEmpty)
+                        SliverFillRemaining(
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: adaptiveColor(context, Colors.grey),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  tr('m158'),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: adaptiveColor(
+                                      context,
+                                      Colors.grey,
+                                      foreground: true,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  tr('m141'),
+                                  style: TextStyle(
+                                    color: adaptiveColor(
+                                      context,
+                                      Colors.grey,
+                                      foreground: true,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
+                        )
+                      else if (_viewMode == 'grid' &&
+                          MediaQuery.of(context).size.width > 600)
+                        SliverPadding(
+                          padding: EdgeInsets.all(16),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount:
+                                      MediaQuery.of(context).size.width > 1200
+                                      ? 4
+                                      : 2,
+                                  mainAxisExtent:
+                                      360 *
+                                      (MediaQuery.textScalerOf(context)
+                                                  .scale(16) /
+                                              16)
+                                          .clamp(1.0, 1.8),
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final product = filteredProducts[index];
+                              return ProductCard(
+                                product: product,
+                                onTap: () =>
+                                    _navigateToDetail(context, product.id),
+                              );
+                            }, childCount: filteredProducts.length),
+                          ),
+                        )
+                      else
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final product = filteredProducts[index];
+                            return ProductListTile(
+                              product: product,
+                              onTap: () =>
+                                  _navigateToDetail(context, product.id),
+                            );
+                          }, childCount: filteredProducts.length),
+                        ),
+
+                      // Bottom padding
+                      SliverToBoxAdapter(child: SizedBox(height: 80)),
+                    ],
+                  ),
+                );
+              },
+              loading: () => Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: adaptiveColor(context, Colors.red),
                     ),
-                  )
-                else if (_viewMode == 'grid' &&
-                    MediaQuery.of(context).size.width > 600)
-                  SliverPadding(
-                    padding: EdgeInsets.all(16),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount:
-                            MediaQuery.of(context).size.width > 1200 ? 4 : 2,
-                        childAspectRatio: 0.75,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final product = filteredProducts[index];
-                          return ProductCard(
-                            product: product,
-                            onTap: () => _navigateToDetail(context, product.id),
-                          );
-                        },
-                        childCount: filteredProducts.length,
-                      ),
-                    ),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final product = filteredProducts[index];
-                        return ProductListTile(
-                          product: product,
-                          onTap: () => _navigateToDetail(context, product.id),
-                        );
+                    SizedBox(height: 16),
+                    Text(friendlyFailure(error)),
+                    SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ref.read(productsProvider.notifier).refresh();
                       },
-                      childCount: filteredProducts.length,
+                      icon: Icon(Icons.refresh),
+                      label: Text(tr('m381')),
                     ),
-                  ),
-
-                // Bottom padding
-                SliverToBoxAdapter(
-                  child: SizedBox(height: 80),
+                  ],
                 ),
-              ],
-            ),
-          );
-        },
-        loading: () => Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline,
-                  size: 64, color: adaptiveColor(context, Colors.red)),
-              SizedBox(height: 16),
-              Text(friendlyFailure(error)),
-              SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ref.read(productsProvider.notifier).refresh();
-                },
-                icon: Icon(Icons.refresh),
-                label: Text(tr('m381')),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToAddProduct(context),
@@ -350,16 +396,24 @@ class _StockWarnings extends StatelessWidget {
             final stock = product.stock;
             return ListTile(
               dense: true,
-              leading: Icon(empty ? Icons.error_outline : Icons.warning_amber,
-                  color: color),
+              leading: Icon(
+                empty ? Icons.error_outline : Icons.warning_amber,
+                color: color,
+              ),
               title: Text(
                 empty ? tr('m649', [product.name]) : tr('m637', [product.name]),
                 style: TextStyle(color: color, fontWeight: FontWeight.w700),
               ),
-              subtitle: Text(empty
-                  ? tr('m342', [product.minStock, product.unit])
-                  : tr('m345',
-                      [stock, product.unit, product.minStock, product.unit])),
+              subtitle: Text(
+                empty
+                    ? tr('m342', [product.minStock, product.unit])
+                    : tr('m345', [
+                        stock,
+                        product.unit,
+                        product.minStock,
+                        product.unit,
+                      ]),
+              ),
             );
           }).toList(),
         ),
@@ -380,9 +434,10 @@ class _StaleInventoryNotice extends StatelessWidget {
         color: adaptiveColor(context, Color(0xFFFFF3E0)),
         child: ListTile(
           dense: true,
-          leading: Icon(Icons.cloud_off,
-              color:
-                  adaptiveColor(context, Colors.deepOrange, foreground: true)),
+          leading: Icon(
+            Icons.cloud_off,
+            color: adaptiveColor(context, Colors.deepOrange, foreground: true),
+          ),
           title: Text(tr('m173')),
           subtitle: Text(tr('m479')),
         ),
@@ -426,8 +481,8 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                   ),
                   TextButton(
                     onPressed: () {
-                      ref.read(productFiltersProvider.notifier).state =
-                          filters.clearFilters();
+                      ref.read(productFiltersProvider.notifier).state = filters
+                          .clearFilters();
                     },
                     child: Text(tr('m533')),
                   ),
@@ -455,9 +510,10 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                               onSelected: (selected) {
                                 if (selected) {
                                   ref
-                                          .read(productFiltersProvider.notifier)
-                                          .state =
-                                      filters.copyWith(categoryId: null);
+                                      .read(productFiltersProvider.notifier)
+                                      .state = filters.copyWith(
+                                    categoryId: null,
+                                  );
                                 }
                               },
                             ),
@@ -493,7 +549,8 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                       children: [
                         FilterChip(
                           label: Text(tr('m53')),
-                          selected: filters.stockStatus == null ||
+                          selected:
+                              filters.stockStatus == null ||
                               filters.stockStatus == 'all',
                           onSelected: (selected) {
                             ref.read(productFiltersProvider.notifier).state =
@@ -504,8 +561,9 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           label: Text(tr('m270')),
                           selected: filters.stockStatus == 'mavjud',
                           onSelected: (selected) {
-                            ref.read(productFiltersProvider.notifier).state =
-                                filters.copyWith(
+                            ref
+                                .read(productFiltersProvider.notifier)
+                                .state = filters.copyWith(
                               stockStatus: selected ? 'mavjud' : 'all',
                             );
                           },
@@ -514,8 +572,9 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           label: Text(tr('m195')),
                           selected: filters.stockStatus == 'kam_qolgan',
                           onSelected: (selected) {
-                            ref.read(productFiltersProvider.notifier).state =
-                                filters.copyWith(
+                            ref
+                                .read(productFiltersProvider.notifier)
+                                .state = filters.copyWith(
                               stockStatus: selected ? 'kam_qolgan' : 'all',
                             );
                           },
@@ -524,8 +583,9 @@ class _ProductFiltersSheetState extends ConsumerState<ProductFiltersSheet> {
                           label: Text(tr('m557')),
                           selected: filters.stockStatus == 'tugagan',
                           onSelected: (selected) {
-                            ref.read(productFiltersProvider.notifier).state =
-                                filters.copyWith(
+                            ref
+                                .read(productFiltersProvider.notifier)
+                                .state = filters.copyWith(
                               stockStatus: selected ? 'tugagan' : 'all',
                             );
                           },

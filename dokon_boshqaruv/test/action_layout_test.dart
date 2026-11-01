@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -24,18 +25,20 @@ import 'package:dokon_boshqaruv/features/reports/screens/reports_screen.dart';
 import 'package:dokon_boshqaruv/features/debts/screens/debts_screen.dart';
 import 'package:dokon_boshqaruv/src/screens/admin_panel.dart';
 import 'package:dokon_boshqaruv/src/screens/account_settings.dart';
+
 import 'account_settings_test.dart' show FakeAccountApi;
 import 'redesign_test.dart' show FakeAdminApi;
 
 final sample = Product(
-    id: 1,
-    name: 'Long product name to inspect on a small mobile screen',
-    sku: 'TEST',
-    salePrice: '1234567.89',
-    purchasePrice: '1',
-    stock: '20',
-    unit: 'dona',
-    minStock: '0');
+  id: 1,
+  name: 'Long product name to inspect on a small mobile screen',
+  sku: 'TEST',
+  salePrice: '1234567.89',
+  purchasePrice: '1',
+  stock: '20',
+  unit: 'dona',
+  minStock: '0',
+);
 
 class StaticProducts extends ProductsNotifier {
   StaticProducts() : super(FakeAccountApi(), OfflineQueue(), (_) {});
@@ -49,38 +52,50 @@ class UiAdminApi extends FakeAdminApi {
   int planSaves = 0;
   bool enabled = true;
   @override
-  Future<Map<String, dynamic>> adminStores(
-          {int page = 1, String? q, bool? active}) async =>
-      {'results': [], 'pages': 1, 'count': 0};
+  Future<Map<String, dynamic>> adminStores({
+    int page = 1,
+    String? q,
+    bool? active,
+  }) async => {'results': [], 'pages': 1, 'count': 0};
   @override
   Future<List<dynamic>> adminPlans() async => [
-        {
-          'id': 17,
-          'name': 'STANDARD long plan title',
-          'price': '49000',
-          'annual_price': '490000',
-          'currency': 'UZS',
-          'user_limit': 2,
-          'product_limit': 500,
-          'active': enabled
-        }
-      ];
+    {
+      'id': 17,
+      'name': 'STANDARD long plan title',
+      'price': '49000',
+      'annual_price': '490000',
+      'currency': 'UZS',
+      'user_limit': 2,
+      'product_limit': 500,
+      'active': enabled,
+    },
+  ];
   @override
   Future<List<dynamic>> adminSubscriptions({String? status, String? q}) async =>
       [];
   @override
-  Future<Map<String, dynamic>> adminPayments(
-          {int page = 1, String? status, String? start, String? end}) async =>
-      {'results': [], 'pages': 1, 'count': 0};
+  Future<Map<String, dynamic>> adminPayments({
+    int page = 1,
+    String? status,
+    String? start,
+    String? end,
+  }) async => {'results': [], 'pages': 1, 'count': 0};
   @override
-  Future<Map<String, dynamic>> adminAudit({int page = 1, String? q}) async =>
-      {'results': [], 'pages': 1, 'count': 0};
+  Future<Map<String, dynamic>> adminAudit({int page = 1, String? q}) async => {
+    'results': [],
+    'pages': 1,
+    'count': 0,
+  };
   @override
-  Future<Map<String, dynamic>> adminSystemStatus() async =>
-      {'api': 'ok', 'database': 'ok'};
+  Future<Map<String, dynamic>> adminSystemStatus() async => {
+    'api': 'ok',
+    'database': 'ok',
+  };
   @override
-  Future<Map<String, dynamic>> saveAdminPlan(Map<String, dynamic> data,
-      {int? id}) async {
+  Future<Map<String, dynamic>> saveAdminPlan(
+    Map<String, dynamic> data, {
+    int? id,
+  }) async {
     planSaves++;
     enabled = data['active'] as bool;
     return data;
@@ -90,20 +105,27 @@ class UiAdminApi extends FakeAdminApi {
 class BillingApi extends FakeAccountApi {
   @override
   Future<List<dynamic>> plans() async => [
-        for (final plan in await super.plans())
-          {...plan as Map<String, dynamic>, 'id': 17}
-      ];
+    for (final plan in await super.plans())
+      {...plan as Map<String, dynamic>, 'id': 17},
+  ];
 }
 
 class BillingTransport implements HttpClientAdapter {
   RequestOptions? request;
   @override
-  Future<ResponseBody> fetch(RequestOptions options, Stream<List<int>>? stream,
-      Future<void>? cancel) async {
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? stream,
+    Future<void>? cancel,
+  ) async {
     request = options;
-    return ResponseBody.fromString('{}', 201, headers: {
-      Headers.contentTypeHeader: ['application/json']
-    });
+    return ResponseBody.fromString(
+      '{}',
+      201,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
   }
 
   @override
@@ -112,8 +134,9 @@ class BillingTransport implements HttpClientAdapter {
 
 void main() {
   for (final lang in ['uz', 'ru', 'en']) {
-    testWidgets('$lang important screens fit 320px with enlarged text',
-        (tester) async {
+    testWidgets('$lang important screens fit 320px with enlarged text', (
+      tester,
+    ) async {
       final previousError = FlutterError.onError;
       FlutterError.onError = (details) {
         debugPrint(details.toString());
@@ -128,33 +151,40 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final adminApi = UiAdminApi();
-      final container = ProviderContainer(overrides: [
-        apiProvider.overrideWithValue(adminApi),
-        productsProvider.overrideWith((ref) => StaticProducts()),
-        categoriesProvider.overrideWith((ref) async => []),
-        salesHistoryProvider.overrideWith((ref) async => []),
-        reportSummaryProvider.overrideWith((ref) async =>
-            {'revenue': 0, 'sales_count': 0, 'cash': 0, 'card': 0}),
-        reportSalesProvider.overrideWith((ref) async => []),
-        debtsProvider.overrideWith((ref, key) async => []),
-      ]);
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(adminApi),
+          productsProvider.overrideWith((ref) => StaticProducts()),
+          categoriesProvider.overrideWith((ref) async => []),
+          salesHistoryProvider.overrideWith((ref) async => []),
+          reportSummaryProvider.overrideWith(
+            (ref) async => {
+              'revenue': 0,
+              'sales_count': 0,
+              'cash': 0,
+              'card': 0,
+            },
+          ),
+          reportSalesProvider.overrideWith((ref) async => []),
+          debtsProvider.overrideWith((ref, key) async => []),
+        ],
+      );
       addTearDown(container.dispose);
       Widget shell(Widget screen) => UncontrolledProviderScope(
-          container: container,
-          child: MaterialApp(
-              theme: buildAppTheme(Brightness.light),
-              locale: Locale(lang),
-              supportedLocales: const [
-                Locale('uz'),
-                Locale('ru'),
-                Locale('en')
-              ],
-              localizationsDelegates: GlobalMaterialLocalizations.delegates,
-              builder: (context, child) => MediaQuery(
-                  data: MediaQuery.of(context)
-                      .copyWith(textScaler: TextScaler.linear(1.3)),
-                  child: AppLocaleScope(language: lang, child: child!)),
-              home: screen));
+        container: container,
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.light),
+          locale: Locale(lang),
+          supportedLocales: const [Locale('uz'), Locale('ru'), Locale('en')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(1.3)),
+            child: AppLocaleScope(language: lang, child: child!),
+          ),
+          home: screen,
+        ),
+      );
       for (final screen in <Widget>[
         const Login(),
         const ProductsScreen(),
@@ -165,12 +195,15 @@ void main() {
         const AdminPanel(),
         const AccountSettings(),
         const AddProductScreen(),
-        EditProductScreen(product: sample)
+        EditProductScreen(product: sample),
       ]) {
         await tester.pumpWidget(shell(screen));
         await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull,
-            reason: screen.runtimeType.toString());
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: screen.runtimeType.toString(),
+        );
         if (screen is AdminPanel) {
           for (final key in [
             'm563',
@@ -179,7 +212,7 @@ void main() {
             'm330',
             'm550',
             'm37',
-            'm521'
+            'm521',
           ]) {
             final chip = find.widgetWithText(ChoiceChip, tr(key));
             await tester.ensureVisible(chip);
@@ -214,8 +247,9 @@ void main() {
         }
       }
       container.read(cartProvider.notifier).addProduct(sample);
-      await tester
-          .pumpWidget(shell(Scaffold(body: CartPanel(onCheckout: () {}))));
+      await tester.pumpWidget(
+        shell(Scaffold(body: CartPanel(onCheckout: () {}))),
+      );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: 'cart');
       await tester.tap(find.byTooltip(tr('quantity_increase')));
@@ -231,44 +265,36 @@ void main() {
       await tester.pump();
     });
   }
-  testWidgets(
-      'plan action validates reference, cancels safely and posts the selected ID',
-      (tester) async {
+  testWidgets('plan offers only hosted inPAY payment and no manual receipt', (
+    tester,
+  ) async {
     activeLanguage = 'uz';
     FlutterSecureStorage.setMockInitialValues({});
     final api = BillingApi();
     final adapter = BillingTransport();
     api.dio.httpClientAdapter = adapter;
-    await tester.pumpWidget(ProviderScope(
+    await tester.pumpWidget(
+      ProviderScope(
         overrides: [apiProvider.overrideWithValue(api)],
         child: MaterialApp(
-            theme: buildAppTheme(Brightness.light),
-            home: const AccountSettings())));
+          theme: buildAppTheme(Brightness.light),
+          home: const AccountSettings(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text(tr('m506')), 200,
-        scrollable: find.byType(Scrollable).first);
-    await tester.ensureVisible(find.widgetWithText(FilledButton, tr('m506')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, tr('m506')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(tr('m33')));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('inPAY orqali to‘lash'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.widgetWithText(FilledButton, 'inPAY orqali to‘lash'),
+      findsOneWidget,
+    );
+    expect(find.text(tr('m506')), findsNothing);
+    expect(find.byType(TextFormField), findsNothing);
     expect(adapter.request, isNull);
-    await tester.tap(find.text(tr('m57')));
-    await tester.pumpAndSettle();
-    expect(adapter.request, isNull);
-    await tester.ensureVisible(find.widgetWithText(FilledButton, tr('m506')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, tr('m506')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField), 'TEST-RECEIPT-ONLY');
-    await tester.tap(find.text(tr('m33')));
-    await tester.pumpAndSettle();
-    expect(adapter.request!.method, 'POST');
-    expect(adapter.request!.path, 'payments/');
-    expect(adapter.request!.data,
-        {'plan_id': 17, 'reference': 'TEST-RECEIPT-ONLY'});
-    expect(find.text(tr('m31')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

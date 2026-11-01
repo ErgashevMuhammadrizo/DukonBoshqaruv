@@ -1,5 +1,6 @@
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 class EmptyProductsState extends StatelessWidget {
@@ -36,8 +37,11 @@ class EmptyProductsState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color:
-                    adaptiveColor(context, Colors.grey[600]!, foreground: true),
+                color: adaptiveColor(
+                  context,
+                  Colors.grey[600]!,
+                  foreground: true,
+                ),
               ),
             ),
             SizedBox(height: 32),
@@ -46,10 +50,7 @@ class EmptyProductsState extends StatelessWidget {
               icon: Icon(Icons.add),
               label: Text(tr('m248')),
               style: FilledButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
             ),
           ],

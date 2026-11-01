@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -12,11 +15,77 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../src/diagnostics/app_diagnostics.dart';
 import '../../../src/diagnostics/camera_session.dart';
 
-class BarcodeScannerDialog extends StatefulWidget {
+/// Windows accepts USB scanners as keyboard input; never opens unsupported camera APIs.
+class BarcodeScannerDialog extends StatelessWidget {
   const BarcodeScannerDialog({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final cameraSupported =
+        kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+    if (cameraSupported) return const _CameraScannerDialog();
+    return const _DesktopBarcodeDialog();
+  }
+}
+
+class _DesktopBarcodeDialog extends StatefulWidget {
+  const _DesktopBarcodeDialog();
+  @override
+  State<_DesktopBarcodeDialog> createState() => _DesktopBarcodeDialogState();
+}
+
+class _DesktopBarcodeDialogState extends State<_DesktopBarcodeDialog> {
+  final controller = TextEditingController();
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void submit() {
+    final value = controller.text.trim();
+    if (value.isNotEmpty) Navigator.pop(context, value);
+  }
 
   @override
-  State<BarcodeScannerDialog> createState() => _BarcodeScannerDialogState();
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Shtrix-kod'),
+    content: SizedBox(
+      width: 380,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'USB skaner bilan skanerlang yoki kodni kiriting va Enter bosing.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Shtrix-kod'),
+            onSubmitted: (_) => submit(),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Bekor qilish'),
+      ),
+      FilledButton(onPressed: submit, child: const Text('Tasdiqlash')),
+    ],
+  );
+}
+
+class _CameraScannerDialog extends StatefulWidget {
+  const _CameraScannerDialog({super.key});
+
+  @override
+  State<_CameraScannerDialog> createState() => __CameraScannerDialogState();
 }
 
 class _PermissionFailure implements Exception {
@@ -45,7 +114,7 @@ class _CameraPort implements CameraSessionPort {
   Future<void> dispose() => disposeCamera();
 }
 
-class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
+class __CameraScannerDialogState extends State<_CameraScannerDialog>
     with WidgetsBindingObserver {
   static final _native = MethodChannel('dokon_boshqaruv/camera_diagnostics');
   final _diagnostics = AppDiagnostics.instance;
@@ -126,7 +195,8 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
   void _onState() {
     if (_disposed || _closing) return;
     final state = _controller.value;
-    final fingerprint = '${state.isInitialized}/${state.isRunning}/'
+    final fingerprint =
+        '${state.isInitialized}/${state.isRunning}/'
         '${state.isStarting}/${state.error}';
     if (fingerprint == _lastState) return;
     _lastState = fingerprint;
@@ -191,8 +261,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
       _watchdog = Timer(Duration(seconds: 12), () {
         _diagnostics.record(
           'camera.start.pending',
-          message:
-              'Native start has not replied after 12 seconds; no parallel retry was started.',
+          message: 'Native start has not replied after 12 seconds; no parallel retry was started.',
         );
         _slow = true;
         _update();
@@ -221,7 +290,8 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
   void _onFailure(Object error, StackTrace stack) {
     _diagnostics.record('camera.session.error', error: error, stack: stack);
     if (error is MobileScannerException) _recordScannerError(error);
-    _permissionDenied = error is _PermissionFailure ||
+    _permissionDenied =
+        error is _PermissionFailure ||
         (error is MobileScannerException &&
             error.errorCode == MobileScannerErrorCode.permissionDenied);
     _lastError = error.toString();
@@ -280,8 +350,9 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
     if (_busy || _closing) return;
     await _session.pause();
     if (_closing || !mounted) return;
-    _facing =
-        _facing == CameraFacing.back ? CameraFacing.front : CameraFacing.back;
+    _facing = _facing == CameraFacing.back
+        ? CameraFacing.front
+        : CameraFacing.back;
     _diagnostics.record('camera.switch', message: _facing.name);
     await _session.resume();
   }
@@ -297,50 +368,51 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
   }
 
   Widget _failure(String message) => ColoredBox(
-        color: Theme.of(context).colorScheme.surface,
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _permissionDenied
-                      ? Icons.no_photography_outlined
-                      : Icons.camera_alt_outlined,
-                  size: 48,
-                  color: adaptiveColor(context, Colors.orange),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  _permissionDenied ? tr('m201') : tr('m199'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 12),
-                Text(
-                    _permissionDenied
-                        ? tr('m202')
-                        : (_slow ? tr('cameraSlow') : tr('cameraUnavailable')),
-                    textAlign: TextAlign.center),
-                SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: _busy || _closing ? null : () => _session.retry(),
-                  icon: Icon(Icons.refresh),
-                  label: Text(tr('m381')),
-                ),
-                if (_permissionDenied)
-                  TextButton(
-                    onPressed: () async {
-                      await openAppSettings();
-                    },
-                    child: Text(tr('m485')),
-                  ),
-              ],
+    color: Theme.of(context).colorScheme.surface,
+    child: Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _permissionDenied
+                  ? Icons.no_photography_outlined
+                  : Icons.camera_alt_outlined,
+              size: 48,
+              color: adaptiveColor(context, Colors.orange),
             ),
-          ),
+            SizedBox(height: 12),
+            Text(
+              _permissionDenied ? tr('m201') : tr('m199'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 12),
+            Text(
+              _permissionDenied
+                  ? tr('m202')
+                  : (_slow ? tr('cameraSlow') : tr('cameraUnavailable')),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _busy || _closing ? null : () => _session.retry(),
+              icon: Icon(Icons.refresh),
+              label: Text(tr('m381')),
+            ),
+            if (_permissionDenied)
+              TextButton(
+                onPressed: () async {
+                  await openAppSettings();
+                },
+                child: Text(tr('m485')),
+              ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -363,11 +435,15 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
               AppBar(
                 automaticallyImplyLeading: false,
                 backgroundColor: adaptiveColor(context, Color(0xFF10243D)),
-                foregroundColor:
-                    adaptiveColor(context, Colors.white, foreground: true),
-                title: Text(tr('m458'),
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                foregroundColor: adaptiveColor(
+                  context,
+                  Colors.white,
+                  foreground: true,
+                ),
+                title: Text(
+                  tr('m458'),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
                 actions: [
                   IconButton(
                     tooltip: tr('m601'),
@@ -400,24 +476,36 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                         stateError == null &&
                         !_busy &&
                         !_closing)
-                      LayoutBuilder(builder: (context, bounds) {
-                        final edge = math.max(
+                      LayoutBuilder(
+                        builder: (context, bounds) {
+                          final edge = math.max(
                             0.0,
                             math.min(
-                                240.0,
-                                math.min(bounds.maxWidth - 32,
-                                    bounds.maxHeight - 32)));
-                        return Center(
+                              240.0,
+                              math.min(
+                                bounds.maxWidth - 32,
+                                bounds.maxHeight - 32,
+                              ),
+                            ),
+                          );
+                          return Center(
                             child: IgnorePointer(
-                                child: SizedBox.square(
-                          dimension: edge,
-                          child: DecoratedBox(
-                              decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white, width: 3),
-                            borderRadius: BorderRadius.circular(20),
-                          )),
-                        )));
-                      }),
+                              child: SizedBox.square(
+                                dimension: edge,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     if (_slow && _busy && !_closing) _failure(tr('cameraSlow')),
                     if (_lastError != null || stateError != null)
                       _failure(_lastError ?? stateError.toString()),
@@ -436,8 +524,12 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
                                     : (_closing ? tr('m203') : tr('m200')),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                    color: adaptiveColor(context, Colors.white,
-                                        foreground: true)),
+                                  color: adaptiveColor(
+                                    context,
+                                    Colors.white,
+                                    foreground: true,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -448,10 +540,7 @@ class _BarcodeScannerDialogState extends State<BarcodeScannerDialog>
               ),
               Padding(
                 padding: EdgeInsets.all(10),
-                child: Text(
-                  tr('m225'),
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(tr('m225'), textAlign: TextAlign.center),
               ),
               Wrap(
                 alignment: WrapAlignment.center,

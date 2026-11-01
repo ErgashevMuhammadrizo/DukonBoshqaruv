@@ -1,8 +1,12 @@
+import '../widgets/category_picker.dart';
+import '../widgets/product_location_fields.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../providers/products_provider.dart';
 import '../models/product.dart';
 import '../widgets/barcode_scanner_dialog.dart';
@@ -22,6 +26,9 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   bool _isSaving = false;
   bool _hasChanges = false;
   String? _imagePath;
+  final _warehouseController = TextEditingController();
+  final _sectionController = TextEditingController();
+  final _shelfController = TextEditingController();
 
   // Controllers
   late final TextEditingController _nameController;
@@ -56,14 +63,27 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     // Initialize controllers with existing values
     _nameController = TextEditingController(text: widget.product.name);
     _skuController = TextEditingController(text: widget.product.sku);
-    _barcodeController =
-        TextEditingController(text: widget.product.barcode ?? '');
-    _purchasePriceController =
-        TextEditingController(text: widget.product.purchasePrice);
-    _salePriceController =
-        TextEditingController(text: widget.product.salePrice);
+    _barcodeController = TextEditingController(
+      text: widget.product.barcode ?? '',
+    );
+    _purchasePriceController = TextEditingController(
+      text: widget.product.purchasePrice,
+    );
+    _salePriceController = TextEditingController(
+      text: widget.product.salePrice,
+    );
     _minStockController = TextEditingController(text: widget.product.minStock);
 
+    _warehouseController.text = widget.product.warehouse;
+    _sectionController.text = widget.product.section;
+    _shelfController.text = widget.product.shelf;
+    for (final c in [
+      _warehouseController,
+      _sectionController,
+      _shelfController,
+    ]) {
+      c.addListener(_markChanged);
+    }
     _selectedCategoryId = widget.product.categoryId;
     _selectedUnit = widget.product.unit;
 
@@ -92,13 +112,15 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     _purchasePriceController.dispose();
     _salePriceController.dispose();
     _minStockController.dispose();
+    _warehouseController.dispose();
+    _sectionController.dispose();
+    _shelfController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     AppLocaleScope.of(context);
-    final categoriesAsync = ref.watch(categoriesProvider);
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
     return PopScope(
@@ -112,19 +134,14 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(tr('m266')),
-        ),
+        appBar: AppBar(title: Text(tr('m266'))),
         body: Form(
           key: _formKey,
           child: ListView(
             padding: EdgeInsets.all(16),
             children: [
               // Product Image Section
-              _SectionHeader(
-                title: tr('m249'),
-                icon: Icons.image,
-              ),
+              _SectionHeader(title: tr('m249'), icon: Icons.image),
               SizedBox(height: 16),
               ImagePickerWidget(
                 initialImagePath: _imagePath ?? widget.product.image,
@@ -144,17 +161,22 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                   padding: EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      Icon(Icons.info,
-                          color: adaptiveColor(context, Colors.blue[700]!),
-                          size: 20),
+                      Icon(
+                        Icons.info,
+                        color: adaptiveColor(context, Colors.blue[700]!),
+                        size: 20,
+                      ),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           tr('m401'),
                           style: TextStyle(
                             fontSize: 12,
-                            color: adaptiveColor(context, Colors.blue[900]!,
-                                foreground: true),
+                            color: adaptiveColor(
+                              context,
+                              Colors.blue[900]!,
+                              foreground: true,
+                            ),
                           ),
                         ),
                       ),
@@ -166,10 +188,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
               SizedBox(height: 16),
 
               // Basic Information Section
-              _SectionHeader(
-                title: tr('m35'),
-                icon: Icons.info_outline,
-              ),
+              _SectionHeader(title: tr('m35'), icon: Icons.info_outline),
               SizedBox(height: 16),
 
               if (isSmallScreen) ...[
@@ -193,53 +212,26 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
               SizedBox(height: 24),
 
               // Category Section
-              _SectionHeader(
-                title: tr('m212'),
-                icon: Icons.category_outlined,
-              ),
+              _SectionHeader(title: tr('m212'), icon: Icons.category_outlined),
               SizedBox(height: 16),
 
-              categoriesAsync.when(
-                data: (categories) {
-                  return DropdownButtonFormField<int>(
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: tr('m212'),
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.category),
-                    ),
-                    initialValue: _selectedCategoryId,
-                    items: [
-                      DropdownMenuItem<int>(
-                        value: null,
-                        child: Text(tr('m211')),
-                      ),
-                      ...categories.map((category) {
-                        return DropdownMenuItem<int>(
-                          value: category.id,
-                          child: Text(category.name),
-                        );
-                      }),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCategoryId = value;
-                        _markChanged();
-                      });
-                    },
-                  );
+              CategoryPicker(
+                value: _selectedCategoryId,
+                onChanged: (id) {
+                  setState(() => _selectedCategoryId = id);
+                  _markChanged();
                 },
-                loading: () => LinearProgressIndicator(),
-                error: (_, __) => Text(tr('m213')),
               ),
-
-              SizedBox(height: 24),
+              const SizedBox(height: 16),
+              ProductLocationFields(
+                warehouse: _warehouseController,
+                section: _sectionController,
+                shelf: _shelfController,
+              ),
+              const SizedBox(height: 24),
 
               // Pricing Section
-              _SectionHeader(
-                title: tr('m307'),
-                icon: Icons.attach_money,
-              ),
+              _SectionHeader(title: tr('m307'), icon: Icons.attach_money),
               SizedBox(height: 16),
 
               if (isSmallScreen) ...[
@@ -275,17 +267,24 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                             padding: EdgeInsets.all(12),
                             child: Row(
                               children: [
-                                Icon(Icons.warning,
-                                    color: adaptiveColor(
-                                        context, Colors.orange[700]!)),
+                                Icon(
+                                  Icons.warning,
+                                  color: adaptiveColor(
+                                    context,
+                                    Colors.orange[700]!,
+                                  ),
+                                ),
                                 SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     tr('m473'),
                                     style: TextStyle(
-                                        color: adaptiveColor(
-                                            context, Colors.orange[900]!,
-                                            foreground: true)),
+                                      color: adaptiveColor(
+                                        context,
+                                        Colors.orange[900]!,
+                                        foreground: true,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -301,10 +300,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
               SizedBox(height: 24),
 
               // Inventory Section
-              _SectionHeader(
-                title: tr('m338'),
-                icon: Icons.storage,
-              ),
+              _SectionHeader(title: tr('m338'), icon: Icons.storage),
               SizedBox(height: 16),
 
               // Current stock (read-only)
@@ -533,10 +529,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       ),
       initialValue: _selectedUnit,
       items: _units.map((unit) {
-        return DropdownMenuItem(
-          value: unit,
-          child: Text(unitLabel(unit)),
-        );
+        return DropdownMenuItem(value: unit, child: Text(unitLabel(unit)));
       }).toList(),
       onChanged: (value) {
         if (value != null) {
@@ -560,9 +553,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(tr('m318')),
-        content: Text(
-          tr('m427'),
-        ),
+        content: Text(tr('m427')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -571,7 +562,8 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
-                backgroundColor: adaptiveColor(context, Colors.red)),
+              backgroundColor: adaptiveColor(context, Colors.red),
+            ),
             child: Text(tr('m57')),
           ),
         ],
@@ -592,6 +584,9 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
 
     try {
       final data = {
+        'warehouse': _warehouseController.text.trim(),
+        'section': _sectionController.text.trim(),
+        'shelf': _shelfController.text.trim(),
         'name': _nameController.text.trim(),
         'sku': _skuController.text.trim(),
         'barcode': _barcodeController.text.trim().isEmpty
@@ -602,17 +597,16 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
             ? '0'
             : _purchasePriceController.text,
         'sale_price': _salePriceController.text,
-        'min_stock':
-            _minStockController.text.isEmpty ? '0' : _minStockController.text,
+        'min_stock': _minStockController.text.isEmpty
+            ? '0'
+            : _minStockController.text,
         'unit': _selectedUnit,
         'active': widget.product.active,
       };
 
-      await ref.read(productsProvider.notifier).updateProduct(
-            widget.product.id,
-            data,
-            imagePath: _imagePath,
-          );
+      await ref
+          .read(productsProvider.notifier)
+          .updateProduct(widget.product.id, data, imagePath: _imagePath);
 
       if (!mounted) return;
 
@@ -649,10 +643,7 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
 
-  const _SectionHeader({
-    required this.title,
-    required this.icon,
-  });
+  const _SectionHeader({required this.title, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -662,13 +653,11 @@ class _SectionHeader extends StatelessWidget {
         Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
         SizedBox(width: 12),
         Expanded(
-            child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+          child: Text(
+            title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-        )),
+        ),
       ],
     );
   }

@@ -43,7 +43,7 @@ class RoutingTests(SimpleTestCase):
     def test_api_only_home_needs_neither_database_nor_website(self):
         response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['service'], 'VEXO API')
+        self.assertEqual(response.json()['service'], 'e-dukon API')
 
     def test_integrated_deployment_example_matches_real_url_configuration(self):
         root=Path(settings.BASE_DIR).parent
@@ -86,7 +86,7 @@ if settings.SERVE_WEBSITE:
     assert resolve('/download/').func
     assert Client().get('/download/').status_code==200
 else:
-    assert response.json()['service']=='VEXO API'
+    assert response.json()['service']=='e-dukon API'
 """
             return subprocess.run([sys.executable,'-c',script],cwd=root/'backend',env=env,
                                   capture_output=True,text=True,timeout=30)

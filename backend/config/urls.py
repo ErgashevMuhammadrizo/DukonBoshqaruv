@@ -43,3 +43,5 @@ urlpatterns += [re_path(r'^media/(?P<path>.*)$', serve_media)]
 
 from apps.core import inpay
 urlpatterns += [path('api/v1/payments/inpay/', inpay.Checkout.as_view()), path('api/v1/payments/inpay/<int:pk>/check/', inpay.CheckPayment.as_view()), path('api/v1/payments/inpay/callback/', inpay.Callback.as_view())]
+
+urlpatterns += [path('api/v1/payments/inpay/return/', inpay.PaymentReturn.as_view())]

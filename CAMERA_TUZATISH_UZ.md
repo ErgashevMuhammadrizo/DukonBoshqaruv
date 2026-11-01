@@ -1,4 +1,4 @@
-# Dokon Boshqaruv — kamera tuzatishi va diagnostika
+# e-dukon — kamera tuzatishi va diagnostika
 
 ## Hozir nima ma’lum?
 

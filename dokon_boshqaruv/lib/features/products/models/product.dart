@@ -14,6 +14,11 @@ class Product {
   final String minStock;
   final bool active;
   final String? image;
+  final String warehouse;
+  final String section;
+  final String shelf;
+  String get locationLabel =>
+      [warehouse, section, shelf].where((v) => v.trim().isNotEmpty).join(' → ');
   final DateTime? updatedAt;
 
   Product({
@@ -30,6 +35,9 @@ class Product {
     required this.minStock,
     this.active = true,
     this.image,
+    this.warehouse = '',
+    this.section = '',
+    this.shelf = '',
     this.updatedAt,
   });
 
@@ -48,6 +56,9 @@ class Product {
       minStock: json['min_stock']?.toString() ?? '0',
       active: json['active'] as bool? ?? true,
       image: json['image'] as String?,
+      warehouse: json['warehouse']?.toString() ?? '',
+      section: json['section']?.toString() ?? '',
+      shelf: json['shelf']?.toString() ?? '',
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'] as String)
           : null,
@@ -67,6 +78,10 @@ class Product {
       'unit': unit,
       'min_stock': minStock,
       'image': image,
+      'category_name': categoryName,
+      'warehouse': warehouse,
+      'section': section,
+      'shelf': shelf,
       'active': active,
     };
   }
@@ -108,6 +123,9 @@ class Product {
     String? minStock,
     bool? active,
     String? image,
+    String? warehouse,
+    String? section,
+    String? shelf,
     DateTime? updatedAt,
   }) {
     return Product(
@@ -124,6 +142,9 @@ class Product {
       minStock: minStock ?? this.minStock,
       active: active ?? this.active,
       image: image ?? this.image,
+      warehouse: warehouse ?? this.warehouse,
+      section: section ?? this.section,
+      shelf: shelf ?? this.shelf,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -133,27 +154,19 @@ class Category {
   final int id;
   final String name;
 
-  Category({
-    required this.id,
-    required this.name,
-  });
+  Category({required this.id, required this.name});
 
   factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      id: json['id'] as int,
-      name: json['name'] as String,
-    );
+    return Category(id: json['id'] as int, name: json['name'] as String);
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-    };
+    return {'id': id, 'name': name};
   }
 }
 
 class ProductFilters {
+  static const _unset = Object();
   final String? searchQuery;
   final int? categoryId;
   final String? stockStatus; // 'all', 'mavjud', 'kam_qolgan', 'tugagan'
@@ -182,29 +195,32 @@ class ProductFilters {
 
   ProductFilters copyWith({
     String? searchQuery,
-    int? categoryId,
+    Object? categoryId = _unset,
     String? stockStatus,
-    double? minPrice,
-    double? maxPrice,
+    Object? minPrice = _unset,
+    Object? maxPrice = _unset,
     String? sortBy,
     bool? sortAscending,
   }) {
     return ProductFilters(
       searchQuery: searchQuery ?? this.searchQuery,
-      categoryId: categoryId ?? this.categoryId,
+      categoryId: identical(categoryId, _unset)
+          ? this.categoryId
+          : categoryId as int?,
       stockStatus: stockStatus ?? this.stockStatus,
-      minPrice: minPrice ?? this.minPrice,
-      maxPrice: maxPrice ?? this.maxPrice,
+      minPrice: identical(minPrice, _unset)
+          ? this.minPrice
+          : minPrice as double?,
+      maxPrice: identical(maxPrice, _unset)
+          ? this.maxPrice
+          : maxPrice as double?,
       sortBy: sortBy ?? this.sortBy,
       sortAscending: sortAscending ?? this.sortAscending,
     );
   }
 
   ProductFilters clearFilters() {
-    return ProductFilters(
-      sortBy: sortBy,
-      sortAscending: sortAscending,
-    );
+    return ProductFilters(sortBy: sortBy, sortAscending: sortAscending);
   }
 }
 

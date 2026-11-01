@@ -1,4 +1,4 @@
-# Dokon Boshqaruv — kod auditi
+# e-dukon — kod auditi
 
 ## Amalga oshirildi
 

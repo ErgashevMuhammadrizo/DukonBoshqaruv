@@ -1,5 +1,6 @@
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
 
 class UnitSelector extends StatelessWidget {
@@ -17,75 +18,79 @@ class UnitSelector extends StatelessWidget {
   });
 
   static Map<String, UnitInfo> get units => {
-        'dona': UnitInfo(
-          icon: Icons.circle_outlined,
-          label: tr('unitPiece'),
-          description: tr('unitPieceDesc'),
-          color: Colors.blue,
-        ),
-        'pachka': UnitInfo(
-            icon: Icons.inventory_2_outlined,
-            label: tr('unitPack'),
-            description: tr('unitPackDesc'),
-            color: Colors.deepPurple),
-        'butilka': UnitInfo(
-            icon: Icons.local_drink_outlined,
-            label: tr('unitBottle'),
-            description: tr('unitBottleDesc'),
-            color: Colors.cyan),
-        'gramm': UnitInfo(
-            icon: Icons.scale,
-            label: tr('unitGram'),
-            description: tr('weight'),
-            color: Colors.green),
-        'ml': UnitInfo(
-            icon: Icons.water_drop,
-            label: tr('unitMl'),
-            description: tr('volume'),
-            color: Colors.cyan),
-        'kg': UnitInfo(
-          icon: Icons.scale_rounded,
-          label: tr('unitKg'),
-          description: tr('weight'),
-          color: Colors.green,
-        ),
-        'litr': UnitInfo(
-          icon: Icons.water_drop_outlined,
-          label: tr('unitLitre'),
-          description: tr('volume'),
-          color: Colors.cyan,
-        ),
-        'metr': UnitInfo(
-          icon: Icons.straighten_rounded,
-          label: tr('unitMetre'),
-          description: tr('length'),
-          color: Colors.orange,
-        ),
-        'quti': UnitInfo(
-          icon: Icons.inventory_2_outlined,
-          label: tr('unitBox'),
-          description: tr('boxed'),
-          color: Colors.purple,
-        ),
-        'paket': UnitInfo(
-          icon: Icons.shopping_bag_outlined,
-          label: tr('unitBag'),
-          description: tr('bagged'),
-          color: Colors.brown,
-        ),
-        'm²': UnitInfo(
-          icon: Icons.crop_square_rounded,
-          label: tr('unitSquare'),
-          description: tr('area'),
-          color: Colors.indigo,
-        ),
-        'm³': UnitInfo(
-          icon: Icons.view_in_ar_rounded,
-          label: tr('unitCubic'),
-          description: tr('volume'),
-          color: Colors.teal,
-        ),
-      };
+    'dona': UnitInfo(
+      icon: Icons.circle_outlined,
+      label: tr('unitPiece'),
+      description: tr('unitPieceDesc'),
+      color: Colors.blue,
+    ),
+    'pachka': UnitInfo(
+      icon: Icons.inventory_2_outlined,
+      label: tr('unitPack'),
+      description: tr('unitPackDesc'),
+      color: Colors.deepPurple,
+    ),
+    'butilka': UnitInfo(
+      icon: Icons.local_drink_outlined,
+      label: tr('unitBottle'),
+      description: tr('unitBottleDesc'),
+      color: Colors.cyan,
+    ),
+    'gramm': UnitInfo(
+      icon: Icons.scale,
+      label: tr('unitGram'),
+      description: tr('weight'),
+      color: Colors.green,
+    ),
+    'ml': UnitInfo(
+      icon: Icons.water_drop,
+      label: tr('unitMl'),
+      description: tr('volume'),
+      color: Colors.cyan,
+    ),
+    'kg': UnitInfo(
+      icon: Icons.scale_rounded,
+      label: tr('unitKg'),
+      description: tr('weight'),
+      color: Colors.green,
+    ),
+    'litr': UnitInfo(
+      icon: Icons.water_drop_outlined,
+      label: tr('unitLitre'),
+      description: tr('volume'),
+      color: Colors.cyan,
+    ),
+    'metr': UnitInfo(
+      icon: Icons.straighten_rounded,
+      label: tr('unitMetre'),
+      description: tr('length'),
+      color: Colors.orange,
+    ),
+    'quti': UnitInfo(
+      icon: Icons.inventory_2_outlined,
+      label: tr('unitBox'),
+      description: tr('boxed'),
+      color: Colors.purple,
+    ),
+    'paket': UnitInfo(
+      icon: Icons.shopping_bag_outlined,
+      label: tr('unitBag'),
+      description: tr('bagged'),
+      color: Colors.brown,
+    ),
+    'm²': UnitInfo(
+      icon: Icons.crop_square_rounded,
+      label: tr('unitSquare'),
+      description: tr('area'),
+      color: Colors.indigo,
+    ),
+    'm³': UnitInfo(
+      icon: Icons.view_in_ar_rounded,
+      label: tr('unitCubic'),
+      description: tr('volume'),
+      color: Colors.teal,
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -103,8 +108,11 @@ class UnitSelector extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color:
-                    adaptiveColor(context, Colors.grey[700]!, foreground: true),
+                color: adaptiveColor(
+                  context,
+                  Colors.grey[700]!,
+                  foreground: true,
+                ),
               ),
             ),
           ),
@@ -125,8 +133,9 @@ class UnitSelector extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: (selectedUnit?.color ?? Colors.grey)
-                        .withValues(alpha: 0.1),
+                    color: (selectedUnit?.color ?? Colors.grey).withValues(
+                      alpha: 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -152,8 +161,11 @@ class UnitSelector extends StatelessWidget {
                           selectedUnit.description,
                           style: TextStyle(
                             fontSize: 12,
-                            color: adaptiveColor(context, Colors.grey[600]!,
-                                foreground: true),
+                            color: adaptiveColor(
+                              context,
+                              Colors.grey[600]!,
+                              foreground: true,
+                            ),
                           ),
                         ),
                     ],
@@ -208,9 +220,14 @@ class UnitSelector extends StatelessWidget {
                           color: adaptiveColor(context, Colors.blue[50]!),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(Icons.straighten_rounded,
-                            color: adaptiveColor(context, Colors.blue[700]!,
-                                foreground: true)),
+                        child: Icon(
+                          Icons.straighten_rounded,
+                          color: adaptiveColor(
+                            context,
+                            Colors.blue[700]!,
+                            foreground: true,
+                          ),
+                        ),
                       ),
                       SizedBox(width: 12),
                       Expanded(
@@ -267,8 +284,9 @@ class UnitSelector extends StatelessWidget {
                                   Container(
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color:
-                                          unitInfo.color.withValues(alpha: 0.1),
+                                      color: unitInfo.color.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -299,8 +317,10 @@ class UnitSelector extends StatelessWidget {
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: adaptiveColor(
-                                                context, Colors.grey[600]!,
-                                                foreground: true),
+                                              context,
+                                              Colors.grey[600]!,
+                                              foreground: true,
+                                            ),
                                           ),
                                         ),
                                       ],

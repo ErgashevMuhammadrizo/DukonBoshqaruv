@@ -169,7 +169,7 @@ SIMPLE_JWT = {
     'CHECK_REVOKE_TOKEN': True,
 }
 
-SPECTACULAR_SETTINGS = {'TITLE': 'Dokon Boshqaruv API', 'VERSION': '1.0.0'}
+SPECTACULAR_SETTINGS = {'TITLE': 'e-dukon API', 'VERSION': '1.0.0'}
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = str(os.getenv('SECURE_SSL_REDIRECT', '0')).strip().lower() in {'1','true','yes','on'}
 SECURE_REDIRECT_EXEMPT = [r'^/health/live$', r'^/health/ready$']

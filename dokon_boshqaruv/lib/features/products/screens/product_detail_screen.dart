@@ -1,8 +1,10 @@
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../providers/products_provider.dart';
 import '../models/product.dart';
 import '../../../src/app.dart'; // Import for apiProvider
@@ -47,9 +49,7 @@ class ProductDetailScreen extends ConsumerWidget {
       body: productAsync.when(
         data: (product) {
           if (product == null) {
-            return Center(
-              child: Text(tr('m253')),
-            );
+            return Center(child: Text(tr('m253')));
           }
 
           return SingleChildScrollView(
@@ -62,17 +62,31 @@ class ProductDetailScreen extends ConsumerWidget {
                   color: adaptiveColor(context, Colors.grey[200]!),
                   child: product.image == null || product.image!.isEmpty
                       ? Center(
-                          child: Icon(Icons.image,
-                              size: 80,
-                              color: adaptiveColor(context, Colors.grey,
-                                  foreground: true)))
-                      : Image.network(product.image!,
+                          child: Icon(
+                            Icons.image,
+                            size: 80,
+                            color: adaptiveColor(
+                              context,
+                              Colors.grey,
+                              foreground: true,
+                            ),
+                          ),
+                        )
+                      : Image.network(
+                          product.image!,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Center(
-                              child: Icon(Icons.image,
-                                  size: 80,
-                                  color: adaptiveColor(context, Colors.grey,
-                                      foreground: true)))),
+                            child: Icon(
+                              Icons.image,
+                              size: 80,
+                              color: adaptiveColor(
+                                context,
+                                Colors.grey,
+                                foreground: true,
+                              ),
+                            ),
+                          ),
+                        ),
                 ),
 
                 // Product Info
@@ -108,6 +122,32 @@ class ProductDetailScreen extends ConsumerWidget {
                         ),
 
                       SizedBox(height: 24),
+
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mahsulot manzili',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Ombor: ${product.warehouse.isEmpty ? 'Belgilanmagan' : product.warehouse}',
+                              ),
+                              Text(
+                                'Bo‘lim: ${product.section.isEmpty ? 'Belgilanmagan' : product.section}',
+                              ),
+                              Text(
+                                'Polka: ${product.shelf.isEmpty ? 'Belgilanmagan' : product.shelf}',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
                       // Price Cards
                       Row(
@@ -172,21 +212,12 @@ class ProductDetailScreen extends ConsumerWidget {
 
                       SizedBox(height: 16),
 
-                      _DetailRow(
-                        label: tr('m241'),
-                        value: product.sku,
-                      ),
+                      _DetailRow(label: tr('m241'), value: product.sku),
 
                       if (product.barcode != null)
-                        _DetailRow(
-                          label: tr('m455'),
-                          value: product.barcode!,
-                        ),
+                        _DetailRow(label: tr('m455'), value: product.barcode!),
 
-                      _DetailRow(
-                        label: tr('m313'),
-                        value: product.unit,
-                      ),
+                      _DetailRow(label: tr('m313'), value: product.unit),
 
                       _DetailRow(
                         label: tr('m163'),
@@ -235,8 +266,11 @@ class ProductDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline,
-                  size: 64, color: adaptiveColor(context, Colors.red)),
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: adaptiveColor(context, Colors.red),
+              ),
               SizedBox(height: 16),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
@@ -344,13 +378,16 @@ class ProductDetailScreen extends ConsumerWidget {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.delete,
-                    color:
-                        adaptiveColor(context, Colors.red, foreground: true)),
-                title: Text(tr('m312'),
-                    style: TextStyle(
-                        color: adaptiveColor(context, Colors.red,
-                            foreground: true))),
+                leading: Icon(
+                  Icons.delete,
+                  color: adaptiveColor(context, Colors.red, foreground: true),
+                ),
+                title: Text(
+                  tr('m312'),
+                  style: TextStyle(
+                    color: adaptiveColor(context, Colors.red, foreground: true),
+                  ),
+                ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   await _deleteProduct(context, ref);
@@ -364,22 +401,30 @@ class ProductDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _runRemoval(
-      BuildContext context, Future<void> Function() action) async {
+    BuildContext context,
+    Future<void> Function() action,
+  ) async {
     final navigator = Navigator.of(context, rootNavigator: true);
     final route = DialogRoute<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => PopScope(
-            canPop: false,
-            child: AlertDialog(
-                content: Row(children: [
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
               const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2)),
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: Text(tr('m231')))
-            ]))));
+              Expanded(child: Text(tr('m231'))),
+            ],
+          ),
+        ),
+      ),
+    );
     navigator.push(route);
     try {
       await action();
@@ -393,9 +438,7 @@ class ProductDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(tr('m263')),
-        content: Text(
-          tr('m238'),
-        ),
+        content: Text(tr('m238')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -412,9 +455,9 @@ class ProductDetailScreen extends ConsumerWidget {
     if (confirm == true && context.mounted) {
       try {
         await _runRemoval(
-            context,
-            () =>
-                ref.read(productsProvider.notifier).archiveProduct(productId));
+          context,
+          () => ref.read(productsProvider.notifier).archiveProduct(productId),
+        );
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -443,9 +486,7 @@ class ProductDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(tr('m264')),
-        content: Text(
-          tr('m240'),
-        ),
+        content: Text(tr('m240')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -454,7 +495,8 @@ class ProductDetailScreen extends ConsumerWidget {
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
-                backgroundColor: adaptiveColor(context, Colors.red)),
+              backgroundColor: adaptiveColor(context, Colors.red),
+            ),
             child: Text(tr('m156')),
           ),
         ],
@@ -463,8 +505,10 @@ class ProductDetailScreen extends ConsumerWidget {
 
     if (confirm == true && context.mounted) {
       try {
-        await _runRemoval(context,
-            () => ref.read(productsProvider.notifier).deleteProduct(productId));
+        await _runRemoval(
+          context,
+          () => ref.read(productsProvider.notifier).deleteProduct(productId),
+        );
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -489,7 +533,10 @@ class ProductDetailScreen extends ConsumerWidget {
   }
 
   void _showStockAdjustment(
-      BuildContext context, WidgetRef ref, Product product) {
+    BuildContext context,
+    WidgetRef ref,
+    Product product,
+  ) {
     showDialog(
       context: context,
       builder: (context) => _StockAdjustmentDialog(product: product),
@@ -497,49 +544,58 @@ class ProductDetailScreen extends ConsumerWidget {
   }
 
   void _viewInventoryHistory(
-      BuildContext context, WidgetRef ref, Product product) {
-    final history =
-        ref.read(apiProvider).getInventoryMovements(productId: product.id);
+    BuildContext context,
+    WidgetRef ref,
+    Product product,
+  ) {
+    final history = ref
+        .read(apiProvider)
+        .getInventoryMovements(productId: product.id);
     showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-                title: Text(tr('m340')),
-                content: SizedBox(
-                    width: 480,
-                    height: 360,
-                    child: FutureBuilder<List<dynamic>>(
-                        future: history,
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            return Center(
-                                child: Text(_readableError(snapshot.error!)));
-                          }
-                          if (!snapshot.hasData) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-                          final rows = snapshot.data!;
-                          if (rows.isEmpty) {
-                            return Center(child: Text(tr('m168')));
-                          }
-                          return ListView.separated(
-                              itemCount: rows.length,
-                              separatorBuilder: (_, index) => const Divider(),
-                              itemBuilder: (_, index) {
-                                final row = rows[index] as Map;
-                                return ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: Text(
-                                        '${row['delta']} ${unitLabel(product.unit)}'),
-                                    subtitle: Text(
-                                        '${row['reference'] ?? ''}\n${row['before']} → ${row['after']}\n${row['created_at'] ?? ''}'));
-                              });
-                        })),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(dialogContext),
-                      child: Text(tr('m601')))
-                ]));
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(tr('m340')),
+        content: SizedBox(
+          width: 480,
+          height: 360,
+          child: FutureBuilder<List<dynamic>>(
+            future: history,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text(_readableError(snapshot.error!)));
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final rows = snapshot.data!;
+              if (rows.isEmpty) {
+                return Center(child: Text(tr('m168')));
+              }
+              return ListView.separated(
+                itemCount: rows.length,
+                separatorBuilder: (_, index) => const Divider(),
+                itemBuilder: (_, index) {
+                  final row = rows[index] as Map;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('${row['delta']} ${unitLabel(product.unit)}'),
+                    subtitle: Text(
+                      '${row['reference'] ?? ''}\n${row['before']} → ${row['after']}\n${row['created_at'] ?? ''}',
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(tr('m601')),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatDate(DateTime date) {
@@ -576,8 +632,11 @@ class _InfoCard extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: 12,
-                color:
-                    adaptiveColor(context, Colors.grey[600]!, foreground: true),
+                color: adaptiveColor(
+                  context,
+                  Colors.grey[600]!,
+                  foreground: true,
+                ),
               ),
             ),
             SizedBox(height: 4),
@@ -600,10 +659,7 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -618,8 +674,11 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color:
-                    adaptiveColor(context, Colors.grey[600]!, foreground: true),
+                color: adaptiveColor(
+                  context,
+                  Colors.grey[600]!,
+                  foreground: true,
+                ),
                 fontSize: 14,
               ),
             ),
@@ -628,10 +687,7 @@ class _DetailRow extends StatelessWidget {
             flex: 3,
             child: Text(
               value,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
             ),
           ),
         ],
@@ -797,17 +853,18 @@ class _StockAdjustmentDialogState
       final delta = double.parse(_deltaController.text);
       final actualDelta = _isAdding ? delta : -delta;
 
-      await ref.read(apiProvider).adjustStock(
+      await ref
+          .read(apiProvider)
+          .adjustStock(
             widget.product.id,
             actualDelta.toString(),
             _reasonController.text.trim(),
           );
 
       // Lokal yangilaymiz — sahifa qayta yuklanmaydi
-      ref.read(productsProvider.notifier).adjustStockLocally(
-            widget.product.id,
-            actualDelta,
-          );
+      ref
+          .read(productsProvider.notifier)
+          .adjustStockLocally(widget.product.id, actualDelta);
       // productProvider ham yangilansin
       ref.invalidate(productProvider(widget.product.id));
 
@@ -817,20 +874,26 @@ class _StockAdjustmentDialogState
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle_rounded,
-                  color: adaptiveColor(context, Colors.white), size: 18),
+              Icon(
+                Icons.check_circle_rounded,
+                color: adaptiveColor(context, Colors.white),
+                size: 18,
+              ),
               SizedBox(width: 8),
-              Text(tr('m398', [
-                _isAdding ? "qo'shildi" : "ayrildi",
-                delta.toStringAsFixed(1),
-                widget.product.unit
-              ])),
+              Text(
+                tr('m398', [
+                  _isAdding ? "qo'shildi" : "ayrildi",
+                  delta.toStringAsFixed(1),
+                  widget.product.unit,
+                ]),
+              ),
             ],
           ),
           backgroundColor: adaptiveColor(context, Colors.green[700]!),
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: EdgeInsets.all(16),
         ),
       );
@@ -844,8 +907,9 @@ class _StockAdjustmentDialogState
           content: Text(_readableError(e)),
           backgroundColor: adaptiveColor(context, Colors.red[700]!),
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: EdgeInsets.all(16),
         ),
       );

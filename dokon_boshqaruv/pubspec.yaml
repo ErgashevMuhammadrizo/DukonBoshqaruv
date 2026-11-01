@@ -1,9 +1,9 @@
 name: dokon_boshqaruv
-description: VEXO — savdo va ombor boshqaruvi
+description: e-dukon — savdo va ombor boshqaruvi
 publish_to: none
-version: 0.2.2+5
+version: 0.3.1+7
 environment:
-  sdk: '>=3.5.0 <4.0.0'
+  sdk: '>=3.12.0 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
@@ -23,6 +23,7 @@ dependencies:
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
   intl: ^0.20.2
+  url_launcher: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

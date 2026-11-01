@@ -439,7 +439,7 @@ const messages = <String, Map<String, String>>{
   },
   "m111": {"uz": "Do'kon nomi", "ru": "Название магазина", "en": "Store name"},
   "m112": {"uz": "Do'konlar", "ru": "Магазины", "en": "Stores"},
-  "m113": {"uz": "VEXO", "ru": "VEXO", "en": "VEXO"},
+  "m113": {"uz": "e-dukon", "ru": "e-dukon", "en": "e-dukon"},
   "m114": {"uz": "Do‘kon", "ru": "Магазин", "en": "Store"},
   "m115": {
     "uz": "Do‘kon ID si topilmadi. Ro‘yxatni yangilang.",

@@ -1,4 +1,4 @@
-# Dokon Boshqaruv — public website
+# e-dukon — public website
 
 Ikki ochiq sahifa: `/` va `/download/`. Mavjud Django texnologiyasi saqlandi. Sayt login, ma’lumotlar bazasi yoki API ulanishisiz ishlaydi. Flutter ilovasi o‘zgartirilmaydi.
 

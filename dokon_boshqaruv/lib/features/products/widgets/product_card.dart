@@ -1,8 +1,10 @@
 import '../../../src/widgets/product_photo.dart';
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/product.dart';
 import 'quick_stock_adjustment.dart';
 
@@ -10,11 +12,7 @@ class ProductCard extends ConsumerWidget {
   final Product product;
   final VoidCallback onTap;
 
-  const ProductCard({
-    super.key,
-    required this.product,
-    required this.onTap,
-  });
+  const ProductCard({super.key, required this.product, required this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,20 +62,45 @@ class ProductCard extends ConsumerWidget {
                     SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.qr_code_2,
-                            size: 12,
-                            color: adaptiveColor(context, Colors.grey[600]!)),
+                        Icon(
+                          Icons.qr_code_2,
+                          size: 12,
+                          color: adaptiveColor(context, Colors.grey[600]!),
+                        ),
                         SizedBox(width: 4),
                         Text(
                           product.sku,
                           style: TextStyle(
                             fontSize: 11,
-                            color: adaptiveColor(context, Colors.grey[600]!,
-                                foreground: true),
+                            color: adaptiveColor(
+                              context,
+                              Colors.grey[600]!,
+                              foreground: true,
+                            ),
                           ),
                         ),
                       ],
                     ),
+                    if (product.categoryName?.isNotEmpty ?? false)
+                      Text(
+                        product.categoryName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (product.locationLabel.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Tooltip(
+                          message: product.locationLabel,
+                          child: Text(
+                            product.locationLabel,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ),
                     Spacer(),
                     Row(
                       children: [
@@ -90,8 +113,11 @@ class ProductCard extends ConsumerWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: adaptiveColor(context, Colors.blue,
-                                      foreground: true),
+                                  color: adaptiveColor(
+                                    context,
+                                    Colors.blue,
+                                    foreground: true,
+                                  ),
                                 ),
                               ),
                               Text(
@@ -99,8 +125,10 @@ class ProductCard extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: adaptiveColor(
-                                      context, Colors.grey[600]!,
-                                      foreground: true),
+                                    context,
+                                    Colors.grey[600]!,
+                                    foreground: true,
+                                  ),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -114,10 +142,15 @@ class ProductCard extends ConsumerWidget {
                               color: adaptiveColor(context, Colors.blue[50]!),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.add_rounded,
-                                size: 18,
-                                color: adaptiveColor(context, Colors.blue[700]!,
-                                    foreground: true)),
+                            child: Icon(
+                              Icons.add_rounded,
+                              size: 18,
+                              color: adaptiveColor(
+                                context,
+                                Colors.blue[700]!,
+                                foreground: true,
+                              ),
+                            ),
                           ),
                           onPressed: () async {
                             await showDialog<bool>(
@@ -167,54 +200,87 @@ class ProductListTile extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    SizedBox(width: 76, height: 76,
-                      child: ProductPhoto(image: product.image, name: product.name,
-                        radius: 12, padding: const EdgeInsets.all(8))),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(product.name,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 15)),
-                          const SizedBox(height: 4),
-                          Text(product.sku,
-                              style: Theme.of(context).textTheme.bodySmall),
-                          if (product.categoryName != null)
-                            Text(product.categoryName!),
-                        ])),
-                  ]),
-                  const SizedBox(height: 12),
-                  Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                  SizedBox(
+                    width: 76,
+                    height: 76,
+                    child: ProductPhoto(
+                      image: product.image,
+                      name: product.name,
+                      radius: 12,
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Chip(
-                            label: Text(
-                                '${product.stock} ${unitLabel(product.unit)}')),
-                        _StockBadge(product: product),
-                      ]),
-                  const SizedBox(height: 12),
-                  Text(tr('m631', [product.salePrice]),
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary)),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                      onPressed: () => showDialog<bool>(
-                          context: context,
-                          builder: (_) =>
-                              QuickStockAdjustmentDialog(product: product)),
-                      icon: const Icon(Icons.add_rounded),
-                      label: Text(tr('m393'))),
-                ])),
+                        Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          product.sku,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        if (product.categoryName != null)
+                          Text(product.categoryName!),
+                        if (product.locationLabel.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              product.locationLabel,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Chip(
+                    label: Text('${product.stock} ${unitLabel(product.unit)}'),
+                  ),
+                  _StockBadge(product: product),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                tr('m631', [product.salePrice]),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => showDialog<bool>(
+                  context: context,
+                  builder: (_) => QuickStockAdjustmentDialog(product: product),
+                ),
+                icon: const Icon(Icons.add_rounded),
+                label: Text(tr('m393')),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

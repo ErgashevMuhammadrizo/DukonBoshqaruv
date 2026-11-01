@@ -217,8 +217,23 @@ class DebtPayments(APIView):
                 return Response(DebtPaymentSerializer(payment).data,status=201)
         except DebtRecord.DoesNotExist: return Response(status=404)
 class CategorySerializer(serializers.ModelSerializer):
+    def validate_name(self,value):
+        value=' '.join(value.split())
+        if not value: raise serializers.ValidationError('Kategoriya nomini kiriting')
+        qs=Category.objects.filter(store=self.context['request'].user.store,name__iexact=value)
+        if self.instance: qs=qs.exclude(pk=self.instance.pk)
+        if qs.exists(): raise serializers.ValidationError('Bu kategoriya allaqachon mavjud')
+        return value
     class Meta: model=Category; fields=['id','name']; read_only_fields=['id']
 class ProductSerializer(serializers.ModelSerializer):
+    category_name=serializers.CharField(source='category.name',read_only=True,allow_null=True)
+    def get_fields(self):
+        fields=super().get_fields()
+        request=self.context.get('request')
+        if request and hasattr(request.user,'store'):
+            fields['category'].queryset=Category.objects.filter(store=request.user.store)
+        return fields
+
     # Boshlang‘ich qoldiq faqat yaratishda qabul qilinadi; keyingi
     # o‘zgarishlar alohida ombor harakati orqali qayd etiladi.
     initial_stock = serializers.DecimalField(max_digits=16, decimal_places=3,
@@ -226,7 +241,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model=Product
         fields=['id','name','sku','barcode','category','purchase_price','sale_price',
-                'stock','initial_stock','unit','min_stock','image','active','updated_at']
+                'stock','initial_stock','unit','min_stock','image','active','updated_at','category_name','warehouse','section','shelf']
         read_only_fields=['id','stock','updated_at']
     def validate_image(self,value):
         if value and value.size > 5 * 1024 * 1024:
@@ -267,8 +282,16 @@ class ProductSerializer(serializers.ModelSerializer):
 class CategoryView(TenantMixin,viewsets.ModelViewSet):
     queryset=Category.objects.all(); serializer_class=CategorySerializer
     http_method_names=['get','post','patch','head','options']
+    @transaction.atomic
+    def create(self,request,*args,**kwargs):
+        Store.objects.select_for_update().get(pk=self.get_store().pk)
+        return super().create(request,*args,**kwargs)
+    @transaction.atomic
+    def partial_update(self,request,*args,**kwargs):
+        Store.objects.select_for_update().get(pk=self.get_store().pk)
+        return super().partial_update(request,*args,**kwargs)
 class ProductView(TenantMixin,viewsets.ModelViewSet):
-    queryset=Product.objects.all(); serializer_class=ProductSerializer
+    queryset=Product.objects.select_related('category').all(); serializer_class=ProductSerializer
     parser_classes=[JSONParser,MultiPartParser,FormParser]
     http_method_names=['get','post','patch','delete','head','options']
     def destroy(self,request,*args,**kwargs):
@@ -298,7 +321,7 @@ class ProductView(TenantMixin,viewsets.ModelViewSet):
         # excluded from the active catalogue returned to every device.
         if self.action == 'list': qs=qs.filter(active=True)
         q=self.request.query_params.get('q')
-        if q: qs=qs.filter(Q(name__icontains=q)|Q(sku__icontains=q)|Q(barcode__icontains=q))
+        if q: qs=qs.filter(Q(name__icontains=q)|Q(sku__icontains=q)|Q(barcode__icontains=q)|Q(category__name__icontains=q)|Q(warehouse__icontains=q)|Q(section__icontains=q)|Q(shelf__icontains=q))
         return qs.order_by('id')
     def create(self,request,*args,**kwargs):
         store=getattr(request.user,'store',None)
@@ -484,7 +507,7 @@ class Payments(APIView):
         return Response({'id':payment.pk,'status':payment.status,'message':'To‘lov arizasi yuborildi'},status=201)
     def get(self,request):
         return Response(list(PaymentRecord.objects.filter(store=request.user.store).values(
-            'id','order_id','plan_name','provider','provider_transaction_id','amount','currency','status',
+            'id','order_id','plan_name','provider','provider_version','provider_livemode','provider_transaction_id','amount','currency','status',
             'reference','billing_period','failure_reason','submitted_at','approved_at')))
 
 class SubscriptionHistoryList(APIView):

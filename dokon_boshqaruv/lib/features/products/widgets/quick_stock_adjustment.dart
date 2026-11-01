@@ -1,7 +1,9 @@
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/product.dart';
 import '../../../src/app.dart';
 import '../providers/products_provider.dart';
@@ -68,7 +70,9 @@ class _QuickStockAdjustmentDialogState
     });
 
     try {
-      await ref.read(apiProvider).adjustStock(
+      await ref
+          .read(apiProvider)
+          .adjustStock(
             widget.product.id,
             delta.toStringAsFixed(3),
             _reasonController.text.isEmpty
@@ -87,15 +91,17 @@ class _QuickStockAdjustmentDialogState
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle_rounded,
-                    color: adaptiveColor(context, Colors.white)),
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: adaptiveColor(context, Colors.white),
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     tr('m398', [
                       isAdding ? "qo'shildi" : "ayrildi",
                       quantity.toStringAsFixed(1),
-                      widget.product.unit
+                      widget.product.unit,
                     ]),
                   ),
                 ),
@@ -145,13 +151,18 @@ class _QuickStockAdjustmentDialogState
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: adaptiveColor(
-                              context, Colors.white.withValues(alpha: 0.2)),
+                            context,
+                            Colors.white.withValues(alpha: 0.2),
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           Icons.inventory_2_rounded,
-                          color: adaptiveColor(context, Colors.white,
-                              foreground: true),
+                          color: adaptiveColor(
+                            context,
+                            Colors.white,
+                            foreground: true,
+                          ),
                           size: 24,
                         ),
                       ),
@@ -160,17 +171,25 @@ class _QuickStockAdjustmentDialogState
                         child: Text(
                           tr('m400'),
                           style: TextStyle(
-                            color: adaptiveColor(context, Colors.white,
-                                foreground: true),
+                            color: adaptiveColor(
+                              context,
+                              Colors.white,
+                              foreground: true,
+                            ),
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close_rounded,
-                            color: adaptiveColor(context, Colors.white,
-                                foreground: true)),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: adaptiveColor(
+                            context,
+                            Colors.white,
+                            foreground: true,
+                          ),
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -180,7 +199,9 @@ class _QuickStockAdjustmentDialogState
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: adaptiveColor(
-                          context, Colors.white.withValues(alpha: 0.2)),
+                        context,
+                        Colors.white.withValues(alpha: 0.2),
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -192,8 +213,11 @@ class _QuickStockAdjustmentDialogState
                               Text(
                                 widget.product.name,
                                 style: TextStyle(
-                                  color: adaptiveColor(context, Colors.white,
-                                      foreground: true),
+                                  color: adaptiveColor(
+                                    context,
+                                    Colors.white,
+                                    foreground: true,
+                                  ),
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -206,11 +230,14 @@ class _QuickStockAdjustmentDialogState
                                   double.tryParse(widget.product.stock)
                                           ?.toStringAsFixed(1) ??
                                       widget.product.stock,
-                                  widget.product.unit
+                                  widget.product.unit,
                                 ]),
                                 style: TextStyle(
-                                  color: adaptiveColor(context, Colors.white70,
-                                      foreground: true),
+                                  color: adaptiveColor(
+                                    context,
+                                    Colors.white70,
+                                    foreground: true,
+                                  ),
                                   fontSize: 13,
                                 ),
                               ),
@@ -266,8 +293,11 @@ class _QuickStockAdjustmentDialogState
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: adaptiveColor(context, Colors.grey,
-                            foreground: true),
+                        color: adaptiveColor(
+                          context,
+                          Colors.grey,
+                          foreground: true,
+                        ),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -276,17 +306,23 @@ class _QuickStockAdjustmentDialogState
                       runSpacing: 8,
                       children: _presets.map((preset) {
                         return ActionChip(
-                          label:
-                              Text('$preset ${unitLabel(widget.product.unit)}'),
+                          label: Text(
+                            '$preset ${unitLabel(widget.product.unit)}',
+                          ),
                           avatar: Icon(
                             isAdding ? Icons.add_rounded : Icons.remove_rounded,
                             size: 18,
                           ),
-                          backgroundColor:
-                              adaptiveColor(context, Colors.blue[50]!),
+                          backgroundColor: adaptiveColor(
+                            context,
+                            Colors.blue[50]!,
+                          ),
                           labelStyle: TextStyle(
-                            color: adaptiveColor(context, Colors.blue[700]!,
-                                foreground: true),
+                            color: adaptiveColor(
+                              context,
+                              Colors.blue[700]!,
+                              foreground: true,
+                            ),
                             fontWeight: FontWeight.w500,
                           ),
                           side: BorderSide(color: Colors.blue[200]!),
@@ -352,19 +388,23 @@ class _QuickStockAdjustmentDialogState
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline_rounded,
-                                  color:
-                                      adaptiveColor(context, Colors.red[700]!),
-                                  size: 20),
+                              Icon(
+                                Icons.error_outline_rounded,
+                                color: adaptiveColor(context, Colors.red[700]!),
+                                size: 20,
+                              ),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _error!,
                                   style: TextStyle(
-                                      color: adaptiveColor(
-                                          context, Colors.red[700]!,
-                                          foreground: true),
-                                      fontSize: 13),
+                                    color: adaptiveColor(
+                                      context,
+                                      Colors.red[700]!,
+                                      foreground: true,
+                                    ),
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                             ],
@@ -399,8 +439,10 @@ class _QuickStockAdjustmentDialogState
                                 tr('m192'),
                                 style: TextStyle(
                                   color: adaptiveColor(
-                                      context, Colors.grey[700]!,
-                                      foreground: true),
+                                    context,
+                                    Colors.grey[700]!,
+                                    foreground: true,
+                                  ),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -421,8 +463,10 @@ class _QuickStockAdjustmentDialogState
                                 tr('m590'),
                                 style: TextStyle(
                                   color: adaptiveColor(
-                                      context, Colors.grey[700]!,
-                                      foreground: true),
+                                    context,
+                                    Colors.grey[700]!,
+                                    foreground: true,
+                                  ),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -457,8 +501,9 @@ class _QuickStockAdjustmentDialogState
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed:
-                          _isSubmitting ? null : () => Navigator.pop(context),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -477,8 +522,9 @@ class _QuickStockAdjustmentDialogState
                           : () => _submitAdjustment(isAdding),
                       style: FilledButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor:
-                            isAdding ? Colors.green : Colors.orange,
+                        backgroundColor: isAdding
+                            ? Colors.green
+                            : Colors.orange,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -492,9 +538,11 @@ class _QuickStockAdjustmentDialogState
                                 color: adaptiveColor(context, Colors.white),
                               ),
                             )
-                          : Icon(isAdding
-                              ? Icons.add_rounded
-                              : Icons.remove_rounded),
+                          : Icon(
+                              isAdding
+                                  ? Icons.add_rounded
+                                  : Icons.remove_rounded,
+                            ),
                       label: Text(
                         _isSubmitting
                             ? tr('m425')

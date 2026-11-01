@@ -1,5 +1,6 @@
 import '../../../src/adaptive_colors.dart';
 import '../../../src/l10n/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,31 +35,18 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
     setState(() => _isProcessing = true);
 
     try {
-      if (source == ImageSource.camera) {
+      final mobile =
+          !kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS);
+      if (mobile && source == ImageSource.camera) {
         final status = await Permission.camera.request();
         if (!mounted) return;
-        if (status.isDenied || status.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(tr('m202')),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          return;
-        }
-      } else {
-        final status = await Permission.photos.request();
-        if (!mounted) return;
-        if (status.isDenied || status.isPermanentlyDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(tr('m149')),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          return;
+        if (!status.isGranted) {
+          throw FormatException(tr('m202'));
         }
       }
+      // Gallery uses the OS picker; Windows has no mobile photos permission.
 
       final XFile? image = await _picker.pickImage(
         source: source,
@@ -76,6 +64,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         if (size > 5 * 1024 * 1024) {
           throw FormatException(tr('m406'));
         }
+        if (!mounted) return;
         setState(() => _imagePath = image.path);
         widget.onImageSelected(image.path);
       }
@@ -85,11 +74,14 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error_outline,
-                    color: adaptiveColor(context, Colors.white)),
+                Icon(
+                  Icons.error_outline,
+                  color: adaptiveColor(context, Colors.white),
+                ),
                 SizedBox(width: 8),
                 Expanded(
-                    child: Text(e is FormatException ? e.message : tr('m412'))),
+                  child: Text(e is FormatException ? e.message : tr('m412')),
+                ),
               ],
             ),
             backgroundColor: adaptiveColor(context, Colors.red),
@@ -98,7 +90,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         );
       }
     } finally {
-      setState(() => _isProcessing = false);
+      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
@@ -109,7 +101,8 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        final supportsCamera = kIsWeb ||
+        final supportsCamera =
+            kIsWeb ||
             defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS;
         return SafeArea(
@@ -129,10 +122,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                 SizedBox(height: 20),
                 Text(
                   tr('m409'),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 16),
                 if (supportsCamera)
@@ -143,12 +133,19 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                         color: adaptiveColor(context, Colors.blue[50]!),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.photo_camera_rounded,
-                          color: adaptiveColor(context, Colors.blue[700]!,
-                              foreground: true)),
+                      child: Icon(
+                        Icons.photo_camera_rounded,
+                        color: adaptiveColor(
+                          context,
+                          Colors.blue[700]!,
+                          foreground: true,
+                        ),
+                      ),
                     ),
-                    title: Text(tr('m197'),
-                        style: TextStyle(fontWeight: FontWeight.w500)),
+                    title: Text(
+                      tr('m197'),
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
                     subtitle: Text(tr('m591')),
                     onTap: () {
                       Navigator.pop(context);
@@ -162,12 +159,19 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                       color: adaptiveColor(context, Colors.green[50]!),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.photo_library_rounded,
-                        color: adaptiveColor(context, Colors.green[700]!,
-                            foreground: true)),
+                    child: Icon(
+                      Icons.photo_library_rounded,
+                      color: adaptiveColor(
+                        context,
+                        Colors.green[700]!,
+                        foreground: true,
+                      ),
+                    ),
                   ),
-                  title: Text(tr('m150'),
-                      style: TextStyle(fontWeight: FontWeight.w500)),
+                  title: Text(
+                    tr('m150'),
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   subtitle: Text(tr('m272')),
                   onTap: () {
                     Navigator.pop(context);
@@ -182,16 +186,25 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                         color: adaptiveColor(context, Colors.red[50]!),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.delete_rounded,
-                          color: adaptiveColor(context, Colors.red[700]!,
-                              foreground: true)),
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: adaptiveColor(
+                          context,
+                          Colors.red[700]!,
+                          foreground: true,
+                        ),
+                      ),
                     ),
                     title: Text(
                       tr('m410'),
                       style: TextStyle(
-                          color: adaptiveColor(context, Colors.red,
-                              foreground: true),
-                          fontWeight: FontWeight.w500),
+                        color: adaptiveColor(
+                          context,
+                          Colors.red,
+                          foreground: true,
+                        ),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     subtitle: Text(tr('m251')),
                     onTap: () {
@@ -241,7 +254,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                 ? LinearGradient(
                     colors: [
                       adaptiveColor(context, Colors.grey[100]!),
-                      adaptiveColor(context, Colors.grey[50]!)
+                      adaptiveColor(context, Colors.grey[50]!),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -260,138 +273,159 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                   ),
                 )
               : _imagePath != null
-                  ? Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: _imagePath!.startsWith('http')
-                              ? Image.network(_imagePath!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      Center(child: Icon(Icons.broken_image)))
-                              : FutureBuilder<Uint8List>(
-                                  future: XFile(_imagePath!).readAsBytes(),
-                                  builder: (context, snapshot) => snapshot
-                                          .hasData
-                                      ? Image.memory(snapshot.data!,
-                                          fit: BoxFit.cover)
-                                      : Center(
-                                          child: CircularProgressIndicator()),
-                                ),
-                        ),
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: adaptiveColor(context, Colors.black54),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: adaptiveColor(context,
-                                      Colors.black.withValues(alpha: 0.3)),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+              ? Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: _imagePath!.startsWith('http')
+                          ? Image.network(
+                              _imagePath!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  Center(child: Icon(Icons.broken_image)),
+                            )
+                          : FutureBuilder<Uint8List>(
+                              future: XFile(_imagePath!).readAsBytes(),
+                              builder: (context, snapshot) => snapshot.hasData
+                                  ? Image.memory(
+                                      snapshot.data!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Center(child: CircularProgressIndicator()),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.edit_rounded,
-                                    color: adaptiveColor(context, Colors.white,
-                                        foreground: true),
-                                    size: 20,
-                                  ),
-                                  onPressed: _showImageSourceDialog,
-                                  tooltip: tr('m411'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 12,
-                          left: 12,
-                          right: 12,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: adaptiveColor(context, Colors.black54),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.check_circle_rounded,
-                                    color: adaptiveColor(context, Colors.green),
-                                    size: 18),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    tr('m408'),
-                                    style: TextStyle(
-                                      color: adaptiveColor(
-                                          context, Colors.white,
-                                          foreground: true),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: adaptiveColor(context, Colors.blue[50]!),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.add_photo_alternate_rounded,
-                            size: 48,
-                            color: adaptiveColor(context, Colors.blue[700]!,
-                                foreground: true),
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          tr('m250'),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: adaptiveColor(context, Colors.blue[50]!),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            tr('m77'),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: adaptiveColor(context, Colors.blue[700]!,
-                                  foreground: true),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: adaptiveColor(context, Colors.black54),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: adaptiveColor(
+                                context,
+                                Colors.black.withValues(alpha: 0.3),
+                              ),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit_rounded,
+                                color: adaptiveColor(
+                                  context,
+                                  Colors.white,
+                                  foreground: true,
+                                ),
+                                size: 20,
+                              ),
+                              onPressed: _showImageSourceDialog,
+                              tooltip: tr('m411'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 12,
+                      left: 12,
+                      right: 12,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: adaptiveColor(context, Colors.black54),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: adaptiveColor(context, Colors.green),
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                tr('m408'),
+                                style: TextStyle(
+                                  color: adaptiveColor(
+                                    context,
+                                    Colors.white,
+                                    foreground: true,
+                                  ),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: adaptiveColor(context, Colors.blue[50]!),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.add_photo_alternate_rounded,
+                        size: 48,
+                        color: adaptiveColor(
+                          context,
+                          Colors.blue[700]!,
+                          foreground: true,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      tr('m250'),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: adaptiveColor(context, Colors.blue[50]!),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        tr('m77'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: adaptiveColor(
+                            context,
+                            Colors.blue[700]!,
+                            foreground: true,
+                          ),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

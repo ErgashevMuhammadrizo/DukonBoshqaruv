@@ -21,6 +21,9 @@ class Category(models.Model):
     class Meta:
         constraints=[models.UniqueConstraint(fields=['store','name'],name='unique_store_category')]
 class Product(models.Model):
+    warehouse=models.CharField(max_length=100,blank=True,default='')
+    section=models.CharField(max_length=100,blank=True,default='')
+    shelf=models.CharField(max_length=100,blank=True,default='')
     store=models.ForeignKey(Store,on_delete=models.PROTECT)
     category=models.ForeignKey(Category,on_delete=models.PROTECT,null=True,blank=True)
     name=models.CharField(max_length=220)
@@ -87,6 +90,9 @@ class Subscription(models.Model):
     trial_end=models.DateTimeField(null=True,blank=True)
     paid_until=models.DateTimeField(null=True,blank=True)
 class PaymentRecord(models.Model):
+    provider_version=models.CharField(max_length=4,default='v1')
+    provider_livemode=models.BooleanField(null=True,blank=True)
+    provider_payload=models.JSONField(default=dict,blank=True)
     checkout_url=models.URLField(max_length=500,blank=True)
     purchased_months=models.PositiveSmallIntegerField(default=1)
     store=models.ForeignKey(Store,on_delete=models.PROTECT)
